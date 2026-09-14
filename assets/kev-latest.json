@@ -1,9 +1,17 @@
 {
   "source": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
-  "catalogVersion": "2026.09.11",
+  "catalogVersion": "2026.09.14",
   "synced": "2026-09-14",
-  "count": 1709,
+  "count": 1710,
   "vulnerabilities": [
+    {
+      "cveID": "CVE-2026-76461",
+      "vendorProject": "Cisco",
+      "product": "Secure Email Gateway",
+      "vulnerabilityName": "Cisco Secure Email Gateway SQL Injection Vulnerability",
+      "dateAdded": "2026-09-14",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
     {
       "cveID": "CVE-2026-84869",
       "vendorProject": "ConnectWise",
@@ -73,14 +81,6 @@
       "vendorProject": "Google",
       "product": "Chromium V8",
       "vulnerabilityName": "Google Chromium V8 Out of Bounds Write Vulnerability",
-      "dateAdded": "2026-09-09",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-20079",
-      "vendorProject": "Cisco",
-      "product": "Secure Firewall Management Center (FMC) and Security Cloud Control (SCC) Firewall Management",
-      "vulnerabilityName": "Cisco Firewall Management Center Authentication Bypass Using an Alternate Path or Channel Vulnerability",
       "dateAdded": "2026-09-09",
       "knownRansomwareCampaignUse": "Unknown"
     }
