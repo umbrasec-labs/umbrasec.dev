@@ -11,11 +11,20 @@ Zero dependencies - standard library only.
 Usage:
     tools/local-sync/sync-kev.py           # fetch and write if changed
     tools/local-sync/sync-kev.py --check   # report drift, write nothing
+    tools/local-sync/sync-kev.py --quiet   # for cron: silent unless it wrote
 
 Exit status:
     0  file is current, or was updated
-    1  fetch failed
+    1  fetch failed (always 0 under --quiet)
     2  --check found the file is stale
+
+Cron it hourly, staying silent until CISA actually publishes something:
+
+    17 * * * * cd /path/to/umbrasec && python3 tools/local-sync/sync-kev.py --quiet
+
+That only refreshes the file on disk. Committing and deploying stay manual, so
+nothing reaches the repo or the live site without you looking at it first - run
+`git status`, then `tools/local-deploy/deploy.sh`.
 """
 
 import argparse
@@ -55,11 +64,17 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", action="store_true",
                     help="report whether the file is stale; write nothing")
+    ap.add_argument("--quiet", action="store_true",
+                    help="say nothing unless the file changed; for cron")
     args = ap.parse_args()
 
     try:
         fresh = build()
     except (urllib.error.URLError, OSError, KeyError, ValueError) as exc:
+        # Under cron a transient network failure is not worth an email - the
+        # next run picks it up. Stay silent and exit clean.
+        if args.quiet:
+            return 0
         print(f"sync-kev: fetch failed: {exc}", file=sys.stderr)
         return 1
 
@@ -73,8 +88,9 @@ def main():
            {k: v for k, v in old_data.items() if k != "synced"}
 
     if same:
-        print(f"sync-kev: already current - catalog {fresh['catalogVersion']}, "
-              f"{fresh['count']} entries. Nothing written.")
+        if not args.quiet:
+            print(f"sync-kev: already current - catalog {fresh['catalogVersion']}, "
+                  f"{fresh['count']} entries. Nothing written.")
         return 0
 
     if args.check:
