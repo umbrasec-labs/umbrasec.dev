@@ -24,3 +24,7 @@ claude_code_session_brief.md
 .zshrc
 .ripgreprc
 .gitconfig
+
+# Local wrangler install for manual deploys. Never deployed - the deploy
+# ships "git archive HEAD", which only contains committed site files.
+node_modules/
