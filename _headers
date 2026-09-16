@@ -20,3 +20,17 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+
+# Published tool sources are meant to be read and curl'd. Without these,
+# .py/.kql/.md are served as application/octet-stream and the browser
+# downloads them instead of showing them - a bad look on a security site.
+# Safe alongside the rule above: these set only Content-Type, and the merge
+# quirk is per-header, so nothing collides with Cache-Control.
+/tools/kev-watch/*
+  Content-Type: text/plain; charset=utf-8
+
+/tools/sigma-pack/queries/kql/*
+  Content-Type: text/plain; charset=utf-8
+
+/tools/sigma-pack/README.md
+  Content-Type: text/plain; charset=utf-8
