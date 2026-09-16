@@ -89,7 +89,7 @@ deliberately a recent-entries feed, not a mirror - for the full catalog, go to
 
 ## Who's behind it
 
-UMBRASEC is a one-person independent defensive security practice run by **0xdev1**,
+UMBRASEC is an independent defensive security practice run by **0xdev1**,
 based in Australia. Seven years in governance, risk and compliance and in detection
 engineering, including law-enforcement environments; the public practice started in
 2026 and publishes under a handle because of that background.
