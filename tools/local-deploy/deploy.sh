@@ -40,6 +40,7 @@ TRIM=(
   "package-lock.json"
   "tools/local-deploy"
   "tools/local-sync"
+  "tools/site-build"
 )
 
 die() { echo "deploy: $*" >&2; exit 1; }
