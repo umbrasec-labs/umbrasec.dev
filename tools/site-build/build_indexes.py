@@ -21,11 +21,12 @@ Usage:
   python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 if drift
 
 The --check mode writes nothing; it just fails if the committed files don't match
-what the manifest would produce. That's what the GitHub Action runs.
+what the manifest would produce. That's what the pre-commit hook runs.
 """
 
 import argparse
 import datetime as dt
+import html
 import json
 import re
 import sys
@@ -234,8 +235,92 @@ def render_palette(articles) -> str:
     return _wrap(lines, "\n", 4)
 
 
+# ---- sigma-pack index ----------------------------------------------------------
+#
+# The ATT&CK coverage table in tools/sigma-pack/README.md is the manifest for the
+# pack, the way research/articles.json is for the writeups. It is parsed rather
+# than the rule files themselves for one reason: the .kql queries carry no
+# structured frontmatter, so the table is the only place their ATT&CK mapping
+# lives. --check enforces both directions, so a rule cannot be added without a
+# table row, and a row cannot point at a file that does not exist.
+
+SIGMA_DIR = ROOT / "tools" / "sigma-pack"
+
+# | [`file.yml`](rel/path.yml) | Type | [Txxxx](url) Name | Tactic | status |
+# Five cells, anchored, so the 3-cell tables further down the README never match.
+SIGMA_ROW_RE = re.compile(
+    r"^\|\s*\[`(?P<file>[^`]+)`\]\((?P<path>[^)]+)\)\s*\|"
+    r"\s*(?P<kind>[^|]*?)\s*\|"
+    r"\s*(?P<attack>[^|]*?)\s*\|"
+    r"\s*(?P<tactic>[^|]*?)\s*\|"
+    r"\s*(?P<status>[^|]*?)\s*\|\s*$"
+)
+MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def load_sigma_rows():
+    """Rows of the ATT&CK coverage table, in README order."""
+    rows = [m.groupdict() for m in
+            (SIGMA_ROW_RE.match(ln) for ln in
+             (SIGMA_DIR / "README.md").read_text(encoding="utf-8").splitlines())
+            if m]
+    if not rows:
+        sys.exit("error: no ATT&CK coverage rows found in tools/sigma-pack/README.md")
+    return rows
+
+
+def sigma_files_on_disk():
+    """Every shipped rule and query, as paths relative to tools/sigma-pack/."""
+    out = set()
+    for pattern in ("rules/**/*.yml", "queries/**/*.kql"):
+        for p in SIGMA_DIR.glob(pattern):
+            out.add(str(p.relative_to(SIGMA_DIR)).replace("\\", "/"))
+    return out
+
+
+def find_sigma_problems(rows):
+    """(files with no table row, table rows with no file) - both are errors."""
+    listed = {r["path"] for r in rows}
+    unlisted = sorted(sigma_files_on_disk() - listed)
+    missing = sorted(p for p in listed if not (SIGMA_DIR / p).exists())
+    return unlisted, missing
+
+
+def md_cell_to_html(cell: str) -> str:
+    """Markdown links to anchors, everything else escaped once.
+
+    README cells already contain HTML entities (`&amp;`), so unescape before
+    escaping or they double up into `&amp;amp;`.
+    """
+    parts, last = [], 0
+    for m in MD_LINK_RE.finditer(cell):
+        parts.append(he(html.unescape(cell[last:m.start()])))
+        text, href = he(html.unescape(m.group(1))), he(html.unescape(m.group(2)))
+        parts.append(f'<a href="{href}" target="_blank" rel="noopener" '
+                     f'class="text-[#7aa2f7] hover:text-[#7dcfff]">{text}</a>')
+        last = m.end()
+    parts.append(he(html.unescape(cell[last:])))
+    return "".join(parts).strip()
+
+
+def render_sigma_rows(rows) -> str:
+    out = []
+    for r in rows:
+        path, name = he(r["path"]), he(html.unescape(r["file"]))
+        out.append(
+            '                    <tr class="border-t border-[#2a2c38]">\n'
+            f'                        <td class="py-4 px-6"><a href="{path}" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">{name}</a></td>\n'
+            f'                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">{md_cell_to_html(r["kind"])}</td>\n'
+            f'                        <td class="py-4 px-6">{md_cell_to_html(r["attack"])}</td>\n'
+            f'                        <td class="py-4 px-6 text-[#a9b1d6]">{md_cell_to_html(r["tactic"])}</td>\n'
+            f'                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">{md_cell_to_html(r["status"])}</td>\n'
+            '                    </tr>'
+        )
+    return "\n".join(out)
+
+
 def render_footer(prefix: str) -> str:
-    """The shared site footer. `prefix` is "" for root pages, "../" for pages one directory deep."""
+    """The shared site footer. `prefix` is "" for root pages, "../" one deep, "../../" two."""
     p = prefix
     return f'''<footer class="border-t border-[#2a2c38] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
@@ -349,7 +434,8 @@ def rewrite_footer(text, footer_html, path):
 
 def site_pages():
     """Every standard site page that carries the shared chrome (nav + footer)."""
-    pages = ["index.html", "about.html", "services.html", "tools/index.html"]
+    pages = ["index.html", "about.html", "services.html", "tools/index.html",
+             "tools/sigma-pack/index.html"]
     for sub in ("guide", "research"):
         pages += sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in (ROOT / sub).glob("*.html"))
     seen, out = set(), []
@@ -400,6 +486,13 @@ def build(check: bool) -> int:
     add("sitemap.xml", lambda t: replace_region(t, "research", render_sitemap(articles), ROOT / "sitemap.xml"))
     add("assets/umbra.js", lambda t: replace_region(t, "articles", render_palette(articles), ROOT / "assets/umbra.js"))
 
+    # sigma-pack index table, from the README's ATT&CK coverage table
+    sigma_rows = load_sigma_rows()
+    add("tools/sigma-pack/index.html",
+        lambda t: replace_region(t, "sigmapack",
+                                 "\n" + render_sigma_rows(sigma_rows) + "\n                    ",
+                                 ROOT / "tools/sigma-pack/index.html"))
+
     # per-article prev/next nav
     for i, a in enumerate(articles):
         rel = f"research/{a['slug']}.html"
@@ -409,7 +502,7 @@ def build(check: bool) -> int:
 
     # shared footer on every site page (depth-aware relative links)
     for rel in site_pages():
-        prefix = "../" if "/" in rel else ""
+        prefix = "../" * rel.count("/")
         add(rel, lambda t, pre=prefix, rel=rel: rewrite_footer(t, render_footer(pre), ROOT / rel))
 
     changes = []
@@ -423,6 +516,7 @@ def build(check: bool) -> int:
             changes.append((path, new))
 
     orphans = find_orphans(articles)
+    sigma_unlisted, sigma_missing = find_sigma_problems(sigma_rows)
 
     if check:
         problems = False
@@ -431,6 +525,18 @@ def build(check: bool) -> int:
             for rel in orphans:
                 print(f"  - {rel}")
             print("\nAdd an entry to research/articles.json (then regenerate), or delete the file.")
+            problems = True
+        if sigma_unlisted:
+            print("site-build: ORPHAN - sigma-pack files missing from the ATT&CK table in tools/sigma-pack/README.md:")
+            for rel in sigma_unlisted:
+                print(f"  - {rel}")
+            print("\nAdd a table row (then regenerate), or delete the file.")
+            problems = True
+        if sigma_missing:
+            print("site-build: DANGLING - ATT&CK table rows pointing at files that do not exist:")
+            for rel in sigma_missing:
+                print(f"  - {rel}")
+            print("\nFix the path in tools/sigma-pack/README.md, or remove the row.")
             problems = True
         if changes:
             print("site-build: DRIFT - these files are out of sync with research/articles.json:")
@@ -456,7 +562,16 @@ def build(check: bool) -> int:
         print("site-build: WARNING - orphaned research pages not in research/articles.json:")
         for rel in orphans:
             print(f"  - {rel}")
-        print("Add them to the manifest or delete them; CI will fail while they exist.")
+        print("Add them to the manifest or delete them; the hook will fail while they exist.")
+    for label, items, fix in (
+        ("sigma-pack files missing from the ATT&CK table", sigma_unlisted, "Add a table row"),
+        ("ATT&CK table rows with no matching file", sigma_missing, "Fix or remove the row"),
+    ):
+        if items:
+            print(f"site-build: WARNING - {label}:")
+            for rel in items:
+                print(f"  - {rel}")
+            print(f"{fix} in tools/sigma-pack/README.md; the hook will fail while this stands.")
     return 0
 
 
