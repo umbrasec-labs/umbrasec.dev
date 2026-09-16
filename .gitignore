@@ -5,3 +5,22 @@ __pycache__/
 tools/local-sync/sync.log
 .claude/
 docs/superpowers/
+
+# Editor and IDE state
+.idea/
+.vscode/
+
+# Agent tooling and session scratch - never site content
+.mcp.json
+.superpowers/
+claude_code_session_brief.md
+
+# Defensive: shell and git config never belong in this repo root.
+# Keeps a careless "git add -A" from committing local environment.
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+.ripgreprc
+.gitconfig
