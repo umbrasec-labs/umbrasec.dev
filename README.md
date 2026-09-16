@@ -4,9 +4,11 @@
 
 # UMBRASEC
 
-**Defensive security tooling and detection research** - runnable Sigma rules and KQL
-queries, a zero-dependency CISA KEV monitor, a trimmed KEV feed, and a single-page
-blue-team reference. Defensive in scope, every claim tied to a primary source.
+**The open-source tooling behind [umbrasec.dev](https://umbrasec.dev)** - runnable Sigma
+rules and KQL queries, a zero-dependency CISA KEV monitor, a trimmed KEV feed, and a
+single-page blue-team reference. Defensive in scope, every claim tied to a primary source.
+
+These are artefacts from the published research, not a product line.
 
 [![License: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-umbrasec.dev-8a2be2)](https://umbrasec.dev)
@@ -87,11 +89,16 @@ deliberately a recent-entries feed, not a mirror - for the full catalog, go to
 
 ## Who's behind it
 
-UMBRASEC is run by **0xdev1**, an independent defensive security practitioner. The
-research and tools here are free and open; there is also a
+UMBRASEC is a one-person independent defensive security practice run by **0xdev1**,
+based in Australia. Seven years in governance, risk and compliance and in detection
+engineering, including law-enforcement environments; the public practice started in
+2026 and publishes under a handle because of that background.
+
+The research and tools here are free and open; there is also a
 [vCISO advisory service](https://umbrasec.dev/services) for small and mid-sized
-businesses. The approach is the straightforward one - publish genuinely useful,
-well-sourced work, and let it be checked.
+businesses, with a Microsoft 365 / Entra ID review as the usual entry point. The
+approach is the straightforward one - publish genuinely useful, well-sourced work,
+and let it be checked.
 
 Everything published is **defensive in scope**. The research explains how attacks work
 *so defenders can detect and stop them* - no working exploits, malware, or offensive
@@ -136,8 +143,6 @@ for your own project, swap these for your own details:
 - **Contact email** - `0xdev1@umbrasec.dev`, used in `index.html`, `services.html`,
   `about.html`, and the palette in `assets/umbra.js`.
 - **Codeberg** - `codeberg.org/0xdev1/umbrasec` throughout.
-- **Crypto tip addresses** - the BTC/XMR addresses and QR SVGs live in `assets/umbra.js`
-  (`COINS`) and `assets/btc-qr.svg` / `assets/xmr-qr.svg`.
 
 ## Corrections
 
