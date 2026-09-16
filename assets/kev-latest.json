@@ -1,9 +1,33 @@
 {
   "source": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
-  "catalogVersion": "2026.09.14",
-  "synced": "2026-09-14",
-  "count": 1710,
+  "catalogVersion": "2026.09.16",
+  "synced": "2026-09-17",
+  "count": 1713,
   "vulnerabilities": [
+    {
+      "cveID": "CVE-2026-58704",
+      "vendorProject": "Google",
+      "product": "Pixel",
+      "vulnerabilityName": "Google Pixel Improper Authorization Vulnerability",
+      "dateAdded": "2026-09-16",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2026-76460",
+      "vendorProject": "Cisco",
+      "product": "Identity Services Engine",
+      "vulnerabilityName": "Cisco Identity Services Engine Incorrect Use of Privileged APIs Vulnerability",
+      "dateAdded": "2026-09-16",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2026-87886",
+      "vendorProject": "Acronis",
+      "product": "Backup",
+      "vulnerabilityName": "Acronis Backup Incorrect Default Permissions Vulnerability",
+      "dateAdded": "2026-09-16",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
     {
       "cveID": "CVE-2026-76461",
       "vendorProject": "Cisco",
@@ -58,30 +82,6 @@
       "product": "RouterOS",
       "vulnerabilityName": "MikroTik RouterOS Missing Authentication for Critical Function Vulnerability",
       "dateAdded": "2026-09-10",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-19490",
-      "vendorProject": "Citrix",
-      "product": "NetScaler",
-      "vulnerabilityName": "Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability",
-      "dateAdded": "2026-09-09",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2025-25249",
-      "vendorProject": "Fortinet",
-      "product": "Multiple Products",
-      "vulnerabilityName": "Fortinet Multiple Products Heap-based Buffer Overflow Vulnerability",
-      "dateAdded": "2026-09-09",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-87491",
-      "vendorProject": "Google",
-      "product": "Chromium V8",
-      "vulnerabilityName": "Google Chromium V8 Out of Bounds Write Vulnerability",
-      "dateAdded": "2026-09-09",
       "knownRansomwareCampaignUse": "Unknown"
     }
   ]
