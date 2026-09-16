@@ -82,17 +82,16 @@ deliberately a recent-entries feed, not a mirror - for the full catalog, go to
   and securing tool-calling AI agents as a class of risk (several writeups live).
 - **SMB security guidance** - a free, framework-grounded [guide](https://umbrasec.dev/guide/)
   taking a small business from zero to a defensible baseline, one stage at a time (plus a
-  paid one-person [vCISO service](https://umbrasec.dev/services) for businesses that want
+  paid [vCISO service](https://umbrasec.dev/services) for businesses that want
   hands-on help getting there).
 
 ## Who's behind it
 
-UMBRASEC is run by **0xdev1** - a single, independent practitioner. The research and
-tools here are free and open; there is also a one-person
+UMBRASEC is run by **0xdev1**, an independent defensive security practitioner. The
+research and tools here are free and open; there is also a
 [vCISO advisory service](https://umbrasec.dev/services) for small and mid-sized
-businesses, honestly labelled as exactly that. It makes no claims of a track record it
-doesn't have yet: it's new, and says so. The plan is the honest one - publish genuinely
-useful, well-sourced work, let it be checked, and let any reputation grow from there.
+businesses. The approach is the straightforward one - publish genuinely useful,
+well-sourced work, and let it be checked.
 
 Everything published is **defensive in scope**. The research explains how attacks work
 *so defenders can detect and stop them* - no working exploits, malware, or offensive
