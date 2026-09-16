@@ -18,7 +18,7 @@ article (located structurally by its container class).
 
 Usage:
   python3 tools/site-build/build_indexes.py          # write changes
-  python3 tools/site-build/build_indexes.py --check   # CI guard: exit 1 if drift
+  python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 if drift
 
 The --check mode writes nothing; it just fails if the committed files don't match
 what the manifest would produce. That's what the GitHub Action runs.
@@ -272,7 +272,7 @@ def render_footer(prefix: str) -> str:
                     <ul class="space-y-2 text-sm">
                         <li><a href="{p}tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
                         <li><a href="{p}tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">GitHub</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
                     </ul>
                 </div>
             </div>

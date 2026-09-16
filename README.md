@@ -5,11 +5,9 @@
 # UMBRASEC
 
 **Defensive security tooling and detection research** - runnable Sigma rules and KQL
-queries, a zero-dependency CISA KEV monitor, a daily-synced KEV feed, and a single-page
+queries, a zero-dependency CISA KEV monitor, a trimmed KEV feed, and a single-page
 blue-team reference. Defensive in scope, every claim tied to a primary source.
 
-[![KEV sync](https://codeberg.org/0xdev1/umbrasec/actions/workflows/kev-sync.yml/badge.svg)](https://codeberg.org/0xdev1/umbrasec/actions/workflows/kev-sync.yml)
-[![Sigma validation](https://codeberg.org/0xdev1/umbrasec/actions/workflows/sigma-validate.yml/badge.svg)](https://codeberg.org/0xdev1/umbrasec/actions/workflows/sigma-validate.yml)
 [![License: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-umbrasec.dev-8a2be2)](https://umbrasec.dev)
 
@@ -44,7 +42,7 @@ Public data only; it reads one JSON feed and never touches a target system.
 | | What it is |
 |---|---|
 | [`tools/kev-watch/`](tools/kev-watch/) | Zero-dependency Python monitor for the CISA KEV catalog. Tracks newly added, actively exploited CVEs, filters to your stack, flags ransomware-linked entries, warns on remediation deadlines. |
-| [`tools/sigma-pack/`](tools/sigma-pack/) | The detection rules from the research writeups as runnable files: Kerberoasting Sigma rules (T1558.003), OAuth consent-phishing KQL queries (T1528), and LiteLLM command-injection Sigma rules (CVE-2026-42271, T1190) so far, each with tuning and false-positive notes. Sigma rules are syntax-validated with sigma-cli in CI, and a per-rule [ATT&CK coverage table](tools/sigma-pack/#attck-coverage) maps every artifact to its technique. |
+| [`tools/sigma-pack/`](tools/sigma-pack/) | The detection rules from the research writeups as runnable files: Kerberoasting Sigma rules (T1558.003), OAuth consent-phishing KQL queries (T1528), and LiteLLM command-injection Sigma rules (CVE-2026-42271, T1190) so far, each with tuning and false-positive notes. A per-rule [ATT&CK coverage table](tools/sigma-pack/#attck-coverage) maps every artifact to its technique. |
 | [`tools/blue-team-mapper/`](tools/blue-team-mapper/) | A single-page defender reference covering the defensive lifecycle: SIEM/log-source priority, detection engineering, IR flow chains, threat hunting, identity and cloud hardening, SOAR playbooks - ATT&CK-aligned. [Use it live](https://umbrasec.dev/tools/blue-team-mapper/). |
 | [`research/`](https://umbrasec.dev/research/) | Detection and threat writeups: [Kerberoasting](https://umbrasec.dev/research/detecting-kerberoasting.html), [OAuth consent phishing in M365](https://umbrasec.dev/research/detecting-oauth-consent-phishing.html), [OWASP LLM Top 10 for defenders](https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html), [Securing AI agents](https://umbrasec.dev/research/securing-ai-agents.html), [LiteLLM command injection (CVE-2026-42271)](https://umbrasec.dev/research/detecting-litellm-command-injection.html), plus threat profiles of ransomware crews active against Australian SMBs - [INC Ransom](https://umbrasec.dev/research/inc-ransom-australian-smb.html) and [SafePay](https://umbrasec.dev/research/safepay-australian-smb.html). Every rule in `sigma-pack` comes from one of the detection writeups. |
 | [`guide/`](https://umbrasec.dev/guide/) | A free, staged security guide for small and mid-sized businesses - from zero to a defensible baseline, with every recommendation mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0, and each step explained as what it is, why it matters, and what it costs. |
@@ -71,7 +69,7 @@ Fields per entry: `cveID`, `vendorProject`, `product`, `vulnerabilityName`,
 `synced`, and `count` (the full catalog's entry count, not this file's). It is
 deliberately a recent-entries feed, not a mirror - for the full catalog, go to
 [CISA](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) or run
-`kev-watch`, which queries CISA's feed directly. Updates daily at 06:17 UTC.
+`kev-watch`, which queries CISA's feed directly. Refreshed manually with `tools/local-sync/sync-kev.py`.
 
 ## Focus right now
 
@@ -113,8 +111,8 @@ Planned directions as the project grows - not live yet, listed honestly as inten
 The research lists - the `index.html` featured trio, the `research/index.html` grid,
 `feed.xml`, `sitemap.xml`, and each article's prev/next footer nav - are **generated**
 from `research/articles.json` by `tools/site-build/build_indexes.py`. That manifest is the
-single source of truth; CI (`Site build check`) fails if any derived file drifts from it, or
-if a `research/*.html` page exists that the manifest does not list (an orphan).
+single source of truth; the pre-commit hook blocks the commit if any derived file drifts
+from it, or if a `research/*.html` page exists that the manifest does not list (an orphan).
 
 A tracked pre-commit hook keeps them in sync: it regenerates the derived files and stages
 them on every commit. Enable it once per clone:
@@ -126,7 +124,7 @@ git config core.hooksPath .githooks
 Or regenerate by hand any time with `python3 tools/site-build/build_indexes.py` (add
 `--check` to verify without writing). When you add an article, add it to
 `research/articles.json` - dropping an HTML file into `research/` alone will not list it,
-and CI (and the hook) will flag it as an orphan until you do.
+and the hook will flag it as an orphan until you do.
 
 ## Forking the site
 
@@ -138,7 +136,7 @@ for your own project, swap these for your own details:
   `<!-- SCHEDULING: ... -->` comment).
 - **Contact email** - `0xdev1@umbrasec.dev`, used in `index.html`, `services.html`,
   `about.html`, and the palette in `assets/umbra.js`.
-- **GitHub** - `codeberg.org/0xdev1/umbrasec` throughout.
+- **Codeberg** - `codeberg.org/0xdev1/umbrasec` throughout.
 - **Crypto tip addresses** - the BTC/XMR addresses and QR SVGs live in `assets/umbra.js`
   (`COINS`) and `assets/btc-qr.svg` / `assets/xmr-qr.svg`.
 

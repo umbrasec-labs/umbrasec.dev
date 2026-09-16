@@ -1,6 +1,5 @@
 # sigma-pack
 
-[![Sigma validation](https://codeberg.org/0xdev1/umbrasec/actions/workflows/sigma-validate.yml/badge.svg)](https://codeberg.org/0xdev1/umbrasec/actions/workflows/sigma-validate.yml)
 
 The detection rules and queries published in [UMBRASEC research writeups](https://umbrasec.dev/research/),
 collected as runnable files. Honest status: **early** - this pack grows one writeup
@@ -9,9 +8,13 @@ Nothing here claims to be more finished than it is.
 
 Every rule ships with the context that makes it usable: the writeup explains the
 technique, the log artifacts, the tuning knobs, and the false-positive profile.
-Read the writeup before deploying the rule. Every Sigma rule in `rules/` is
-syntax-validated with [sigma-cli](https://github.com/SigmaHQ/sigma-cli) in CI on
-every change - that's what the badge above checks.
+Read the writeup before deploying the rule. Validate anything here yourself
+before you run it - [sigma-cli](https://github.com/SigmaHQ/sigma-cli) will
+syntax-check the whole directory:
+
+```bash
+sigma check tools/sigma-pack/rules/
+```
 
 ## ATT&CK coverage
 
@@ -30,8 +33,7 @@ every change - that's what the badge above checks.
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
-KQL queries are plain queries with no Sigma status; the CI validation covers the
-Sigma rules only.
+KQL queries are plain queries with no Sigma status.
 
 ## Contents
 

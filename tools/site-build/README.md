@@ -66,5 +66,5 @@ palette). Do not pre-escape.
 
 ```sh
 python3 tools/site-build/build_indexes.py          # regenerate (writes changes)
-python3 tools/site-build/build_indexes.py --check   # CI guard: exit 1 on drift, writes nothing
+python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 on drift, writes nothing
 ```
