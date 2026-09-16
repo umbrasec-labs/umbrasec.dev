@@ -18,8 +18,9 @@ removes that whole class of mistake.
    python3 tools/site-build/build_indexes.py
    ```
 
-4. Commit. CI (`.github/workflows/site-build.yml`) re-runs it in `--check` mode
-   and fails the build if anything is out of sync, so a forgotten step can't ship.
+4. Commit. The `.githooks/pre-commit` hook re-runs it in `--check` mode and
+   blocks the commit if anything is out of sync, so a forgotten step can't ship.
+   Enable it once per clone with `git config core.hooksPath .githooks`.
 
 ## What the generator owns
 

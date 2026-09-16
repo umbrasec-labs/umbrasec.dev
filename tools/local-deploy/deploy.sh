@@ -33,13 +33,13 @@ DRY_RUN=0
 # relative to the staging root. Deleting from the staging copy leaves the real
 # working tree untouched.
 TRIM=(
-  ".github"
   ".githooks"
   ".gitignore"
   "README.md"
   "package.json"
   "package-lock.json"
   "tools/local-deploy"
+  "tools/local-sync"
 )
 
 die() { echo "deploy: $*" >&2; exit 1; }
