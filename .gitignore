@@ -7,3 +7,6 @@ __pycache__/
 
 # Local wrangler install for manual deploys
 node_modules/
+
+# Agent/session config - local only, never committed
+.claude/
