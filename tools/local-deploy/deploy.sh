@@ -17,6 +17,9 @@
 # Requires Node 22+ (wrangler 4 refuses older) and a logged-in wrangler
 # (`npx wrangler login`). Wrangler is pinned in package.json, so npx uses the
 # local copy in node_modules rather than downloading one.
+#
+# Needs outbound access to api.cloudflare.com. Telemetry and the log path are
+# pinned below so the script runs clean from cron or a restricted shell.
 
 set -euo pipefail
 
@@ -54,6 +57,17 @@ fi
 command -v node >/dev/null 2>&1 || die "node not found. Install Node 22+ (nvm install 22)."
 node_major="$(node -v | sed 's/^v\([0-9]*\).*/\1/')"
 [ "$node_major" -ge 22 ] || die "node $(node -v) is too old; wrangler needs 22+. Try: nvm use 22"
+
+# wrangler writes a log file per run, defaulting to ~/.config/.wrangler/logs.
+# That path is not writable everywhere this runs - a locked-down cron user or a
+# sandboxed shell - and wrangler treats the failed write as a fatal error, so a
+# perfectly good deploy dies on a log file nobody reads. Send logs somewhere
+# writable instead. Respect the caller's choice if they already set one.
+export WRANGLER_LOG_PATH="${WRANGLER_LOG_PATH:-${TMPDIR:-/tmp}/wrangler-logs/}"
+
+# No telemetry from an unattended deploy: it dials sparrow.cloudflare.com, which
+# is one more host to allow through a firewall and one more thing to hang on.
+export WRANGLER_SEND_METRICS="${WRANGLER_SEND_METRICS:-false}"
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
 [ "$branch" = "$BRANCH" ] || echo "deploy: WARNING on branch '$branch', but deploying as '$BRANCH' (production)."
