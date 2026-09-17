@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sixteen Days From KEV to Exfiltration - UMBRASEC</title>
+    <meta name="description" content="CVE-2026-72898 is an unauthenticated SQL injection in Metabase. The patch shipped 6 August 2026 with active exploitation already confirmed, CISA listed it on 11 August, and an Australian edtech platform lost 1,079,819 records on 27 August. What the timeline asks of anyone running internal tooling.">
+    <link rel="canonical" href="https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="UMBRASEC">
+    <meta property="og:url" content="https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html">
+    <meta property="og:title" content="Sixteen Days From KEV to Exfiltration - UMBRASEC">
+    <meta property="og:description" content="A business intelligence tool is pre-joined access to everything you have. CVE-2026-72898 turned Metabase's password reset endpoint into unauthenticated admin, and the gap between the public warning and the data leaving was sixteen days.">
+    <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="UMBRASEC - Attackers improve. Defenders should too.">
+    <meta property="article:published_time" content="2026-09-17">
+    <meta property="article:author" content="UMBRASEC">
+    <meta property="article:section" content="Threat Analysis">
+    <meta property="article:tag" content="Metabase">
+    <meta property="article:tag" content="CVE-2026-72898">
+    <meta property="article:tag" content="CISA KEV">
+    <meta property="article:tag" content="Business Intelligence">
+    <meta property="article:tag" content="Australian SMB">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sixteen Days From KEV to Exfiltration - UMBRASEC">
+    <meta name="twitter:description" content="Patch available 6 August. Intrusion 10 August. CISA KEV 11 August. Data gone 27 August. What the Mathspace Metabase breach says about the internal tooling nobody inventories.">
+    <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
+    <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling",
+      "description": "CVE-2026-72898 is an unauthenticated SQL injection in Metabase's password reset endpoint. The patch shipped 6 August 2026 with active exploitation already confirmed, CISA listed it on 11 August, and 1,079,819 records left an Australian edtech platform on 27 August.",
+      "datePublished": "2026-09-17",
+      "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
+      "image": "https://umbrasec.dev/assets/og.png",
+      "mainEntityOfPage": "https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html",
+      "about": "Metabase unauthenticated SQL injection, business intelligence tooling as attack surface, and KEV-driven patch prioritisation for Australian SMBs",
+      "keywords": "Metabase, CVE-2026-72898, SQL injection, CWE-89, CISA KEV, business intelligence, BI, internal tooling, asset inventory, Essential Eight, patch applications, Mathspace, OAIC, notifiable data breach, Australian SMB, kev-watch, Sigma, T1190, T1213.006, T1567"
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-avatar.png">
+    <link rel="apple-touch-icon" href="../assets/umbra-avatar.png">
+    <meta name="theme-color" content="#1a1b26">
+    <link rel="stylesheet" href="../assets/umbra.css">
+</head>
+<body class="bg-[#1a1b26] text-[#c0caf5]" data-base="../" data-reading>
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 border-b border-[#2a2c38] bg-[#1a1b26]/95 backdrop-blur-lg">
+        <div class="max-w-[1280px] mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="../index.html" class="brand flex items-center gap-x-2.5">
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
+                        <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                    </div>
+                    <div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                        <span class="font-mono text-xs text-[#a9b1d6] ml-1.5">2026</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                    <a href="../guide/index.html" class="nav-link">Guide</a>
+                    <a href="index.html" class="nav-link">Research</a>
+                    <a href="../tools/index.html" class="nav-link">Open Source</a>
+                    <a href="../services.html" class="nav-link">Services</a>
+                    <a href="../about.html" class="nav-link">About</a>
+                    <a href="../index.html#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button data-cmdk type="button"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#2a2c38] hover:bg-[#16161e] transition-colors"
+                            title="Open command palette">
+                        <span data-kbd>Ctrl K</span>
+                        <span class="text-[#a9b1d6]">Search</span>
+                    </button>
+                    <a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener"
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#16161e]" title="Codeberg">
+                        <i class="fa-solid fa-code-branch text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Article -->
+    <article class="max-w-[1280px] mx-auto px-8 py-16">
+        <!-- breadcrumb -->
+        <div class="font-mono text-xs text-[#565f89] mb-8">
+            <a href="../index.html" class="hover:text-[#7aa2f7]">home</a> /
+            <a href="index.html" class="hover:text-[#7aa2f7]">research</a> /
+            <span class="text-[#a9b1d6]">mathspace-metabase-internal-tooling</span>
+        </div>
+
+        <header class="prose mx-auto">
+            <div class="flex items-center gap-x-3 mb-6 text-xs font-mono">
+                <span class="text-[#9ece6a]">THREAT ANALYSIS</span>
+                <span class="text-[#565f89]">·</span>
+                <span class="text-[#a9b1d6]">Sep 17, 2026</span>
+                <span class="text-[#565f89]">·</span>
+                <span class="text-[#a9b1d6]">~10 min</span>
+            </div>
+            <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#c0caf5]">
+                Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling
+            </h1>
+            <p class="text-xl text-[#a9b1d6] leading-snug">
+                Metabase shipped a patch on 6 August 2026 and said in the same breath that the flaw was already being
+                exploited. CISA listed it five days later. On 27 August, data on 1,079,819 students, parents and school
+                staff was downloaded from an Australian platform's self-hosted instance. Every date in that sequence
+                was public before the data moved. This is not a story about a clever exploit. It is a story about the
+                reporting tool nobody put on the asset register.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#16161e] border border-[#2a2c38] text-[#a9b1d6]">Business Intelligence</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#16161e] border border-[#2a2c38] text-[#a9b1d6]">CISA KEV</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#16161e] border border-[#2a2c38] text-[#a9b1d6]">Asset Inventory</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#16161e] border border-[#2a2c38] text-[#a9b1d6]">Detection Engineering</span>
+            </div>
+        </header>
+
+        <div class="prose mx-auto mt-10 article-body">
+            <aside class="toc-rail" data-toc aria-label="On this page"></aside>
+
+            <div class="callout">
+                <p class="text-sm"><strong>TL;DR for defenders.</strong> <strong>CVE-2026-72898</strong> is an
+                unauthenticated SQL injection in Metabase's <code>/api/session/reset_password</code> endpoint that
+                returns administrator access to the instance, and through it every database Metabase is connected to.
+                CVSS 10.0 under both v3.1 and v4.0. Patch and advisory landed 6 August 2026 with active exploitation
+                already confirmed by the vendor; CISA added it to KEV on 11 August. Three things to do: confirm
+                whether you run Metabase and whether it is reachable from the internet, get to
+                <strong>58.24, 59.21, 60.17, 61.11, 62.9 or 63.5</strong>, and block
+                <code>/api/session/reset_password</code> at the proxy until you have. If you were exposed, the vendor's
+                own guidance is to revoke sessions, audit API keys and admin accounts, rotate every database
+                credential Metabase held, and read your access logs.</p>
+            </div>
+
+            <h2>A BI tool is pre-joined access to everything</h2>
+            <p>
+                Business intelligence software exists to answer questions across all of your data at once. To do that
+                it holds standing credentials to the databases that matter, and it holds them in a form designed for
+                convenient querying rather than least privilege. The whole value proposition is that somebody in
+                operations can ask a question spanning four systems without filing a ticket.
+            </p>
+            <p>
+                State that as a control and it reads badly. A single web application, frequently deployed by a data
+                team rather than an infrastructure team, holds live credentials to your production datastores and
+                offers a query interface over them. Compromise it and you do not need to move laterally, escalate, or
+                find the data. The tool has already found the data for you. That is what makes this class of software
+                worth attacking, and it is why "it's only an internal reporting tool" is precisely the wrong instinct.
+            </p>
+
+            <h2>What actually happened</h2>
+            <p>
+                Every date below is from either the vendor's advisory, the CISA KEV catalog, or the affected
+                organisation's own public statement. Nothing here is inferred.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Date (2026)</th><th>Event</th></tr></thead>
+                    <tbody>
+                        <tr><td>6 Aug</td><td>Metabase publishes advisory <strong>GHSA-vwf4-m7j8-wcjf</strong> and patched builds, stating it has <strong>confirmed active exploitation</strong></td></tr>
+                        <tr><td>10 Aug</td><td>Unauthorised access to the Australian reporting database begins (AEST) - four days after the fix was available</td></tr>
+                        <tr><td>10 Aug</td><td>CVE-2026-72898 published, assigned by CISA as CNA</td></tr>
+                        <tr><td><strong>11 Aug</strong></td><td><strong>CISA adds CVE-2026-72898 to the KEV catalog</strong></td></tr>
+                        <tr><td>27 Aug</td><td>Data downloaded from the reporting database - <strong>16 days after the KEV listing</strong></td></tr>
+                        <tr><td>29 Aug</td><td>Metabase instance updated, after a separate notice draws attention to the issue</td></tr>
+                        <tr><td>3 Sep</td><td>Breach confirmed; instance taken offline, API keys revoked, database accounts disabled, SQL passwords changed</td></tr>
+                        <tr><td>4 Sep</td><td>Schools and regulators notified</td></tr>
+                        <tr><td>6 Sep</td><td>Individual notifications begin</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                Twenty-three days from a patch being available to it being applied. Sixteen days from a government
+                catalogue saying <em>this is being exploited right now</em> to the data leaving. The attacker did not
+                need a zero-day, an insider, or patience beyond three weeks.
+            </p>
+
+            <h2>What the flaw actually is</h2>
+            <p>
+                The CVE record is assigned by CISA rather than the vendor, which is worth noticing on its own: it
+                signals the coordination path this took.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <tbody>
+                        <tr><td>CVE</td><td><strong>CVE-2026-72898</strong>, published 10 Aug 2026</td></tr>
+                        <tr><td>Weakness</td><td>CWE-89, SQL injection</td></tr>
+                        <tr><td>CVSS v3.1</td><td>10.0 - <code>AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H</code></td></tr>
+                        <tr><td>CVSS v4.0</td><td>10.0 - <code>AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H</code></td></tr>
+                        <tr><td>Vector</td><td>Unauthenticated SQL injection via <code>/api/session/reset_password</code>, yielding administrator access</td></tr>
+                        <tr><td>Affected</td><td>&gt;=58.0 &lt;58.24, &gt;=59.0 &lt;59.21, &gt;=60.0 &lt;60.17, &gt;=61.0 &lt;61.11, &gt;=62.0 &lt;62.9, &gt;=63.0 &lt;63.5</td></tr>
+                        <tr><td>Fixed in</td><td>58.24, 59.21, 60.17, 61.11, 62.9, 63.5</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                Read the vectors rather than the number. <code>PR:N</code> and <code>UI:N</code> mean no credentials
+                and no user to trick. <code>AC:L</code> means no special conditions. Under v3.1, <code>S:C</code> -
+                scope changed - is why this reaches 10.0 rather than 9.8: the impact does not stop at the vulnerable
+                component. That is the CVSS specification describing, in advance, exactly what happened here. The
+                injection is in Metabase; the loss is in the database Metabase was pointed at.
+            </p>
+            <p>
+                Note also that six release branches were affected. Any inventory that tracked only "is Metabase
+                installed" without tracking the build would not have produced an answer.
+            </p>
+
+            <h2>The failure was inventory, not patch speed</h2>
+            <p>
+                The obvious reading is that twenty-three days is too slow. True, but not the useful lesson, because
+                almost nobody consciously decides to leave a known-exploited internet-facing critical unpatched for
+                three weeks. What actually happens is that the clock never starts, because nothing connects
+                "Metabase published an advisory" to "we run that, on the internet, against production data."
+            </p>
+            <p>
+                Three questions decide whether you are in the same position. They are inventory questions, not
+                patching questions:
+            </p>
+            <ul>
+                <li>Does an authoritative list exist of every internally-built or self-hosted application you run, including the ones a data or analytics team stood up without a ticket?</li>
+                <li>For each, does the list record whether it is reachable from the internet, and what it is credentialed to reach?</li>
+                <li>When a vendor for anything on that list publishes a critical advisory, who finds out, and how long does that take?</li>
+            </ul>
+            <p>
+                If the third question has no named answer, patch windows are aspirational. The affected organisation
+                here applied the update on 29 August after "a separate, later notice" brought it to their attention -
+                that phrasing, from their own disclosure, describes the notification gap precisely.
+            </p>
+
+            <h2>Where the Essential Eight fits</h2>
+            <p>
+                <em>Patch applications</em> is the first of the
+                <a href="https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight" target="_blank" rel="noopener">Essential Eight</a>,
+                and the maturity model sets defined maximum windows for patching internet-facing services, with a
+                much shorter window where a working exploit exists or the vulnerability is being actively exploited.
+                Both of those conditions were publicly true here on 6 August, before anyone was compromised, and were
+                restated by CISA on 11 August.
+            </p>
+            <p>
+                Check the current wording of the maturity model against your own target level rather than trusting a
+                number quoted in an article, including this one. The point that does not depend on the specific
+                figure: the Essential Eight also requires an asset discovery capability, and that control is doing
+                the real work here. A patch window you cannot start is not a patch window.
+            </p>
+
+            <h2>Detection</h2>
+            <p>
+                One Sigma rule and one hunt. The rule is in
+                <a href="https://codeberg.org/0xdev1/umbrasec/src/branch/master/tools/sigma-pack" target="_blank" rel="noopener">sigma-pack</a>;
+                convert with
+                <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener">sigma-cli</a>.
+            </p>
+
+            <h3>1. SQL metacharacters against the reset endpoint</h3>
+            <p>
+                The vendor's interim workaround is to block <code>/api/session/reset_password</code> outright. That
+                makes the endpoint a good detection anchor: on a patched and hardened instance, traffic there is
+                already anomalous.
+            </p>
+            <pre><code>title: Metabase Password Reset SQL Injection Attempt
+id: fbeecaf9-c9de-4071-b9c6-3576b195e679
+status: experimental
+description: >
+    A request to Metabase's unauthenticated password-reset endpoint carrying
+    SQL metacharacters. CVE-2026-72898 is an unauthenticated SQL injection in
+    /api/session/reset_password that yields administrator access to the
+    Metabase instance, and through it every database connection that instance
+    holds.
+references:
+    - https://github.com/metabase/metabase/security/advisories/GHSA-vwf4-m7j8-wcjf
+    - https://www.cve.org/CVERecord?id=CVE-2026-72898
+author: UMBRASEC
+date: 2026/09/17
+tags:
+    - attack.initial_access
+    - attack.t1190
+logsource:
+    category: webserver
+detection:
+    endpoint:
+        cs-uri-stem|contains: '/api/session/reset_password'
+    sqli_markers:
+        cs-uri-query|contains:
+            - ''''
+            - ' or '
+            - ' and '
+            - 'union'
+            - 'select'
+            - 'sleep('
+            - 'pg_sleep'
+            - '--'
+            - '/*'
+            - ';'
+    condition: endpoint and sqli_markers
+level: high</code></pre>
+            <p>
+                Be clear about what this does not do. Webserver-category logs record the request line. An exploit that
+                carries its payload in the POST body will not match, and you should assume a competent one does. This
+                rule catches scanners, opportunistic spray, and the naive case; it is a tripwire, not a guarantee. If
+                you have a WAF or proxy that captures request bodies, that is where the authoritative version of this
+                detection lives.
+            </p>
+
+            <h3>2. Hunt: the shape of the endpoint's traffic</h3>
+            <p>
+                Password reset is a rare, human-paced action. Exploitation of a blind or error-based injection is
+                neither. Over your proxy or web logs for the Metabase host, group requests to
+                <code>/api/session/reset_password</code> by source address per hour and look for any source
+                responsible for more requests than your users plausibly generate in a day. Ten resets from one address
+                in ten minutes is not a forgetful employee.
+            </p>
+            <p>
+                Pair that with the egress side, which is the signal that mattered on 27 August. A BI host has a
+                characteristic traffic profile: substantial inbound queries, modest outbound responses to internal
+                clients. Bulk extraction inverts it. If you baseline one thing on that host, baseline outbound volume,
+                and alert on a multiple of the daily norm rather than an absolute threshold.
+            </p>
+
+            <h3>ATT&amp;CK</h3>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
+                    <tbody>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener">T1190</a> Exploit Public-Facing Application</td><td>The injection against the reset endpoint</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1213/006/" target="_blank" rel="noopener">T1213.006</a> Data from Information Repositories: Databases</td><td>Reading the reporting database once admin is held</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1567/" target="_blank" rel="noopener">T1567</a> Exfiltration Over Web Service</td><td>The bulk download</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>KEV is a trigger, not a newsletter</h2>
+            <p>
+                The single highest-value date in the timeline is 11 August. CISA's Known Exploited Vulnerabilities
+                catalog is a short, curated list of things confirmed to be under active exploitation. It is far
+                smaller than a CVE feed and far more actionable, and it is free. Sixteen days of warning sat in a
+                public JSON file.
+            </p>
+            <p>
+                We publish <a href="../tools/kev-watch/README.md">kev-watch</a> for this: a zero-dependency Python
+                script that reads the catalog and reports newly-added CVEs matching products you care about. No
+                install, no account, no packages.
+            </p>
+            <pre><code>python3 kev_watch.py --watch metabase postgres nginx</code></pre>
+            <p>
+                Run against the catalog on 11 August, a watch list containing <code>metabase</code> would have
+                produced a hit that day. The tool is not the point - a cron job and <code>grep</code> over the same
+                feed would have done it. The point is that the trigger has to be automatic and pointed at a list of
+                what you actually run. A human subscribing to a mailing list is the control that failed here.
+            </p>
+
+            <h2>Credit where it is due</h2>
+            <p>
+                The disclosure itself is good, and saying so costs nothing. The public statement gives a dated
+                timeline, an exact affected count of 1,079,819, the specific software and that it was self-hosted, an
+                itemised list of exposed fields - user ID, username, first and last name, email address, country, time
+                zone, user type, email-verification status, last-active date, last-login date, date joined - and an
+                explicit list of what was <em>not</em> taken: no academic records, results or assessments, no password
+                hashes, no authentication tokens, no SSO credentials, no API credentials. It names the regulators
+                notified: the OAIC and ACSC in Australia, the Privacy Commissioner and NCSC in New Zealand.
+            </p>
+            <p>
+                That is more precision than most breach notifications contain, and it is the reason this article can
+                be written from primary sources rather than speculation. An organisation that tells you the field list
+                is an organisation you can actually assess. Compare it to the "an unauthorised third party may have
+                accessed certain information" template and the difference is not cosmetic - one lets affected people
+                make decisions, the other does not.
+            </p>
+
+            <h2>What to do this week</h2>
+            <ol>
+                <li><strong>Answer the Metabase question directly.</strong> Do you run it, at what build, and is it reachable from the internet? If yes to the first and you cannot immediately answer the other two, that is your finding.</li>
+                <li><strong>Patch to 58.24 / 59.21 / 60.17 / 61.11 / 62.9 / 63.5</strong> and block <code>/api/session/reset_password</code> at the proxy in the meantime.</li>
+                <li><strong>If you were running an affected build while exposed, assume admin access.</strong> Revoke sessions, audit API keys and administrator accounts, rotate every database credential the instance held, and review access logs. That is the vendor's guidance, not ours.</li>
+                <li><strong>Inventory the rest.</strong> Every self-hosted internal tool, what it is credentialed to reach, and whether it is internet-facing. BI tools, wikis, dashboards, admin panels, CI runners.</li>
+                <li><strong>Put KEV on a trigger</strong> against that inventory, and give the resulting alert a named owner.</li>
+                <li><strong>Baseline outbound volume</strong> from hosts that hold credentials to bulk data.</li>
+            </ol>
+
+            <h2>Honest limitations</h2>
+            <p>
+                We have no visibility into the intrusion beyond what has been published, and this article does not
+                speculate about it. The initial access vector is stated by the affected organisation; the sequence
+                between 10 and 27 August is not public, and we have not invented one. We have not tested the exploit,
+                and no exploit details appear here beyond the endpoint the vendor itself published in its workaround.
+                The Sigma rule is <code>experimental</code> and has not been validated against a real exploitation
+                attempt - treat it as a starting point, tune it against your own logs, and read the false-positive
+                notes in the file before alerting on it.
+            </p>
+            <p>
+                On the Essential Eight timeframes, check the current maturity model rather than any number quoted
+                second-hand. The argument in this article does not depend on the specific figure.
+            </p>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://github.com/metabase/metabase/security/advisories/GHSA-vwf4-m7j8-wcjf" target="_blank" rel="noopener">Metabase - GHSA-vwf4-m7j8-wcjf, SQL injection using an unauthenticated endpoint leading to admin access</a></li>
+                <li><a href="https://www.cve.org/CVERecord?id=CVE-2026-72898" target="_blank" rel="noopener">MITRE - CVE-2026-72898</a></li>
+                <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2026-72898" target="_blank" rel="noopener">NVD - CVE-2026-72898</a></li>
+                <li><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA - Known Exploited Vulnerabilities catalog</a></li>
+                <li><a href="https://blog.mathspace.co/mathspace-data-breach-what-happened-and-what-affected-users-should-know/" target="_blank" rel="noopener">Mathspace - Data breach: what happened and what affected users should know</a></li>
+                <li><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank" rel="noopener">MITRE - CWE-89</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1190</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1213/006/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1213.006</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1567/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1567</a></li>
+                <li><a href="https://www.first.org/cvss/v3.1/specification-document" target="_blank" rel="noopener">FIRST - CVSS v3.1 spec</a></li>
+                <li><a href="https://www.first.org/cvss/v4.0/specification-document" target="_blank" rel="noopener">FIRST - CVSS v4.0 spec</a></li>
+                <li><a href="https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight" target="_blank" rel="noopener">ASD's ACSC - Essential Eight</a></li>
+                <li><a href="https://www.oaic.gov.au/privacy/notifiable-data-breaches" target="_blank" rel="noopener">OAIC - Notifiable Data Breaches scheme</a></li>
+            </ul>
+
+            <div class="callout mt-10">
+                <p class="text-sm"><strong>Scope note.</strong> Built entirely from the vendor advisory, the CVE
+                record, the CISA KEV catalog and the affected organisation's own public statement. It contains no
+                exploit code and no proof of concept - the injection string is not public and this article does not
+                reconstruct one. The organisation is named because it published a detailed account under its own
+                name; the value here is the timeline, not the company. UMBRASEC publishes defense, not offense.</p>
+            </div>
+
+        </div>
+
+        <!-- end-of-article: share + nav -->
+        <div class="prose mx-auto mt-16 pt-8 border-t border-[#2a2c38]">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <a href="n-able-ncentral-msp-supply-chain.html" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">← Your MSP's RMM Is Your Attack Surface</a>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-[#565f89] mr-1">Share</span>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=Sixteen%20Days%20From%20KEV%20to%20Exfiltration%20-%20What%20the%20Mathspace%20Breach%20Says%20About%20Internal%20Tooling&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fmathspace-metabase-internal-tooling.html" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fmathspace-metabase-internal-tooling.html" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+                <a href="index.html" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">All research →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-[#2a2c38] mt-8">
+        <div class="max-w-[1280px] mx-auto px-8 py-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+                <div class="col-span-2">
+                    <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
+                            <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                        </div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                    </a>
+                    <p class="text-sm text-[#a9b1d6] max-w-[300px] leading-relaxed">
+                        Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Guide</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../guide/foundation.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Governance &amp; Maturity</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Research</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../research/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#a9b1d6] hover:text-[#7aa2f7]">RSS feed</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Open Source</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
+                        <li><a href="../tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-[#2a2c38] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#a9b1d6]">
+                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#7aa2f7]">Services</a> · <a href="../about.html" class="hover:text-[#7aa2f7]">About</a> · <a href="../index.html#contact" class="hover:text-[#7aa2f7]">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/umbra.js" defer></script>
+</body>
+</html>

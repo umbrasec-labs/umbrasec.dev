@@ -72,7 +72,7 @@
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">Research.</h1>
         <p class="max-w-[640px] text-xl text-[#a9b1d6]">
             Detection-engineering walkthroughs, threat analysis, and mitigation guides. Sourced, reproducible, and
-            defensive in scope. <!-- AUTO:count START -->Eight published so far<!-- AUTO:count END --> - this index grows as writeups ship.
+            defensive in scope. <!-- AUTO:count START -->Nine published so far<!-- AUTO:count END --> - this index grows as writeups ship.
         </p>
     </section>
 
@@ -91,6 +91,24 @@
         <!-- Card grid -->
         <div data-research-grid class="grid md:grid-cols-2 gap-5">
             <!-- AUTO:cards START -->
+            <a href="mathspace-metabase-internal-tooling.html"
+               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-mono text-xs text-[#9ece6a]">THREAT ANALYSIS</span>
+                    <span class="font-mono text-[10px] text-[#565f89]">~10 min</span>
+                </div>
+                <div class="research-card-title font-semibold text-xl leading-tight mb-3">
+                    Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling
+                </div>
+                <p class="text-sm text-[#a9b1d6] mb-5">
+                    CVE-2026-72898 turns Metabase's password reset endpoint into unauthenticated administrator access, and a BI tool is pre-joined access to everything it is credentialed to reach. Patch available 6 August, intrusion 10 August, CISA KEV 11 August, data gone 27 August. The timeline, what the CVSS vectors predicted, a Sigma rule and a hunt, and why this was an inventory failure rather than a patching one.
+                </p>
+                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                    <span>Sep 17, 2026</span>
+                    <span class="research-card-arrow ml-auto">Read →</span>
+                </div>
+            </a>
+
             <a href="n-able-ncentral-msp-supply-chain.html"
                class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
                 <div class="flex items-center justify-between mb-3">

@@ -6,8 +6,16 @@
     <atom:link href="https://umbrasec.dev/feed.xml" rel="self" type="application/rss+xml"/>
     <description>Independent defensive security research - detection engineering, threat analysis, and open-source tooling.</description>
     <language>en-us</language>
-    <!-- AUTO:builddate START --><lastBuildDate>Wed, 12 Aug 2026 12:00:00 +0000</lastBuildDate><!-- AUTO:builddate END -->
+    <!-- AUTO:builddate START --><lastBuildDate>Thu, 17 Sep 2026 12:00:00 +0000</lastBuildDate><!-- AUTO:builddate END -->
     <!-- AUTO:items START -->
+    <item>
+      <title>Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling</title>
+      <link>https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html</link>
+      <guid isPermaLink="true">https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html</guid>
+      <pubDate>Thu, 17 Sep 2026 12:00:00 +0000</pubDate>
+      <category>Threat Analysis</category>
+      <description>CVE-2026-72898 is an unauthenticated SQL injection in Metabase's /api/session/reset_password endpoint, CVSS 10.0 under both v3.1 and v4.0, yielding administrator access to the instance and through it every database it holds. Metabase confirmed active exploitation when it published the fix on 6 August 2026; CISA added the CVE to KEV on 11 August; an Australian edtech platform's self-hosted instance was accessed on 10 August and 1,079,819 records were downloaded on 27 August. The verified timeline, what S:C in the CVSS vector told you in advance, one Sigma rule plus a volume and egress hunt, the ATT&amp;CK mapping, and why asset discovery rather than patch speed is the control that failed.</description>
+    </item>
     <item>
       <title>Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for SMBs</title>
       <link>https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html</link>

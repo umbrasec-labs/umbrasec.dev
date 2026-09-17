@@ -2,6 +2,23 @@
   "_comment": "Single source of truth for all research articles. Add one entry per article (newest first), then run: python3 tools/site-build/build_indexes.py. The generator rewrites the homepage featured trio, the research index cards + count, feed.xml, the sitemap research entries, the command palette, and every article's prev/next nav. Raw text only: use literal & and \" - the generator escapes per output format. Categories: threat | detection | ai | tooling.",
   "articles": [
     {
+      "slug": "mathspace-metabase-internal-tooling",
+      "title": "Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling",
+      "nav_title": "Sixteen Days From KEV to Exfiltration",
+      "category": "threat",
+      "date": "2026-09-17",
+      "read_min": 10,
+      "home_blurb": "Metabase patched an unauthenticated SQL injection on 6 August 2026 and said the flaw was already being exploited. CISA listed it on 11 August. On 27 August, 1,079,819 records left an Australian platform's self-hosted instance. Every date was public before the data moved - the failure was that nothing connected the advisory to the asset.",
+      "card_blurb": "CVE-2026-72898 turns Metabase's password reset endpoint into unauthenticated administrator access, and a BI tool is pre-joined access to everything it is credentialed to reach. Patch available 6 August, intrusion 10 August, CISA KEV 11 August, data gone 27 August. The timeline, what the CVSS vectors predicted, a Sigma rule and a hunt, and why this was an inventory failure rather than a patching one.",
+      "feed_desc": "CVE-2026-72898 is an unauthenticated SQL injection in Metabase's /api/session/reset_password endpoint, CVSS 10.0 under both v3.1 and v4.0, yielding administrator access to the instance and through it every database it holds. Metabase confirmed active exploitation when it published the fix on 6 August 2026; CISA added the CVE to KEV on 11 August; an Australian edtech platform's self-hosted instance was accessed on 10 August and 1,079,819 records were downloaded on 27 August. The verified timeline, what S:C in the CVSS vector told you in advance, one Sigma rule plus a volume and egress hunt, the ATT&CK mapping, and why asset discovery rather than patch speed is the control that failed.",
+      "palette": {
+        "label": "Sixteen Days From KEV to Exfiltration",
+        "hint": "Metabase + internal tooling",
+        "icon": "fa-chart-column",
+        "keywords": "metabase cve-2026-72898 sql injection cwe-89 business intelligence bi internal tooling reporting database asset inventory asset discovery cisa kev kev-watch essential eight patch applications mathspace oaic notifiable data breach australian smb exfiltration sigma t1190 t1213.006 t1567"
+      }
+    },
+    {
       "slug": "n-able-ncentral-msp-supply-chain",
       "title": "Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for SMBs",
       "nav_title": "Your MSP's RMM Is Your Attack Surface",

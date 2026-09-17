@@ -30,6 +30,7 @@ sigma check tools/sigma-pack/rules/
 | [`litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 | [`masquerading-svchost-outside-system32.yml`](rules/windows/masquerading-svchost-outside-system32.yml) | Sigma | [T1036.005](https://attack.mitre.org/techniques/T1036/005/) Match Legitimate Resource Name or Location | Defense Evasion | experimental |
 | [`cloudflared-tunnel-service-install.yml`](rules/windows/cloudflared-tunnel-service-install.yml) | Sigma | [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service; [T1572](https://attack.mitre.org/techniques/T1572/) Protocol Tunneling | Persistence / Command &amp; Control | experimental |
+| [`metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
@@ -95,6 +96,21 @@ client can actually see.
 Prerequisite: Windows process-creation telemetry (Sysmon Event 1 or Security
 4688 with command line auditing) for the first rule, and the Windows System log
 (Event 7045) for the second.
+
+### Metabase unauthenticated SQL injection - CVE-2026-72898 (MITRE ATT&CK T1190)
+
+Writeup: [Sixteen Days From KEV to Exfiltration](https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html)
+
+| Rule | What it catches | Level |
+|---|---|---|
+| [`rules/web/metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | SQL metacharacters in a request to Metabase's unauthenticated `/api/session/reset_password` endpoint - the front-door signal | high |
+
+Prerequisite: web server, reverse proxy or WAF logs for the Metabase host, with
+the request line retained. A payload carried in the POST body is invisible to
+webserver-category logs, so pair this with body capture where you have it, and
+with the volume hunt in the writeup. Patching (58.24, 59.21, 60.17, 61.11, 62.9,
+63.5) and blocking the endpoint are the real controls; this covers the window
+before you got there.
 
 Read the [writeup](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html)
 before deploying - the Cloudflare Tunnel rule in particular is a tuning
