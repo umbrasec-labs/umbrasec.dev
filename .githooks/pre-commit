@@ -11,6 +11,9 @@
 # re-runs --check as a gate and blocks the commit until you register the page in
 # research/articles.json or delete it.
 #
+# It also runs gitleaks over the staged patch on every commit, regardless of
+# which site-build path is taken.
+#
 # Generated files: index.html, research/index.html, feed.xml, sitemap.xml,
 # assets/umbra.js (command palette), and each research/<slug>.html prev/next nav.
 #
@@ -22,13 +25,28 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
+# Secret scan on the staged patch. Called on every exit path.
+scan_secrets() {
+    if command -v gitleaks >/dev/null 2>&1; then
+        if ! gitleaks git --pre-commit --staged --no-banner --redact; then
+            echo "pre-commit: gitleaks found a secret in the staged changes; aborting commit" >&2
+            echo "pre-commit: review above, or bypass once with: git commit --no-verify" >&2
+            exit 1
+        fi
+    else
+        echo "pre-commit: gitleaks not found; skipping secret scan" >&2
+    fi
+}
+
 if ! command -v python3 >/dev/null 2>&1; then
     echo "pre-commit: python3 not found; skipping site-build regen" >&2
+    scan_secrets
     exit 0
 fi
 
-# Fast path: if everything is in sync and there are no orphans, do nothing.
+# Fast path: if everything is in sync and there are no orphans, still scan.
 if python3 tools/site-build/build_indexes.py --check >/dev/null 2>&1; then
+    scan_secrets
     exit 0
 fi
 
@@ -49,6 +67,9 @@ if ! python3 tools/site-build/build_indexes.py --check; then
     echo "pre-commit: fix it, or bypass once with: git commit --no-verify" >&2
     exit 1
 fi
+
+# Scan after staging, so regenerated files are covered too.
+scan_secrets
 
 echo "pre-commit: regenerated derived files staged into this commit."
 exit 0
