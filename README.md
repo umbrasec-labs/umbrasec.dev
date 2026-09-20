@@ -18,8 +18,8 @@ These are artefacts from the published research, not a product line.
 `kev-watch` needs Python 3.9+ and nothing else - no packages, no install step:
 
 ```bash
-git clone https://codeberg.org/0xdev1/umbrasec
-python3 umbrasec/tools/kev-watch/kev_watch.py --watch fortinet ivanti citrix
+git clone https://codeberg.org/0xdev1/Umbrasec
+python3 Umbrasec/tools/kev-watch/kev_watch.py --watch fortinet ivanti citrix
 ```
 
 That prints newly-added, **actively exploited** CVEs from CISA's Known Exploited
@@ -142,12 +142,12 @@ for your own project, swap these for your own details:
   `<!-- SCHEDULING: ... -->` comment).
 - **Contact email** - `0xdev1@umbrasec.dev`, used in `index.html`, `services.html`,
   `about.html`, and the palette in `assets/umbra.js`.
-- **Codeberg** - `codeberg.org/0xdev1/umbrasec` throughout.
+- **Codeberg** - `codeberg.org/0xdev1/Umbrasec` throughout.
 
 ## Corrections
 
 Found a detection that misbehaves, a wrong citation, or an analysis that's off? That
-feedback is welcome - [open an issue](https://codeberg.org/0xdev1/umbrasec/issues).
+feedback is welcome - [open an issue](https://codeberg.org/0xdev1/Umbrasec/issues).
 Corrections are credited.
 
 ## License

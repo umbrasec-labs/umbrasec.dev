@@ -20,7 +20,7 @@ Usage:
     python3 kev_watch.py --json               # machine-readable output
 
 License: MIT
-Project: https://codeberg.org/0xdev1/umbrasec
+Project: https://codeberg.org/0xdev1/Umbrasec
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ STATE_PATH = os.environ.get(
     "KEV_WATCH_STATE",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), ".kev_state.json"),
 )
-USER_AGENT = "kev-watch/1.0 (+https://codeberg.org/0xdev1/umbrasec)"
+USER_AGENT = "kev-watch/1.0 (+https://codeberg.org/0xdev1/Umbrasec)"
 
 
 # ── ANSI helpers (auto-disabled when not a TTY) ──────────────────────────────
