@@ -1,9 +1,33 @@
 {
   "source": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
-  "catalogVersion": "2026.09.30",
-  "synced": "2026-10-01",
-  "count": 1730,
+  "catalogVersion": "2026.10.02",
+  "synced": "2026-10-03",
+  "count": 1733,
   "vulnerabilities": [
+    {
+      "cveID": "CVE-2026-102490",
+      "vendorProject": "Zammad GmbH",
+      "product": "Zammad",
+      "vulnerabilityName": "Zammad GmbH Zammad Improper Privilege Management Vulnerability",
+      "dateAdded": "2026-10-02",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2026-102489",
+      "vendorProject": "Zammad GmbH",
+      "product": "Zammad",
+      "vulnerabilityName": "Zammad GmbH Zammad Session Fixation Vulnerability",
+      "dateAdded": "2026-10-02",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2026-104286",
+      "vendorProject": "Fortinet",
+      "product": "FortiMail",
+      "vulnerabilityName": "Fortinet FortiMail Path Traversal Vulnerability",
+      "dateAdded": "2026-10-01",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
     {
       "cveID": "CVE-2026-76504",
       "vendorProject": "Cisco",
@@ -58,30 +82,6 @@
       "product": "Core",
       "vulnerabilityName": "WordPress Core Remote File Inclusion Vulnerability",
       "dateAdded": "2026-09-25",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-5430",
-      "vendorProject": "WSO2",
-      "product": "Multiple Products",
-      "vulnerabilityName": "WSO2 Multiple Products Path Traversal Vulnerability ",
-      "dateAdded": "2026-09-24",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-71362",
-      "vendorProject": "Adobe",
-      "product": "Commerce and Magento ",
-      "vulnerabilityName": "Adobe Commerce and Magento Incorrect Authorization Vulnerability ",
-      "dateAdded": "2026-09-24",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-93952",
-      "vendorProject": "Arista",
-      "product": "VeloCloud Orchestrator",
-      "vulnerabilityName": "Arista VeloCloud Orchestrator Improper Input Validation Vulnerability",
-      "dateAdded": "2026-09-22",
       "knownRansomwareCampaignUse": "Unknown"
     }
   ]
