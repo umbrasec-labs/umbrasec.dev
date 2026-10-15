@@ -3,7 +3,7 @@
 
 The detection rules and queries published in [UMBRASEC research writeups](https://umbrasec.dev/research/),
 collected as runnable files. Honest status: **early** - this pack grows one writeup
-at a time, and right now it contains exactly what the four published writeups cover.
+at a time, and right now it contains exactly what the published writeups cover.
 Nothing here claims to be more finished than it is.
 
 Every rule ships with the context that makes it usable: the writeup explains the
@@ -82,6 +82,8 @@ the real control - these cover the window before you've patched and the assets y
 haven't found yet.
 
 ### N-able N-central intrusion artifacts - CVE-2026-18556 / CVE-2026-18577 (T1036.005, T1543.003, T1572)
+
+Writeup: [Your MSP's RMM Is Your Attack Surface](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html)
 
 These two rules do not detect the N-central authentication bypass itself - that
 happens on the MSP's server, not on your endpoints. They detect what the

@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detecting Kerberoasting with Sigma - UMBRASEC</title>
     <meta name="description" content="A defender-focused walkthrough of Kerberoasting (MITRE ATT&CK T1558.003): how it works, why RC4 service tickets expose it, and Sigma rules with tuning notes you can run against your own logs.">
-    <link rel="canonical" href="https://umbrasec.dev/research/detecting-kerberoasting.html">
+    <link rel="canonical" href="https://umbrasec.dev/research/detecting-kerberoasting">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
-    <meta property="og:url" content="https://umbrasec.dev/research/detecting-kerberoasting.html">
+    <meta property="og:url" content="https://umbrasec.dev/research/detecting-kerberoasting">
     <meta property="og:title" content="Detecting Kerberoasting: A Practical Walkthrough with Sigma">
     <meta property="og:description" content="How Kerberoasting (MITRE ATT&CK T1558.003) works, why RC4 service tickets expose it, and Sigma rules with tuning notes you can run against your own logs.">
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
@@ -36,7 +36,7 @@
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
-      "mainEntityOfPage": "https://umbrasec.dev/research/detecting-kerberoasting.html",
+      "mainEntityOfPage": "https://umbrasec.dev/research/detecting-kerberoasting",
       "about": "Kerberoasting (MITRE ATT&CK T1558.003) detection",
       "keywords": "Kerberoasting, T1558.003, Sigma, detection engineering, Active Directory, RC4, Kerberos"
     }
@@ -137,17 +137,28 @@
             <h2>Why this is still worth your time in 2026</h2>
             <p>
                 Kerberoasting has been public since Tim Medin presented it in 2014, so it's tempting to file it under
-                "solved." It isn't. CrowdStrike's 2025 Global Threat Report lists it among the top post-compromise
-                techniques they observe, and IBM X-Force reported a roughly <strong>100% year-over-year increase</strong>
-                in Kerberoasting seen during incident-response engagements. The reason it persists is structural: the
-                attack abuses how Kerberos is <em>supposed</em> to work, so there's no patch that makes it disappear.
+                "solved." It isn't. CrowdStrike's 2023 Threat Hunting Report recorded a
+                <strong>583% year-over-year increase</strong> in Kerberoasting attacks, and IBM's 2024 X-Force Threat
+                Intelligence Index reported a <strong>100% increase</strong> in Kerberoasting attacks across 2023.
+                Those figures are a few years old now, but the mechanics they describe haven't changed. The reason it
+                persists is structural: the attack abuses how Kerberos is <em>supposed</em> to work, so there's no
+                patch that makes it disappear.
             </p>
             <p>
-                There's also a 2026-specific wrinkle. Microsoft is finally retiring RC4: new Active Directory domains
-                built on <strong>Windows Server 2025</strong> have RC4 disabled by default as of Q1 2026. That's real
-                progress - but <em>existing</em> domains keep RC4 enabled for backward compatibility unless an admin
-                changes it. So for most organizations, the weak encryption that makes Kerberoasting fast is still sitting
-                there, and detection still matters.
+                There's also a 2026-specific wrinkle. Microsoft is finally retiring RC4 in Kerberos, and it's doing it
+                in phases on every domain controller version it still updates (Windows Server 2012 under ESU through
+                <strong>Windows Server 2025</strong>), not just in new domains. The January 2026 Windows updates added
+                KDC audit events (System log, events 201 to 209) that flag RC4 use without changing behaviour. The
+                April 2026 updates switched the domain controller default to <strong>AES-only</strong> for accounts
+                that have no explicit <code>msDS-SupportedEncryptionTypes</code> value, with a registry rollback to
+                audit mode still available. The July 2026 updates will remove that rollback. (Windows Server 2025
+                domain controllers already refuse to issue RC4 ticket-granting tickets, but the <em>service</em>
+                tickets Kerberoasting targets follow the account's encryption settings, which is why this change is
+                the one that matters.) That's real progress - but any account whose
+                <code>msDS-SupportedEncryptionTypes</code> explicitly includes RC4 still gets RC4 service tickets, and
+                Microsoft's own guidance is to set exactly that on anything that still needs RC4. Those tend to be the
+                old, over-privileged service accounts an attacker wants anyway. So for most organizations, the weak
+                encryption that makes Kerberoasting fast is still sitting on some accounts, and detection still matters.
             </p>
 
             <h2>How the attack actually works</h2>
@@ -173,12 +184,19 @@
             <p>
                 The crackability depends almost entirely on the ticket's encryption type. When a ticket is issued with
                 <strong>RC4-HMAC</strong> (<code>etype 0x17</code>, decimal 23), the key is derived directly from the
-                account's unsalted NT hash - fast to attack with a GPU. Modern cracking rigs running Hashcat exceed
-                <em>100 billion</em> guesses per second, so a weak service-account password falls in minutes.
+                account's unsalted NT hash - fast to attack with a GPU. Be careful with the headline numbers, though:
+                the figures in the hundreds of billions per second that get quoted are for raw NTLM. A single RTX 4090
+                running Hashcat 7.0.0 benchmarks at about 272 billion NTLM guesses per second (hash-mode 1000) but
+                about <em>3.4 billion</em> per second against an RC4 TGS-REP (hash-mode 13100), because each guess
+                also has to run the HMAC key derivation and an RC4 decryption. Three billion a second on one consumer
+                card is still enough that a short or dictionary-based service-account password falls in minutes to
+                hours, and a multi-GPU rig multiplies it.
             </p>
             <p>
                 AES tickets (<code>0x11</code>/AES-128 and <code>0x12</code>/AES-256) are dramatically harder - on the
-                order of tens of thousands of times more cracking effort - because of salting and key derivation. That's
+                same GPU, Hashcat runs AES-256 TGS-REP (hash-mode 19700) roughly a thousand times slower than the RC4
+                variant, and AES-128 (hash-mode 19600) several hundred times slower - because the key comes from salted
+                PBKDF2 rather than straight from the NT hash. That's
                 why Kerberoasting tooling frequently <strong>requests RC4 on purpose</strong>: the attacker downgrades to
                 the weakest option the domain will hand out. <em>That deliberate downgrade is your single best detection
                 signal.</em>
@@ -368,7 +386,7 @@ level: high</code></pre>
                     automatically-rotated passwords that are not practically crackable.</li>
                 <li><strong>Kill RC4.</strong> Move accounts and domains to AES-only (<code>msDS-SupportedEncryptionTypes</code>),
                     after you've used detection #1 to find what still needs RC4. This is the same direction Microsoft is
-                    pushing with the Windows Server 2025 defaults.</li>
+                    pushing with its 2026 Kerberos RC4 hardening updates.</li>
                 <li><strong>Fix weak service-account passwords.</strong> Long and random beats clever. AES raises the cost,
                     but a short AES-protected password still falls eventually.</li>
                 <li><strong>Audit SPNs and privilege.</strong> Remove SPNs from accounts that don't need them, and strip
@@ -392,10 +410,17 @@ level: high</code></pre>
 
             <h2>References</h2>
             <ul>
+                <li><a href="https://support.microsoft.com/en-us/topic/how-to-manage-kerberos-kdc-usage-of-rc4-for-service-account-ticket-issuance-changes-related-to-cve-2026-20833-1ebcda33-720a-4da8-93c1-b0496e1910dc" target="_blank" rel="noopener">Microsoft Support - KB5073381: How to manage Kerberos KDC usage of RC4 for service account ticket issuance changes related to CVE-2026-20833 (Jan 2026)</a></li>
+                <li><a href="https://techcommunity.microsoft.com/discussions/windowsserver/phase-2-of-kerberos-rc4-hardening-begins-with-the-april-2026-windows-security-up/4511702" target="_blank" rel="noopener">Microsoft Tech Community - Phase 2 of Kerberos RC4 hardening begins with the April 2026 Windows security update (Apr 2026)</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/windows-server/security/kerberos/detect-remediate-rc4-kerberos" target="_blank" rel="noopener">Microsoft Learn - Detect and Remediate RC4 Usage in Kerberos (Feb 2026)</a></li>
+                <li><a href="https://www.microsoft.com/en-us/security/blog/2024/10/11/microsofts-guidance-to-help-mitigate-kerberoasting/" target="_blank" rel="noopener">Microsoft Security Blog - Guidance to help mitigate Kerberoasting (Oct 2024)</a></li>
                 <li><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1558.003: Steal or Forge Kerberos Tickets: Kerberoasting</a></li>
                 <li><a href="https://attack.mitre.org/detectionstrategies/DET0157/" target="_blank" rel="noopener">MITRE ATT&amp;CK - Detection Strategy DET0157 (Detect Kerberoasting Attempts)</a></li>
-                <li><a href="https://www.microsoft.com/en-us/security/blog/2024/10/11/microsofts-guidance-to-help-mitigate-kerberoasting/" target="_blank" rel="noopener">Microsoft Security Blog - Guidance to help mitigate Kerberoasting (Oct 2024)</a></li>
-                <li><a href="https://www.crowdstrike.com/en-us/cybersecurity-101/cyberattacks/kerberoasting/" target="_blank" rel="noopener">CrowdStrike - What is a Kerberoasting Attack?</a></li>
+                <li><a href="https://www.crowdstrike.com/en-us/blog/crowdstrikes-fight-against-identity-based-attacks/" target="_blank" rel="noopener">CrowdStrike Blog - Amid Sharp Increase in Identity-Based Attacks, CrowdStrike Unveils New Threat Hunting Capability (Aug 2023)</a></li>
+                <li><a href="https://www.crowdstrike.com/en-us/cybersecurity-101/cyberattacks/kerberoasting/" target="_blank" rel="noopener">CrowdStrike - What is a Kerberoasting Attack? (Mar 2025)</a></li>
+                <li><a href="https://newsroom.ibm.com/2024-02-21-IBM-Report-Identity-Comes-Under-Attack,-Straining-Enterprises-Recovery-Time-from-Breaches" target="_blank" rel="noopener">IBM Newsroom - IBM Report: Identity Comes Under Attack, Straining Enterprises' Recovery Time from Breaches (Feb 2024)</a></li>
+                <li><a href="https://hashcat.net/forum/post-63595.html" target="_blank" rel="noopener">hashcat Forum - NVIDIA RTX 4090 Benchmark HC 7.0.0 (Aug 2025)</a></li>
+                <li><a href="https://gist.github.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef" target="_blank" rel="noopener">Chick3nman (GitHub Gist) - Hashcat v6.1.1 benchmark on the Nvidia RTX 3090 (Sep 2020)</a></li>
                 <li><a href="https://thehackernews.com/2025/07/kerberoasting-detections-new-approach.html" target="_blank" rel="noopener">The Hacker News - Kerberoasting Detections: A New Approach to a Decade-Old Challenge (Jul 2025)</a></li>
             </ul>
 
@@ -413,8 +438,8 @@ level: high</code></pre>
                 <a href="index.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← All research</a>
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
-                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=Detecting%20Kerberoasting%3A%20A%20Practical%20Walkthrough%20with%20Sigma&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-kerberoasting.html" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-kerberoasting.html" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=Detecting%20Kerberoasting%3A%20A%20Practical%20Walkthrough%20with%20Sigma&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-kerberoasting" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-kerberoasting" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
                 </div>
                 <a href="detecting-oauth-consent-phishing.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Detecting OAuth Consent Phishing →</a>
             </div>

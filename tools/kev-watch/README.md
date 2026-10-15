@@ -40,8 +40,8 @@ python3 kev_watch.py --json --watch fortinet
 On a normal run (no `--since` / `--due-soon`), kev-watch compares the current
 catalog against a local state file (`.kev_state.json`) and prints only CVEs it
 hasn't seen before, then records everything it saw. So the **first** run is quiet
-by design (it's establishing a baseline); subsequent runs surface only what's
-genuinely new. Use `--no-save` for a dry run that doesn't advance the baseline.
+by design: it records a baseline, prints a one-line notice on stderr and exits;
+subsequent runs surface only what's genuinely new. Use `--no-save` for a dry run that doesn't advance the baseline.
 
 The `--since` and `--due-soon` modes are independent queries - they never advance
 the seen-state, so they won't hide future "new" results.

@@ -196,11 +196,15 @@ def render_feed_items(articles) -> str:
     items = []
     for a in articles:
         feed_cat = he(CATEGORIES[a["category"]][1])
-        url = f"https://umbrasec.dev/research/{a['slug']}.html"
+        # Cloudflare Pages serves the extensionless path and 308-redirects the
+        # .html form, so links use the served URL. The guid keeps the original
+        # .html string on purpose: readers key items by guid, and changing it
+        # would re-surface every article as new.
+        url = f"https://umbrasec.dev/research/{a['slug']}"
         items.append(f"""    <item>
       <title>{he(a['title'])}</title>
       <link>{url}</link>
-      <guid isPermaLink="true">{url}</guid>
+      <guid isPermaLink="false">{url}.html</guid>
       <pubDate>{rfc822(a['_date'])}</pubDate>
       <category>{feed_cat}</category>
       <description>{he(a['feed_desc'])}</description>
@@ -216,7 +220,7 @@ def render_sitemap(articles) -> str:
     entries = []
     for a in articles:
         entries.append(f"""  <url>
-    <loc>https://umbrasec.dev/research/{a['slug']}.html</loc>
+    <loc>https://umbrasec.dev/research/{a['slug']}</loc>
     <lastmod>{a['date']}</lastmod>
     <priority>0.9</priority>
   </url>""")
@@ -546,7 +550,7 @@ def build(check: bool) -> int:
     else:
         print(f"site-build: regenerated {len(changes)} file(s) from {len(articles)} articles.")
     # Regeneration cannot register an orphan (it has no metadata for it), so warn
-    # loudly; --check (CI + the pre-commit hook gate) is what enforces this.
+    # loudly; --check (the pre-commit hook gate) is what enforces this.
     if orphans:
         print("site-build: WARNING - orphaned research pages not in research/articles.json:")
         for rel in orphans:

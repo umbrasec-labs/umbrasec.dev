@@ -48,6 +48,8 @@ TRIM=(
   "tools/local-deploy"
   "tools/local-sync"
   "tools/site-build"
+  "research/articles.json"
+  "assets/vciso-journey.mmd"
 )
 
 die() { echo "deploy: $*" >&2; exit 1; }

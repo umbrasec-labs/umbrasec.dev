@@ -2,20 +2,22 @@
 #
 # UMBRASEC pre-commit hook: keep derived files in sync with research/articles.json
 #
-# The CI "Site build check" runs build_indexes.py --check and fails if:
+# There is no CI for this site, by design: this hook is the only gate. It
+# regenerates the derived files, stages them so a drift can never reach a
+# commit, and re-runs build_indexes.py --check, which fails if:
 #   - any generated file drifts from the manifest, or
 #   - a research/*.html page exists that no manifest entry points to (orphan).
 #
-# This hook regenerates the derived files and stages them so a drift can never
-# reach a commit. It cannot auto-fix an orphan (it has no metadata for it), so it
-# re-runs --check as a gate and blocks the commit until you register the page in
-# research/articles.json or delete it.
+# The hook cannot auto-fix an orphan (it has no metadata for it), so it blocks
+# the commit until you register the page in research/articles.json or delete it.
 #
 # It also runs gitleaks over the staged patch on every commit, regardless of
 # which site-build path is taken.
 #
 # Generated files: index.html, research/index.html, feed.xml, sitemap.xml,
-# assets/umbra.js (command palette), and each research/<slug>.html prev/next nav.
+# assets/umbra.js (command palette), each research/<slug>.html prev/next nav,
+# the tools/sigma-pack/index.html coverage table, and the shared footer on
+# every site page (about, services, guide/*, tools/index, tools/sigma-pack).
 #
 # Bypass with: git commit --no-verify
 # Enable (once per clone): git config core.hooksPath .githooks
@@ -58,10 +60,11 @@ fi
 
 # Stage only already-tracked generated files (-u never adds new untracked files,
 # so a brand-new article you have not git-added yet is left for you to add).
-git add -u -- index.html feed.xml sitemap.xml assets/umbra.js research
+git add -u -- index.html about.html services.html feed.xml sitemap.xml \
+    assets/umbra.js research guide tools/index.html tools/sigma-pack/index.html
 
 # Gate: regeneration fixes drift but not orphans. If --check still fails, an
-# unregistered research page exists - block so it cannot reach CI.
+# unregistered research page exists - block so it cannot reach a commit.
 if ! python3 tools/site-build/build_indexes.py --check; then
     echo "pre-commit: unresolved site-build problem (see above); aborting commit" >&2
     echo "pre-commit: fix it, or bypass once with: git commit --no-verify" >&2

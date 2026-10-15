@@ -10,72 +10,72 @@
     <!-- AUTO:items START -->
     <item>
       <title>Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling</title>
-      <link>https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html</guid>
+      <link>https://umbrasec.dev/research/mathspace-metabase-internal-tooling</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html</guid>
       <pubDate>Thu, 17 Sep 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
       <description>CVE-2026-72898 is an unauthenticated SQL injection in Metabase's /api/session/reset_password endpoint, CVSS 10.0 under both v3.1 and v4.0, yielding administrator access to the instance and through it every database it holds. Metabase confirmed active exploitation when it published the fix on 6 August 2026; CISA added the CVE to KEV on 11 August; an Australian edtech platform's self-hosted instance was accessed on 10 August and 1,079,819 records were downloaded on 27 August. The verified timeline, what S:C in the CVSS vector told you in advance, one Sigma rule plus a volume and egress hunt, the ATT&amp;CK mapping, and why asset discovery rather than patch speed is the control that failed.</description>
     </item>
     <item>
       <title>Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for SMBs</title>
-      <link>https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html</guid>
+      <link>https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html</guid>
       <pubDate>Wed, 12 Aug 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
       <description>CVE-2026-18556 and CVE-2026-18577 are authentication bypasses in N-able N-central, an RMM platform used by MSPs to manage client fleets. Both were added to CISA KEV in early August 2026 after in-the-wild exploitation, and the second exists because the fix for the first was incomplete. For an SMB with outsourced IT the vulnerable server is not theirs to patch - but the Take Control sessions, the svchost.exe dropped into a user's Documents folder, and the Cloudflared persistence service all executed on their endpoints. The timeline, what the published CVSS vectors tell a defender, two Sigma rules, a hunt procedure, and the supplier questions that follow.</description>
     </item>
     <item>
       <title>SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius</title>
-      <link>https://umbrasec.dev/research/safepay-australian-smb.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/safepay-australian-smb.html</guid>
+      <link>https://umbrasec.dev/research/safepay-australian-smb</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/safepay-australian-smb.html</guid>
       <pubDate>Sat, 20 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
       <description>SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate SMBs fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link. Built entirely from public vendor reporting, naming no individual victim.</description>
     </item>
     <item>
       <title>How INC Ransom Hits Australian SMBs - and the Essential Eight That Stops It</title>
-      <link>https://umbrasec.dev/research/inc-ransom-australian-smb.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/inc-ransom-australian-smb.html</guid>
+      <link>https://umbrasec.dev/research/inc-ransom-australian-smb</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/inc-ransom-australian-smb.html</guid>
       <pubDate>Mon, 15 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
       <description>INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical SMB. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the ACSC/CERT NZ advisory.</description>
     </item>
     <item>
       <title>Securing AI Agents: A Defender's Guide to Tool-Calling LLMs</title>
-      <link>https://umbrasec.dev/research/securing-ai-agents.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/securing-ai-agents.html</guid>
+      <link>https://umbrasec.dev/research/securing-ai-agents</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/securing-ai-agents.html</guid>
       <pubDate>Sun, 14 Jun 2026 12:00:00 +0000</pubDate>
       <category>AI &amp; LLM Security</category>
       <description>A chatbot that gets prompt-injected says something wrong; an agent that gets prompt-injected does something wrong. The agent threat surface - excessive agency, indirect injection via tool output, the MCP supply chain, the confused-deputy identity problem - what to log, and the detections and containment architecture that keep one bad instruction from becoming an incident.</description>
     </item>
     <item>
       <title>Detecting the LiteLLM Command Injection (CVE-2026-42271) in Your AI Gateway</title>
-      <link>https://umbrasec.dev/research/detecting-litellm-command-injection.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/detecting-litellm-command-injection.html</guid>
+      <link>https://umbrasec.dev/research/detecting-litellm-command-injection</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/detecting-litellm-command-injection.html</guid>
       <pubDate>Sat, 13 Jun 2026 12:00:00 +0000</pubDate>
       <category>Detection Engineering</category>
       <description>CVE-2026-42271 turns LiteLLM's MCP preview endpoints into authenticated command execution on the proxy host, and chains with the Starlette "BadHost" bug (CVE-2026-48710) into unauthenticated RCE. In CISA KEV and actively exploited - the mechanism at a defender's depth, what to log, and two runnable Sigma rules with tuning notes.</description>
     </item>
     <item>
       <title>Prompt Injection and the OWASP LLM Top 10: A Field Guide for Defenders</title>
-      <link>https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html</guid>
+      <link>https://umbrasec.dev/research/owasp-llm-top-10-for-defenders</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html</guid>
       <pubDate>Thu, 11 Jun 2026 12:00:00 +0000</pubDate>
       <category>AI &amp; LLM Security</category>
       <description>The OWASP LLM Top 10 read as a defender's checklist: why prompt injection has no patch, the "lethal trifecta" behind incidents like EchoLeak (CVE-2025-32711), what to log in LLM-integrated apps, and canary, egress, and behavioral detections you can deploy today.</description>
     </item>
     <item>
       <title>Detecting OAuth Consent Phishing in Microsoft 365</title>
-      <link>https://umbrasec.dev/research/detecting-oauth-consent-phishing.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/detecting-oauth-consent-phishing.html</guid>
+      <link>https://umbrasec.dev/research/detecting-oauth-consent-phishing</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/detecting-oauth-consent-phishing.html</guid>
       <pubDate>Thu, 11 Jun 2026 12:00:00 +0000</pubDate>
       <category>Detection Engineering</category>
       <description>The phishing class that never asks for a password and sails through MFA - illicit OAuth consent grants (MITRE ATT&amp;CK T1528) in Microsoft Entra ID, the audit-log artifacts they leave, and KQL detections with tuning notes.</description>
     </item>
     <item>
       <title>Detecting Kerberoasting: A Practical Walkthrough with Sigma</title>
-      <link>https://umbrasec.dev/research/detecting-kerberoasting.html</link>
-      <guid isPermaLink="true">https://umbrasec.dev/research/detecting-kerberoasting.html</guid>
+      <link>https://umbrasec.dev/research/detecting-kerberoasting</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/detecting-kerberoasting.html</guid>
       <pubDate>Wed, 10 Jun 2026 12:00:00 +0000</pubDate>
       <category>Detection Engineering</category>
       <description>How Kerberoasting (MITRE ATT&amp;CK T1558.003) works, why RC4 service tickets give it away, and three layered Sigma detections - RC4 downgrade, request fan-out, and a honeypot SPN - with tuning and false-positive notes you can run against your own logs.</description>

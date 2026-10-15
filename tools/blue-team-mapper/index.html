@@ -359,13 +359,13 @@ body {
 ═══════════════════════════════════════════════════════════ */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(460px, 100%), 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
 
 .card-grid-3 {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
 }
 
 .card {
@@ -457,6 +457,7 @@ code {
   font-size: 11px;
   padding: 2px 7px;
   border-radius: 4px;
+  overflow-wrap: anywhere;
 }
 
 code.c-cyan   { background: var(--cyan-dim);   color: var(--cyan);   }
@@ -616,7 +617,8 @@ code.c-teal   { background: var(--teal-dim);   color: var(--teal);   }
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin-bottom: 24px;
 }
 
@@ -814,6 +816,9 @@ footer strong { color: var(--text-bright); }
     padding: 78px 22px 40px;
     max-width: 100%;
   }
+
+  .lifecycle { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .lifecycle-phase::after { display: none; }
 }
 
 @media (max-width: 560px) {

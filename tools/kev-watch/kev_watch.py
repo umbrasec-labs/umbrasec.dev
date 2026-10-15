@@ -213,7 +213,29 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     catalog = fetch_kev()
+    first_run = not os.path.exists(STATE_PATH)
     seen = load_state()
+    new_mode = not args.since and args.due_soon is None
+
+    if first_run and new_mode:
+        # No baseline yet, so every entry would count as "new" and the whole
+        # catalog would print. Record the baseline instead and say so, which is
+        # what the README promises; --since is the way to look back on purpose.
+        all_ids = {v.get("cveID") for v in catalog.get("vulnerabilities", []) if v.get("cveID")}
+        if args.no_save:
+            note = "baseline not saved (--no-save)"
+        else:
+            save_state(all_ids)
+            note = f"baseline recorded in {STATE_PATH}"
+        print(
+            f"kev-watch: first run, {len(all_ids)} entries in the catalog; {note}. "
+            "Run again to see new additions, or use --since YYYY-MM-DD to look back.",
+            file=sys.stderr,
+        )
+        if args.json:
+            print("[]")
+        return 0
+
     rows = select(catalog, seen, args)
 
     if args.json:
@@ -226,7 +248,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Only the default ("new since last run") mode advances the seen-state,
     # so --since / --due-soon queries never hide future "new" results.
-    if not args.no_save and not args.since and args.due_soon is None:
+    if not args.no_save and new_mode:
         all_ids = {v.get("cveID") for v in catalog.get("vulnerabilities", []) if v.get("cveID")}
         save_state(seen | all_ids)
 
