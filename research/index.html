@@ -26,26 +26,26 @@
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-avatar.png">
     <link rel="apple-touch-icon" href="../assets/umbra-avatar.png">
-    <meta name="theme-color" content="#1a1b26">
+    <meta name="theme-color" content="#171717">
     <link rel="stylesheet" href="../assets/umbra.css">
 </head>
-<body class="bg-[#1a1b26] text-[#c0caf5]" data-base="../">
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../">
 
-    <nav class="sticky top-0 z-50 border-b border-[#2a2c38] bg-[#1a1b26]/95 backdrop-blur-lg">
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
         <div class="max-w-[1280px] mx-auto px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="../index.html" class="brand flex items-center gap-x-2.5">
-                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                        <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                     </div>
                     <div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
-                        <span class="font-mono text-xs text-[#a9b1d6] ml-1.5">2026</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
                     </div>
                 </a>
                 <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
                     <a href="../guide/index.html" class="nav-link">Guide</a>
-                    <a href="index.html" class="nav-link text-[#c0caf5]">Research</a>
+                    <a href="index.html" class="nav-link text-[#ccd0cf]">Research</a>
                     <a href="../tools/index.html" class="nav-link">Open Source</a>
                     <a href="../services.html" class="nav-link">Services</a>
                     <a href="../about.html" class="nav-link">About</a>
@@ -53,13 +53,13 @@
                 </div>
                 <div class="flex items-center gap-x-3">
                     <button data-cmdk type="button"
-                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#2a2c38] hover:bg-[#16161e] transition-colors"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
                             title="Open command palette">
                         <span data-kbd>Ctrl K</span>
-                        <span class="text-[#a9b1d6]">Search</span>
+                        <span class="text-[#959c95]">Search</span>
                     </button>
                     <a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener"
-                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#16161e]" title="Codeberg">
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="Codeberg">
                         <i class="fa-solid fa-code-branch text-xl"></i>
                     </a>
                 </div>
@@ -67,10 +67,10 @@
         </div>
     </nav>
 
-    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 tokyo-grid">
+    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 umbra-grid">
         <div class="section-label mb-4">RESEARCH</div>
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">Research.</h1>
-        <p class="max-w-[640px] text-xl text-[#a9b1d6]">
+        <p class="max-w-[640px] text-xl text-[#959c95]">
             Detection-engineering walkthroughs, threat analysis, and mitigation guides. Sourced, reproducible, and
             defensive in scope. <!-- AUTO:count START -->Nine published so far<!-- AUTO:count END --> - this index grows as writeups ship.
         </p>
@@ -92,162 +92,162 @@
         <div data-research-grid class="grid md:grid-cols-2 gap-5">
             <!-- AUTO:cards START -->
             <a href="mathspace-metabase-internal-tooling.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="threat">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">THREAT ANALYSIS</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~10 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">THREAT ANALYSIS</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~10 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     CVE-2026-72898 turns Metabase's password reset endpoint into unauthenticated administrator access, and a BI tool is pre-joined access to everything it is credentialed to reach. Patch available 6 August, intrusion 10 August, CISA KEV 11 August, data gone 27 August. The timeline, what the CVSS vectors predicted, a Sigma rule and a hunt, and why this was an inventory failure rather than a patching one.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Sep 17, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="n-able-ncentral-msp-supply-chain.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="threat">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">THREAT ANALYSIS</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~11 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">THREAT ANALYSIS</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~11 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for SMBs
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     N-central is the RMM platform your MSP uses to manage your fleet, and in early August 2026 two authentication bypasses in it were exploited in the wild. You cannot patch someone else's server - but every artifact the operators left behind ran on your machines. The timeline, what the advisories actually tell you, endpoint-side detections, and the questions to put to your provider this week.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Aug 12, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="safepay-australian-smb.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="threat">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">THREAT ANALYSIS</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~12 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">THREAT ANALYSIS</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~12 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     SafePay is a centralized ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly - data-rich, cash-handling, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - edge devices, infostealer-harvested logins, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 20, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="inc-ransom-australian-smb.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="threat">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="threat">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">THREAT ANALYSIS</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~13 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">THREAT ANALYSIS</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~13 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     How INC Ransom Hits Australian SMBs - and the Essential Eight That Stops It
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     INC Ransom is a RaaS crew actively claiming Australian victims, and the firms it lands on look a lot like yours. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link in the chain.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 15, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="securing-ai-agents.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="ai">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="ai">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">AI &amp; LLM SECURITY</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~14 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">AI &amp; LLM SECURITY</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~14 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Securing AI Agents: A Defender's Guide to Tool-Calling LLMs
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     The moment you give a model tools, its output stops being text and becomes actions. The agent threat surface - excessive agency, indirect injection via tool output, the MCP supply chain, the confused-deputy identity problem - what to log, and the detections and containment architecture that keep one bad instruction from becoming an incident.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 14, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="detecting-litellm-command-injection.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="detection">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="detection">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">DETECTION ENGINEERING</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~11 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">DETECTION ENGINEERING</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~11 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Detecting the LiteLLM Command Injection (CVE-2026-42271) in Your AI Gateway
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     An authenticated command injection in LiteLLM's MCP preview endpoints - in CISA KEV and actively exploited - that chains with the Starlette "BadHost" bug (CVE-2026-48710) into unauthenticated RCE. The mechanism, what to log, and two runnable Sigma rules with tuning notes.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 13, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="owasp-llm-top-10-for-defenders.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="ai">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="ai">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">AI &amp; LLM SECURITY</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~13 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">AI &amp; LLM SECURITY</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~13 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Prompt Injection and the OWASP LLM Top 10: A Field Guide for Defenders
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     The OWASP LLM Top 10 read as a defender's checklist: why prompt injection has no patch, the "lethal trifecta" behind incidents like EchoLeak (CVE-2025-32711), what to log in LLM-integrated apps, and canary, egress, and behavioral detections you can deploy today.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 11, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="detecting-oauth-consent-phishing.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="detection">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="detection">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">DETECTION ENGINEERING</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~12 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">DETECTION ENGINEERING</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~12 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Detecting OAuth Consent Phishing in Microsoft 365
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     The phishing class that never asks for a password and sails through MFA - illicit OAuth consent grants (MITRE ATT&amp;CK T1528) in Entra ID, the audit-log artifacts they leave, and KQL detections with tuning notes.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 11, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
             </a>
 
             <a href="detecting-kerberoasting.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="detection">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="detection">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">DETECTION ENGINEERING</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~14 min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">DETECTION ENGINEERING</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~14 min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     Detecting Kerberoasting: A Practical Walkthrough with Sigma
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     How Kerberoasting (MITRE ATT&amp;CK T1558.003) works, why RC4 service tickets give it away, and three layered Sigma detections - RC4 downgrade, request fan-out, and a honeypot SPN - with tuning and false-positive notes you can run against your own logs.
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>Jun 10, 2026</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
@@ -260,57 +260,57 @@
             No writeups in this category yet - more are on the bench.
         </div>
 
-        <div class="mt-12 p-8 border border-[#2a2c38] border-dashed rounded-3xl bg-[#16161e] max-w-[680px]">
-            <div class="font-mono text-xs text-[#e0af68] mb-2">SUGGEST A TOPIC</div>
-            <p class="text-[#a9b1d6] text-sm">
+        <div class="mt-12 p-8 border border-[#525252] border-dashed rounded-3xl bg-[#222222] max-w-[680px]">
+            <div class="font-mono text-xs text-[#f56e0f] mb-2">SUGGEST A TOPIC</div>
+            <p class="text-[#959c95] text-sm">
                 New writeups ship as the threats worth covering surface. Want to suggest a topic, request a detection,
-                or flag an error in what's published? <a href="https://codeberg.org/0xdev1/umbrasec" class="text-[#7aa2f7] hover:text-[#7dcfff]" target="_blank" rel="noopener">Open an issue →</a>
+                or flag an error in what's published? <a href="https://codeberg.org/0xdev1/umbrasec" class="text-[#f25623] hover:text-[#f56e0f]" target="_blank" rel="noopener">Open an issue →</a>
             </p>
         </div>
     </section>
 
-    <footer class="border-t border-[#2a2c38] mt-8">
+    <footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
                     <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
-                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                            <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
-                    <p class="text-sm text-[#a9b1d6] max-w-[300px] leading-relaxed">
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
                         Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
                     </p>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Guide</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../guide/foundation.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Foundation</a></li>
-                        <li><a href="../guide/identity-and-access.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Identity &amp; Access</a></li>
-                        <li><a href="../guide/detection-and-response.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Detection &amp; Response</a></li>
-                        <li><a href="../guide/governance-and-maturity.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Governance &amp; Maturity</a></li>
+                        <li><a href="../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Research</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../research/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All writeups</a></li>
-                        <li><a href="../feed.xml" class="text-[#a9b1d6] hover:text-[#7aa2f7]">RSS feed</a></li>
+                        <li><a href="../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Open Source</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
-                        <li><a href="../tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
+                        <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="../tools/blue-team-mapper/index.html" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">Codeberg</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-[#2a2c38] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="font-mono text-xs text-[#a9b1d6]">
-                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#7aa2f7]">Services</a> · <a href="../about.html" class="hover:text-[#7aa2f7]">About</a> · <a href="../index.html#contact" class="hover:text-[#7aa2f7]">Contact</a>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

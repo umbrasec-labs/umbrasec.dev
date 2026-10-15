@@ -26,40 +26,40 @@
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-avatar.png">
     <link rel="apple-touch-icon" href="../assets/umbra-avatar.png">
-    <meta name="theme-color" content="#1a1b26">
+    <meta name="theme-color" content="#171717">
     <link rel="stylesheet" href="../assets/umbra.css">
 </head>
-<body class="bg-[#1a1b26] text-[#c0caf5]" data-base="../">
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../">
 
-    <nav class="sticky top-0 z-50 border-b border-[#2a2c38] bg-[#1a1b26]/95 backdrop-blur-lg">
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
         <div class="max-w-[1280px] mx-auto px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="../index.html" class="brand flex items-center gap-x-2.5">
-                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                        <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                     </div>
                     <div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
-                        <span class="font-mono text-xs text-[#a9b1d6] ml-1.5">2026</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
                     </div>
                 </a>
                 <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
                     <a href="../guide/index.html" class="nav-link">Guide</a>
                     <a href="../research/index.html" class="nav-link">Research</a>
-                    <a href="index.html" class="nav-link text-[#c0caf5]">Open Source</a>
+                    <a href="index.html" class="nav-link text-[#ccd0cf]">Open Source</a>
                     <a href="../services.html" class="nav-link">Services</a>
                     <a href="../about.html" class="nav-link">About</a>
                     <a href="../index.html#contact" class="nav-link">Contact</a>
                 </div>
                 <div class="flex items-center gap-x-3">
                     <button data-cmdk type="button"
-                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#2a2c38] hover:bg-[#16161e] transition-colors"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
                             title="Open command palette">
                         <span data-kbd>Ctrl K</span>
-                        <span class="text-[#a9b1d6]">Search</span>
+                        <span class="text-[#959c95]">Search</span>
                     </button>
                     <a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener"
-                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#16161e]" title="Codeberg">
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="Codeberg">
                         <i class="fa-solid fa-code-branch text-xl"></i>
                     </a>
                 </div>
@@ -67,10 +67,10 @@
         </div>
     </nav>
 
-    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 tokyo-grid">
+    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 umbra-grid">
         <div class="section-label mb-4">OPEN SOURCE</div>
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">Open source.</h1>
-        <p class="max-w-[640px] text-xl text-[#a9b1d6]">
+        <p class="max-w-[640px] text-xl text-[#959c95]">
             Small defensive artefacts from the writeups - rules, a KEV monitor, a blue-team reference.
             They are evidence of how the work is done, not a product line. Status labels are honest.
         </p>
@@ -78,93 +78,93 @@
 
     <section class="max-w-[1280px] mx-auto px-8 pb-24">
         <div class="grid md:grid-cols-2 gap-5">
-            <div class="u-card p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]">
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
                 <div class="flex items-center gap-x-2 mb-2">
                     <div class="font-semibold text-xl">kev-watch</div>
-                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1a2e1a] text-[#9ece6a] border border-[#2a3a2a]">WORKING</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#88a57d] border border-[#525252]">WORKING</span>
                 </div>
-                <p class="text-sm text-[#a9b1d6]">A zero-dependency Python monitor for the CISA Known Exploited Vulnerabilities (KEV) catalog. Tracks newly added, actively-exploited CVEs and flags ones that match products you care about. Public data only.</p>
+                <p class="text-sm text-[#959c95]">A zero-dependency Python monitor for the CISA Known Exploited Vulnerabilities (KEV) catalog. Tracks newly added, actively-exploited CVEs and flags ones that match products you care about. Public data only.</p>
                 <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <a href="kev-watch/kev_watch.py" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">Read the source →</a>
-                    <a href="https://codeberg.org/0xdev1/umbrasec/src/branch/master/tools/kev-watch" target="_blank" rel="noopener" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">View on Codeberg →</a>
+                    <a href="kev-watch/kev_watch.py" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Read the source →</a>
+                    <a href="https://codeberg.org/0xdev1/umbrasec/src/branch/master/tools/kev-watch" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on Codeberg →</a>
                 </div>
-                <p class="mt-4 font-mono text-xs text-[#565f89] break-all">curl -sO https://umbrasec.dev/tools/kev-watch/kev_watch.py</p>
+                <p class="mt-4 font-mono text-xs text-[#7d837d] break-all">curl -sO https://umbrasec.dev/tools/kev-watch/kev_watch.py</p>
             </div>
 
-            <div class="u-card p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]">
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
                 <div class="flex items-center gap-x-2 mb-2">
                     <div class="font-semibold text-xl">sigma-pack</div>
-                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2410] text-[#e0af68] border border-[#3a341a]">EARLY</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
                 </div>
-                <p class="text-sm text-[#a9b1d6]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - seven Sigma rules (Kerberoasting, LiteLLM command injection, N-central post-exploitation) and three OAuth consent-phishing KQL queries so far, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
+                <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - seven Sigma rules (Kerberoasting, LiteLLM command injection, N-central post-exploitation) and three OAuth consent-phishing KQL queries so far, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
                 <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <a href="sigma-pack/index.html" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">Browse the pack →</a>
-                    <a href="https://codeberg.org/0xdev1/umbrasec/src/branch/master/tools/sigma-pack" target="_blank" rel="noopener" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">View on Codeberg →</a>
+                    <a href="sigma-pack/index.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Browse the pack →</a>
+                    <a href="https://codeberg.org/0xdev1/umbrasec/src/branch/master/tools/sigma-pack" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on Codeberg →</a>
                 </div>
-                <p class="mt-4 font-mono text-xs text-[#565f89] break-all">curl -sO https://umbrasec.dev/tools/sigma-pack/rules/windows/kerberoasting-spn-fanout.yml</p>
+                <p class="mt-4 font-mono text-xs text-[#7d837d] break-all">curl -sO https://umbrasec.dev/tools/sigma-pack/rules/windows/kerberoasting-spn-fanout.yml</p>
             </div>
 
-            <div class="u-card p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e] md:col-span-2">
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222] md:col-span-2">
                 <div class="flex items-center gap-x-2 mb-2">
                     <div class="font-semibold text-xl">Blue Team Mapper</div>
-                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1a2e1a] text-[#9ece6a] border border-[#2a3a2a]">LIVE</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#88a57d] border border-[#525252]">LIVE</span>
                 </div>
-                <p class="text-sm text-[#a9b1d6]">A comprehensive, single-page defender reference - the full defensive lifecycle mapped end to end: SIEM and log-source priority, detection engineering, incident-response flow chains, threat hunting, identity and cloud hardening, SOAR playbooks, and LLM-app defense. ATT&amp;CK-aligned, built for analysts who need actionable depth.</p>
-                <a href="blue-team-mapper/index.html" class="mt-6 inline-block text-sm text-[#7aa2f7] hover:text-[#7dcfff]">Open the mapper →</a>
+                <p class="text-sm text-[#959c95]">A comprehensive, single-page defender reference - the full defensive lifecycle mapped end to end: SIEM and log-source priority, detection engineering, incident-response flow chains, threat hunting, identity and cloud hardening, SOAR playbooks, and LLM-app defense. ATT&amp;CK-aligned, built for analysts who need actionable depth.</p>
+                <a href="blue-team-mapper/index.html" class="mt-6 inline-block text-sm text-[#f25623] hover:text-[#f56e0f]">Open the mapper →</a>
             </div>
         </div>
 
-        <div class="mt-12 p-8 border border-[#2a2c38] border-dashed rounded-3xl bg-[#16161e] max-w-[680px]">
-            <div class="font-mono text-xs text-[#e0af68] mb-2">BUILT IN THE OPEN</div>
-            <p class="text-[#a9b1d6] text-sm">
+        <div class="mt-12 p-8 border border-[#525252] border-dashed rounded-3xl bg-[#222222] max-w-[680px]">
+            <div class="font-mono text-xs text-[#f56e0f] mb-2">BUILT IN THE OPEN</div>
+            <p class="text-[#959c95] text-sm">
                 Everything here lives in the public repository, issues and all. Found a bug, or want to suggest a tool?
-                <a href="https://codeberg.org/0xdev1/umbrasec" class="text-[#7aa2f7] hover:text-[#7dcfff]" target="_blank" rel="noopener">Open an issue →</a>
+                <a href="https://codeberg.org/0xdev1/umbrasec" class="text-[#f25623] hover:text-[#f56e0f]" target="_blank" rel="noopener">Open an issue →</a>
             </p>
         </div>
     </section>
 
-    <footer class="border-t border-[#2a2c38] mt-8">
+    <footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
                     <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
-                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                            <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
-                    <p class="text-sm text-[#a9b1d6] max-w-[300px] leading-relaxed">
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
                         Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
                     </p>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Guide</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../guide/foundation.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Foundation</a></li>
-                        <li><a href="../guide/identity-and-access.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Identity &amp; Access</a></li>
-                        <li><a href="../guide/detection-and-response.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Detection &amp; Response</a></li>
-                        <li><a href="../guide/governance-and-maturity.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Governance &amp; Maturity</a></li>
+                        <li><a href="../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Research</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../research/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All writeups</a></li>
-                        <li><a href="../feed.xml" class="text-[#a9b1d6] hover:text-[#7aa2f7]">RSS feed</a></li>
+                        <li><a href="../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Open Source</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
-                        <li><a href="../tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
+                        <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="../tools/blue-team-mapper/index.html" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">Codeberg</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-[#2a2c38] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="font-mono text-xs text-[#a9b1d6]">
-                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#7aa2f7]">Services</a> · <a href="../about.html" class="hover:text-[#7aa2f7]">About</a> · <a href="../index.html#contact" class="hover:text-[#7aa2f7]">Contact</a>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

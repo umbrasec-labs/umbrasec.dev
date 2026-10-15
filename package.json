@@ -1,4 +1,9 @@
 {
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'tools/**/*.test.mjs'"
+  },
   "devDependencies": {
     "wrangler": "^4.132.0"
   }

@@ -2,9 +2,12 @@
 """
 Refresh assets/kev-latest.json from the public CISA KEV catalog.
 
-This is the homepage ticker's data. It used to run twice a day from a GitHub
-Action; that repo is gone and this site has no CI by design, so the sync is a
-deliberate local step now: run this, check the diff, commit, deploy.
+This is the homepage ticker's FALLBACK snapshot. The ticker itself reads
+/api/kev, a Pages Function (functions/api/kev.js) that fetches and trims the
+catalog live and edge-caches it, so nothing here needs to run on a schedule any
+more. The snapshot only answers when CISA is unreachable from the edge, so it
+is worth refreshing now and then - run this, check the diff, commit, deploy -
+but a stale snapshot is no longer a stale homepage.
 
 Zero dependencies - standard library only.
 
@@ -24,7 +27,7 @@ Cron it hourly, staying silent until CISA actually publishes something:
 
 That only refreshes the file on disk. Committing and deploying stay manual, so
 nothing reaches the repo or the live site without you looking at it first - run
-`git status`, then `tools/local-deploy/deploy.sh`.
+`git status`, then `tools/local-deploy/deploy.sh`. The cron is optional now.
 """
 
 import argparse

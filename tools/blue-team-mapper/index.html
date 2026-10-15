@@ -23,43 +23,43 @@
 <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="512x512" href="../../assets/umbra-avatar.png">
 <link rel="apple-touch-icon" href="../../assets/umbra-avatar.png">
-<meta name="theme-color" content="#1a1b26">
+<meta name="theme-color" content="#171717">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 /* ═══════════════════════════════════════════════════════════
-   TOKYO NIGHT PALETTE + EXTENDED VARIABLES
+   CHARCOAL / ORANGE PALETTE + EXTENDED VARIABLES
 ═══════════════════════════════════════════════════════════ */
 :root {
-  --bg:           #1a1b26;
-  --bg-card:      #16161e;
-  --bg-raised:    #1c1d29;
-  --bg-hover:     #292e42;
-  --border:       #2a2c38;
-  --border-dim:   #222431;
+  --bg:           #171717;
+  --bg-card:      #222222;
+  --bg-raised:    #2a2a2a;
+  --bg-hover:     #2a2a2a;
+  --border:       #525252;
+  --border-dim:   #2a2a2a;
 
-  --text:         #a9b1d6;
-  --text-bright:  #c0caf5;
-  --text-dim:     #565f89;
-  --text-muted:   #414868;
+  --text:         #959c95;
+  --text-bright:  #ccd0cf;
+  --text-dim:     #7d837d;
+  --text-muted:   #686c69;
 
-  --blue:         #7aa2f7;
-  --blue-dim:     rgba(122,162,247,0.12);
-  --cyan:         #7dcfff;
-  --cyan-dim:     rgba(125,207,255,0.10);
-  --green:        #9ece6a;
-  --green-dim:    rgba(158,206,106,0.12);
-  --teal:         #73daca;
-  --teal-dim:     rgba(115,218,202,0.10);
-  --orange:       #e0af68;
-  --orange-dim:   rgba(224,175,104,0.12);
-  --red:          #f7768e;
-  --red-dim:      rgba(247,118,142,0.12);
-  --purple:       #bb9af7;
-  --purple-dim:   rgba(187,154,247,0.12);
-  --yellow:       #e0af68;
-  --magenta:      #bb9af7;
+  --blue:         #f25623;
+  --blue-dim:     rgba(242,86,35,0.12);
+  --cyan:         #f56e0f;
+  --cyan-dim:     rgba(245,110,15,0.10);
+  --green:        #88a57d;
+  --green-dim:    rgba(136,165,125,0.12);
+  --teal:         #88a57d;
+  --teal-dim:     rgba(136,165,125,0.10);
+  --orange:       #f56e0f;
+  --orange-dim:   rgba(245,110,15,0.12);
+  --red:          #f25623;
+  --red-dim:      rgba(242,86,35,0.12);
+  --purple:       #aeab94;
+  --purple-dim:   rgba(174,171,148,0.12);
+  --yellow:       #f56e0f;
+  --magenta:      #aeab94;
 
   --sidebar-w:    260px;
   --content-max:  1120px;
@@ -642,11 +642,12 @@ code.c-teal   { background: var(--teal-dim);   color: var(--teal);   }
   white-space: nowrap;
 }
 
-.sev-crit { background: rgba(247,118,142,0.2); color: var(--red); }
-.sev-high { background: rgba(224,175,104,0.2); color: var(--orange); }
-.sev-med  { background: rgba(122,162,247,0.2); color: var(--blue); }
-.sev-low  { background: rgba(158,206,106,0.2); color: var(--green); }
-.sev-info { background: rgba(125,207,255,0.2); color: var(--cyan); }
+/* ordinal scale within the palette: orange > ember > khaki > sage > grey-sage */
+.sev-crit { background: rgba(242,86,35,0.2);    color: var(--red); }
+.sev-high { background: rgba(245,110,15,0.2);   color: var(--orange); }
+.sev-med  { background: rgba(174,171,148,0.2);  color: var(--purple); }
+.sev-low  { background: rgba(136,165,125,0.2);  color: var(--green); }
+.sev-info { background: rgba(149,156,149,0.2);  color: #959c95; }
 
 /* ═══════════════════════════════════════════════════════════
    CALLOUT BOXES
@@ -827,7 +828,7 @@ footer strong { color: var(--text-bright); }
 .section a, .card a, .callout a {
   color: var(--cyan);
   text-decoration: none;
-  border-bottom: 1px solid rgba(125,207,255,0.35);
+  border-bottom: 1px solid rgba(245,110,15,0.35);
   transition: color 0.15s, border-color 0.15s;
 }
 .section a:hover, .card a:hover, .callout a:hover {

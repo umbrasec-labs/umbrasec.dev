@@ -45,33 +45,41 @@ Public data only; it reads one JSON feed and never touches a target system.
 |---|---|
 | [`tools/kev-watch/`](tools/kev-watch/) | Zero-dependency Python monitor for the CISA KEV catalog. Tracks newly added, actively exploited CVEs, filters to your stack, flags ransomware-linked entries, warns on remediation deadlines. |
 | [`tools/sigma-pack/`](tools/sigma-pack/) | The detection rules from the research writeups as runnable files: Kerberoasting Sigma rules (T1558.003), OAuth consent-phishing KQL queries (T1528), and LiteLLM command-injection Sigma rules (CVE-2026-42271, T1190) so far, each with tuning and false-positive notes. A per-rule [ATT&CK coverage table](tools/sigma-pack/#attck-coverage) maps every artifact to its technique. |
+| [`functions/api/kev.js`](functions/api/kev.js) | The `/api/kev` endpoint behind the homepage ticker: a Cloudflare Pages Function that serves the 10 newest CISA KEV entries live, edge-cached, with the committed snapshot as fallback. Tests: `npm test`. |
 | [`tools/blue-team-mapper/`](tools/blue-team-mapper/) | A single-page defender reference covering the defensive lifecycle: SIEM/log-source priority, detection engineering, IR flow chains, threat hunting, identity and cloud hardening, SOAR playbooks - ATT&CK-aligned. [Use it live](https://umbrasec.dev/tools/blue-team-mapper/). |
 | [`research/`](https://umbrasec.dev/research/) | Detection and threat writeups: [Kerberoasting](https://umbrasec.dev/research/detecting-kerberoasting.html), [OAuth consent phishing in M365](https://umbrasec.dev/research/detecting-oauth-consent-phishing.html), [OWASP LLM Top 10 for defenders](https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html), [Securing AI agents](https://umbrasec.dev/research/securing-ai-agents.html), [LiteLLM command injection (CVE-2026-42271)](https://umbrasec.dev/research/detecting-litellm-command-injection.html), plus threat profiles of ransomware crews active against Australian SMBs - [INC Ransom](https://umbrasec.dev/research/inc-ransom-australian-smb.html) and [SafePay](https://umbrasec.dev/research/safepay-australian-smb.html). Every rule in `sigma-pack` comes from one of the detection writeups. |
 | [`guide/`](https://umbrasec.dev/guide/) | A free, staged security guide for small and mid-sized businesses - from zero to a defensible baseline, with every recommendation mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0, and each step explained as what it is, why it matters, and what it costs. |
 
 ## The KEV feed, as a feed
 
-A local script [syncs the CISA KEV catalog](tools/local-sync/sync-kev.py) into
-a small JSON file holding the **10 most recently added** actively-exploited CVEs,
-newest first - handy for dashboards, tickers, and "what just got exploited" checks
-without CORS issues or hitting cisa.gov yourself:
+A small JSON endpoint holding the **10 most recently added** actively-exploited
+CVEs, newest first - handy for dashboards, tickers, and "what just got exploited"
+checks without hitting cisa.gov yourself. It sends `Access-Control-Allow-Origin: *`,
+so a browser page can read it directly:
 
 ```
-https://umbrasec.dev/assets/kev-latest.json
+https://umbrasec.dev/api/kev
 ```
 
 ```bash
 # the five most recently added actively-exploited CVEs
-curl -s https://umbrasec.dev/assets/kev-latest.json |
+curl -s https://umbrasec.dev/api/kev |
   jq -r '.vulnerabilities[:5][] | "\(.dateAdded)  \(.cveID)  \(.vendorProject) \(.product)"'
 ```
 
+It is live: [`functions/api/kev.js`](functions/api/kev.js) is a Cloudflare Pages
+Function that fetches CISA's catalog on demand, trims it, and caches the result at
+the edge for an hour. If CISA is unreachable it serves the committed snapshot at
+`/assets/kev-latest.json` instead (refreshed now and then with
+[`tools/local-sync/sync-kev.py`](tools/local-sync/sync-kev.py)). The `X-KEV-Source`
+response header says which one answered: `live`, `cache`, `snapshot`.
+
 Fields per entry: `cveID`, `vendorProject`, `product`, `vulnerabilityName`,
 `dateAdded`, `knownRansomwareCampaignUse`. Top level carries `catalogVersion`,
-`synced`, and `count` (the full catalog's entry count, not this file's). It is
-deliberately a recent-entries feed, not a mirror - for the full catalog, go to
-[CISA](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) or run
-`kev-watch`, which queries CISA's feed directly. Refreshed manually with `tools/local-sync/sync-kev.py`.
+`dateReleased`, `synced`, `mode`, and `count` (the full catalog's entry count, not
+this file's). It is deliberately a recent-entries feed, not a mirror - for the full
+catalog, go to [CISA](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+or run `kev-watch`, which queries CISA's feed directly.
 
 ## Focus right now
 
@@ -128,7 +136,9 @@ git config core.hooksPath .githooks
 ```
 
 Or regenerate by hand any time with `python3 tools/site-build/build_indexes.py` (add
-`--check` to verify without writing). When you add an article, add it to
+`--check` to verify without writing). `npm test` runs the Pages Function tests
+(`node --test`, no packages beyond the pinned wrangler); `npx wrangler pages dev .`
+previews the site with `/api/kev` running locally. When you add an article, add it to
 `research/articles.json` - dropping an HTML file into `research/` alone will not list it,
 and the hook will flag it as an orphan until you do.
 

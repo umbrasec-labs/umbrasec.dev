@@ -5,8 +5,9 @@ __pycache__/
 # kev-watch writes this next to itself when run
 .kev_state.json
 
-# Local wrangler install for manual deploys
+# Local wrangler install for manual deploys, and its state dir (pages dev)
 node_modules/
+.wrangler/
 
 # Agent/session config - local only, never committed
 .claude/

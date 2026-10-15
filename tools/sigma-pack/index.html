@@ -26,40 +26,40 @@
     <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
     <link rel="icon" type="image/png" sizes="512x512" href="../../assets/umbra-avatar.png">
     <link rel="apple-touch-icon" href="../../assets/umbra-avatar.png">
-    <meta name="theme-color" content="#1a1b26">
+    <meta name="theme-color" content="#171717">
     <link rel="stylesheet" href="../../assets/umbra.css">
 </head>
-<body class="bg-[#1a1b26] text-[#c0caf5]" data-base="../../">
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../../">
 
-    <nav class="sticky top-0 z-50 border-b border-[#2a2c38] bg-[#1a1b26]/95 backdrop-blur-lg">
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
         <div class="max-w-[1280px] mx-auto px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="../../index.html" class="brand flex items-center gap-x-2.5">
-                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                        <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                     </div>
                     <div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
-                        <span class="font-mono text-xs text-[#a9b1d6] ml-1.5">2026</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
                     </div>
                 </a>
                 <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
                     <a href="../../guide/index.html" class="nav-link">Guide</a>
                     <a href="../../research/index.html" class="nav-link">Research</a>
-                    <a href="../index.html" class="nav-link text-[#c0caf5]">Open Source</a>
+                    <a href="../index.html" class="nav-link text-[#ccd0cf]">Open Source</a>
                     <a href="../../services.html" class="nav-link">Services</a>
                     <a href="../../about.html" class="nav-link">About</a>
                     <a href="../../index.html#contact" class="nav-link">Contact</a>
                 </div>
                 <div class="flex items-center gap-x-3">
                     <button data-cmdk type="button"
-                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#2a2c38] hover:bg-[#16161e] transition-colors"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
                             title="Open command palette">
                         <span data-kbd>Ctrl K</span>
-                        <span class="text-[#a9b1d6]">Search</span>
+                        <span class="text-[#959c95]">Search</span>
                     </button>
                     <a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener"
-                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#16161e]" title="Codeberg">
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="Codeberg">
                         <i class="fa-solid fa-code-branch text-xl"></i>
                     </a>
                 </div>
@@ -67,117 +67,117 @@
         </div>
     </nav>
 
-    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 tokyo-grid">
+    <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 umbra-grid">
         <div class="section-label mb-4">OPEN SOURCE / SIGMA-PACK</div>
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">sigma-pack.</h1>
-        <p class="max-w-[720px] text-xl text-[#a9b1d6]">
+        <p class="max-w-[720px] text-xl text-[#959c95]">
             The detection rules and queries from the UMBRASEC research writeups, as runnable files.
             Every rule comes out of a writeup that explains the technique, the log artifacts, the
             tuning knobs, and the false-positive profile. Read that before you deploy the rule.
         </p>
-        <p class="max-w-[720px] text-sm text-[#565f89] mt-5">
+        <p class="max-w-[720px] text-sm text-[#7d837d] mt-5">
             Each file below is served directly over HTTPS - no account, no clone. Validate anything
-            here yourself before running it; <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">sigma-cli</a>
+            here yourself before running it; <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">sigma-cli</a>
             will syntax-check the whole directory.
         </p>
     </section>
 
     <section class="max-w-[1280px] mx-auto px-8 pb-16">
-        <div class="overflow-x-auto rounded-3xl border border-[#2a2c38] bg-[#16161e]">
+        <div class="overflow-x-auto rounded-3xl border border-[#525252] bg-[#222222]">
             <table class="w-full text-sm min-w-[820px]">
                 <thead>
                     <tr class="text-left">
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase">Rule / query</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase">Type</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase">MITRE ATT&amp;CK</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase">Tactic</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase">Status</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Rule / query</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Type</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">MITRE ATT&amp;CK</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Tactic</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- AUTO:sigmapack START -->
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-rc4-service-ticket.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">kerberoasting-rc4-service-ticket.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1558.003</a> Kerberoasting</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-rc4-service-ticket.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">kerberoasting-rc4-service-ticket.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-spn-fanout.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">kerberoasting-spn-fanout.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma (correlation)</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1558.003</a> Kerberoasting</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-spn-fanout.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">kerberoasting-spn-fanout.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma (correlation)</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-honeypot-spn.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">kerberoasting-honeypot-spn.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1558.003</a> Kerberoasting</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/windows/kerberoasting-honeypot-spn.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">kerberoasting-honeypot-spn.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="queries/kql/oauth-consent-sensitive-scopes.kql" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">oauth-consent-sensitive-scopes.kql</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">KQL</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1528</a> Steal Application Access Token</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">query</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="queries/kql/oauth-consent-sensitive-scopes.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">oauth-consent-sensitive-scopes.kql</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="queries/kql/oauth2-permission-grant-post.kql" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">oauth2-permission-grant-post.kql</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">KQL</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1528</a> Steal Application Access Token</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">query</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="queries/kql/oauth2-permission-grant-post.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">oauth2-permission-grant-post.kql</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="queries/kql/app-role-assignment.kql" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">app-role-assignment.kql</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">KQL</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1528</a> Steal Application Access Token</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">query</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="queries/kql/app-role-assignment.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">app-role-assignment.kql</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
+                        <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/linux/litellm-proxy-spawns-shell.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">litellm-proxy-spawns-shell.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1190</a> Exploit Public-Facing App; <a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1059</a> Command &amp; Scripting</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Initial Access / Execution</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/linux/litellm-proxy-spawns-shell.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-proxy-spawns-shell.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App; <a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1059</a> Command &amp; Scripting</td>
+                        <td class="py-4 px-6 text-[#959c95]">Initial Access / Execution</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/web/litellm-mcp-test-endpoint.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">litellm-mcp-test-endpoint.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1190</a> Exploit Public-Facing App</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Initial Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/web/litellm-mcp-test-endpoint.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-mcp-test-endpoint.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App</td>
+                        <td class="py-4 px-6 text-[#959c95]">Initial Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/windows/masquerading-svchost-outside-system32.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">masquerading-svchost-outside-system32.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1036/005/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1036.005</a> Match Legitimate Resource Name or Location</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Defense Evasion</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/windows/masquerading-svchost-outside-system32.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">masquerading-svchost-outside-system32.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1036/005/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1036.005</a> Match Legitimate Resource Name or Location</td>
+                        <td class="py-4 px-6 text-[#959c95]">Defense Evasion</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/windows/cloudflared-tunnel-service-install.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">cloudflared-tunnel-service-install.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1543/003/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1543.003</a> Windows Service; <a href="https://attack.mitre.org/techniques/T1572/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1572</a> Protocol Tunneling</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Persistence / Command &amp; Control</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/windows/cloudflared-tunnel-service-install.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">cloudflared-tunnel-service-install.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1543/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1543.003</a> Windows Service; <a href="https://attack.mitre.org/techniques/T1572/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1572</a> Protocol Tunneling</td>
+                        <td class="py-4 px-6 text-[#959c95]">Persistence / Command &amp; Control</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
-                    <tr class="border-t border-[#2a2c38]">
-                        <td class="py-4 px-6"><a href="rules/web/metabase-reset-password-sqli.yml" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">metabase-reset-password-sqli.yml</a></td>
-                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">Sigma</td>
-                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#7aa2f7] hover:text-[#7dcfff]">T1190</a> Exploit Public-Facing App</td>
-                        <td class="py-4 px-6 text-[#a9b1d6]">Initial Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">experimental</td>
+                    <tr class="border-t border-[#525252]">
+                        <td class="py-4 px-6"><a href="rules/web/metabase-reset-password-sqli.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">metabase-reset-password-sqli.yml</a></td>
+                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
+                        <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App</td>
+                        <td class="py-4 px-6 text-[#959c95]">Initial Access</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
                     </tr>
                     <!-- AUTO:sigmapack END -->
                 </tbody>
             </table>
         </div>
-        <p class="text-xs text-[#565f89] mt-4">
+        <p class="text-xs text-[#7d837d] mt-4">
             <code class="font-mono">experimental</code> is the Sigma status the rules themselves declare - new rules,
             not yet battle-tested across many environments. KQL queries carry no Sigma status.
         </p>
@@ -185,70 +185,70 @@
 
     <section class="max-w-[1280px] mx-auto px-8 pb-24">
         <div class="grid md:grid-cols-2 gap-5">
-            <div class="u-card p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]">
-                <div class="font-mono text-xs text-[#e0af68] mb-3">FETCH ONE RULE</div>
-                <p class="font-mono text-xs text-[#a9b1d6] break-all">curl -sO https://umbrasec.dev/tools/sigma-pack/rules/windows/kerberoasting-spn-fanout.yml</p>
-                <p class="text-sm text-[#a9b1d6] mt-4">Every path in the table works the same way. Rules are plain YAML, queries are plain text.</p>
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
+                <div class="font-mono text-xs text-[#f56e0f] mb-3">FETCH ONE RULE</div>
+                <p class="font-mono text-xs text-[#959c95] break-all">curl -sO https://umbrasec.dev/tools/sigma-pack/rules/windows/kerberoasting-spn-fanout.yml</p>
+                <p class="text-sm text-[#959c95] mt-4">Every path in the table works the same way. Rules are plain YAML, queries are plain text.</p>
             </div>
-            <div class="u-card p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]">
-                <div class="font-mono text-xs text-[#e0af68] mb-3">TAKE THE WHOLE PACK</div>
-                <p class="font-mono text-xs text-[#a9b1d6] break-all">git clone https://codeberg.org/0xdev1/umbrasec</p>
-                <p class="text-sm text-[#a9b1d6] mt-4">The pack lives in <code class="font-mono text-xs">tools/sigma-pack/</code>, alongside the writeups each rule came from.</p>
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
+                <div class="font-mono text-xs text-[#f56e0f] mb-3">TAKE THE WHOLE PACK</div>
+                <p class="font-mono text-xs text-[#959c95] break-all">git clone https://codeberg.org/0xdev1/umbrasec</p>
+                <p class="text-sm text-[#959c95] mt-4">The pack lives in <code class="font-mono text-xs">tools/sigma-pack/</code>, alongside the writeups each rule came from.</p>
             </div>
         </div>
 
-        <div class="mt-12 p-8 border border-[#2a2c38] border-dashed rounded-3xl bg-[#16161e] max-w-[680px]">
-            <div class="font-mono text-xs text-[#e0af68] mb-2">A RULE MISBEHAVED?</div>
-            <p class="text-[#a9b1d6] text-sm">
+        <div class="mt-12 p-8 border border-[#525252] border-dashed rounded-3xl bg-[#222222] max-w-[680px]">
+            <div class="font-mono text-xs text-[#f56e0f] mb-2">A RULE MISBEHAVED?</div>
+            <p class="text-[#959c95] text-sm">
                 False positives and tuning notes are worth more than silence - if one of these fires wrongly in your
                 environment, say so.
-                <a href="https://codeberg.org/0xdev1/umbrasec/issues" class="text-[#7aa2f7] hover:text-[#7dcfff]" target="_blank" rel="noopener">Open an issue →</a>
+                <a href="https://codeberg.org/0xdev1/umbrasec/issues" class="text-[#f25623] hover:text-[#f56e0f]" target="_blank" rel="noopener">Open an issue →</a>
             </p>
         </div>
     </section>
 
-    <footer class="border-t border-[#2a2c38] mt-8">
+    <footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
                     <a href="../../index.html" class="brand flex items-center gap-x-2.5 mb-4">
-                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                            <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
-                    <p class="text-sm text-[#a9b1d6] max-w-[300px] leading-relaxed">
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
                         Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
                     </p>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Guide</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../../guide/foundation.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Foundation</a></li>
-                        <li><a href="../../guide/identity-and-access.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Identity &amp; Access</a></li>
-                        <li><a href="../../guide/detection-and-response.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Detection &amp; Response</a></li>
-                        <li><a href="../../guide/governance-and-maturity.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Governance &amp; Maturity</a></li>
+                        <li><a href="../../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Research</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../../research/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All writeups</a></li>
-                        <li><a href="../../feed.xml" class="text-[#a9b1d6] hover:text-[#7aa2f7]">RSS feed</a></li>
+                        <li><a href="../../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Open Source</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../../tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
-                        <li><a href="../../tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
+                        <li><a href="../../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="../../tools/blue-team-mapper/index.html" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">Codeberg</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-[#2a2c38] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="font-mono text-xs text-[#a9b1d6]">
-                    © 2026 UMBRASEC · <a href="../../services.html" class="hover:text-[#7aa2f7]">Services</a> · <a href="../../about.html" class="hover:text-[#7aa2f7]">About</a> · <a href="../../index.html#contact" class="hover:text-[#7aa2f7]">Contact</a>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../../about.html" class="hover:text-[#f25623]">About</a> · <a href="../../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

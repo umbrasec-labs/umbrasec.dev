@@ -1,87 +1,87 @@
 {
   "source": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
-  "catalogVersion": "2026.10.02",
-  "synced": "2026-10-03",
-  "count": 1733,
+  "catalogVersion": "2026.10.14",
+  "synced": "2026-10-15",
+  "count": 1745,
   "vulnerabilities": [
     {
-      "cveID": "CVE-2026-102490",
-      "vendorProject": "Zammad GmbH",
-      "product": "Zammad",
-      "vulnerabilityName": "Zammad GmbH Zammad Improper Privilege Management Vulnerability",
-      "dateAdded": "2026-10-02",
+      "cveID": "CVE-2026-105134",
+      "vendorProject": "Ahsay",
+      "product": "AhsayCBS",
+      "vulnerabilityName": "Ahsay AhsayCBS Command Injection Vulnerability",
+      "dateAdded": "2026-10-14",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-102489",
-      "vendorProject": "Zammad GmbH",
-      "product": "Zammad",
-      "vulnerabilityName": "Zammad GmbH Zammad Session Fixation Vulnerability",
-      "dateAdded": "2026-10-02",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-104286",
-      "vendorProject": "Fortinet",
-      "product": "FortiMail",
-      "vulnerabilityName": "Fortinet FortiMail Path Traversal Vulnerability",
-      "dateAdded": "2026-10-01",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-76504",
+      "cveID": "CVE-2026-76519",
       "vendorProject": "Cisco",
-      "product": "Catalyst SD-WAN Manager",
-      "vulnerabilityName": "Cisco Catalyst SD-WAN Manager Hex Encoding Vulnerability",
-      "dateAdded": "2026-09-30",
+      "product": "Secure Email Gateway",
+      "vulnerabilityName": "Cisco Secure Email Gateway Relative Path Traversal Vulnerability",
+      "dateAdded": "2026-10-14",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-86950",
-      "vendorProject": "Apple",
-      "product": "Multiple Products",
-      "vulnerabilityName": "Apple Multiple Products Out-of-Bounds Write Vulnerability",
-      "dateAdded": "2026-09-29",
+      "cveID": "CVE-2026-105133",
+      "vendorProject": "Ahsay",
+      "product": "AhsayCBS",
+      "vulnerabilityName": "Ahsay AhsayCBS Improper Authentication Vulnerability",
+      "dateAdded": "2026-10-14",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-88772",
-      "vendorProject": "Citrix",
-      "product": "NetScaler",
-      "vulnerabilityName": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
-      "dateAdded": "2026-09-27",
+      "cveID": "CVE-2026-0322",
+      "vendorProject": "Palo Alto Networks",
+      "product": "PAN-OS",
+      "vulnerabilityName": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+      "dateAdded": "2026-10-14",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-88771",
-      "vendorProject": "Citrix",
-      "product": "NetScaler",
-      "vulnerabilityName": "Citrix NetScaler Improper Input Validation Vulnerability",
-      "dateAdded": "2026-09-27",
+      "cveID": "CVE-2026-104935",
+      "vendorProject": "Ivanti",
+      "product": "Connect Secure",
+      "vulnerabilityName": "Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability",
+      "dateAdded": "2026-10-13",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-67279",
-      "vendorProject": "MikroTik",
-      "product": "RouterOS",
-      "vulnerabilityName": "Mikrotik RouterOS Improper Enforcement of Behavioral Workflow Vulnerability",
-      "dateAdded": "2026-09-25",
-      "knownRansomwareCampaignUse": "Unknown"
-    },
-    {
-      "cveID": "CVE-2026-65660",
+      "cveID": "CVE-2026-96951",
       "vendorProject": "Microsoft",
-      "product": "SharePoint",
-      "vulnerabilityName": "Microsoft SharePoint Code Injection Vulnerability",
-      "dateAdded": "2026-09-25",
+      "product": "Windows",
+      "vulnerabilityName": "Microsoft Windows Command Injection Vulnerability",
+      "dateAdded": "2026-10-13",
       "knownRansomwareCampaignUse": "Unknown"
     },
     {
-      "cveID": "CVE-2026-87902",
-      "vendorProject": "WordPress",
-      "product": "Core",
-      "vulnerabilityName": "WordPress Core Remote File Inclusion Vulnerability",
-      "dateAdded": "2026-09-25",
+      "cveID": "CVE-2015-5477",
+      "vendorProject": "ISC",
+      "product": "BIND",
+      "vulnerabilityName": " ISC BIND Data Processing Errors Vulnerability",
+      "dateAdded": "2026-10-08",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2016-3081",
+      "vendorProject": "Apache",
+      "product": "Struts",
+      "vulnerabilityName": "Apache Struts Command Injection Vulnerability",
+      "dateAdded": "2026-10-08",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2023-22894",
+      "vendorProject": "Strapi",
+      "product": "Strapi",
+      "vulnerabilityName": "Strapi Cleartext Storage of Sensitive Information Vulnerability",
+      "dateAdded": "2026-10-08",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-2021-3199",
+      "vendorProject": "ONLYOFFICE",
+      "product": "Docs",
+      "vulnerabilityName": "ONLYOFFICE Docs Server Path Traversal Vulnerability",
+      "dateAdded": "2026-10-08",
       "knownRansomwareCampaignUse": "Unknown"
     }
   ]

@@ -122,17 +122,17 @@ def render_home_rows(articles) -> str:
 f'''                <a href="research/{a['slug']}.html" class="block">
                     <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
                         <div class="md:col-span-5">
-                            <div class="font-mono text-xs text-[#9ece6a] mb-2">{label}</div>
-                            <div class="font-semibold text-xl group-hover:text-[#7aa2f7] transition-colors">
+                            <div class="font-mono text-xs text-[#88a57d] mb-2">{label}</div>
+                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
                                 {he(a['title'])}
                             </div>
                         </div>
-                        <div class="md:col-span-7 text-[#a9b1d6] mt-2 md:mt-0">
+                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
                             {he(a['home_blurb'])}
                             <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
-                                <span class="text-[#7aa2f7]">{mon_year}</span>
-                                <span class="text-[#565f89]">·</span>
-                                <span class="text-[#565f89]">~{a['read_min']} min read</span>
+                                <span class="text-[#f25623]">{mon_year}</span>
+                                <span class="text-[#7d837d]">·</span>
+                                <span class="text-[#7d837d]">~{a['read_min']} min read</span>
                                 <span class="row-chev ml-auto">Read →</span>
                             </div>
                         </div>
@@ -145,7 +145,7 @@ def render_hero(articles) -> str:
     a = articles[0]
     anchor = (
 f'''                        <a href="research/{a['slug']}.html"
-                           class="btn-primary w-full sm:w-auto sm:whitespace-nowrap inline-flex items-center justify-center px-8 py-3.5 rounded-2xl bg-[#7aa2f7] text-[#1a1b26] font-semibold hover:bg-[#8fb3ff] transition-all">
+                           class="btn-primary w-full sm:w-auto sm:whitespace-nowrap inline-flex items-center justify-center px-8 py-3.5 rounded-2xl bg-[#f25623] text-[#171717] font-semibold hover:bg-[#f56e0f] transition-all">
                             Read the latest research <span class="arrow ml-1.5">→</span>
                         </a>''')
     return _wrap([anchor], "\n", 24)
@@ -159,18 +159,18 @@ def render_cards(articles) -> str:
         date_str = a["_date"].strftime("%b %d, %Y")
         cards.append(
 f'''            <a href="{a['slug']}.html"
-               class="research-card u-card block p-6 border border-[#2a2c38] rounded-3xl bg-[#16161e]" data-cat="{cat}">
+               class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="{cat}">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-mono text-xs text-[#9ece6a]">{label}</span>
-                    <span class="font-mono text-[10px] text-[#565f89]">~{a['read_min']} min</span>
+                    <span class="font-mono text-xs text-[#88a57d]">{label}</span>
+                    <span class="font-mono text-[10px] text-[#7d837d]">~{a['read_min']} min</span>
                 </div>
                 <div class="research-card-title font-semibold text-xl leading-tight mb-3">
                     {he(a['title'])}
                 </div>
-                <p class="text-sm text-[#a9b1d6] mb-5">
+                <p class="text-sm text-[#959c95] mb-5">
                     {he(a['card_blurb'])}
                 </p>
-                <div class="flex items-center text-xs font-mono text-[#7aa2f7]">
+                <div class="flex items-center text-xs font-mono text-[#f25623]">
                     <span>{date_str}</span>
                     <span class="research-card-arrow ml-auto">Read →</span>
                 </div>
@@ -297,7 +297,7 @@ def md_cell_to_html(cell: str) -> str:
         parts.append(he(html.unescape(cell[last:m.start()])))
         text, href = he(html.unescape(m.group(1))), he(html.unescape(m.group(2)))
         parts.append(f'<a href="{href}" target="_blank" rel="noopener" '
-                     f'class="text-[#7aa2f7] hover:text-[#7dcfff]">{text}</a>')
+                     f'class="text-[#f25623] hover:text-[#f56e0f]">{text}</a>')
         last = m.end()
     parts.append(he(html.unescape(cell[last:])))
     return "".join(parts).strip()
@@ -308,12 +308,12 @@ def render_sigma_rows(rows) -> str:
     for r in rows:
         path, name = he(r["path"]), he(html.unescape(r["file"]))
         out.append(
-            '                    <tr class="border-t border-[#2a2c38]">\n'
-            f'                        <td class="py-4 px-6"><a href="{path}" class="font-mono text-xs text-[#7aa2f7] hover:text-[#7dcfff] break-all">{name}</a></td>\n'
-            f'                        <td class="py-4 px-6 text-[#a9b1d6] whitespace-nowrap">{md_cell_to_html(r["kind"])}</td>\n'
+            '                    <tr class="border-t border-[#525252]">\n'
+            f'                        <td class="py-4 px-6"><a href="{path}" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">{name}</a></td>\n'
+            f'                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">{md_cell_to_html(r["kind"])}</td>\n'
             f'                        <td class="py-4 px-6">{md_cell_to_html(r["attack"])}</td>\n'
-            f'                        <td class="py-4 px-6 text-[#a9b1d6]">{md_cell_to_html(r["tactic"])}</td>\n'
-            f'                        <td class="py-4 px-6 font-mono text-xs text-[#565f89] whitespace-nowrap">{md_cell_to_html(r["status"])}</td>\n'
+            f'                        <td class="py-4 px-6 text-[#959c95]">{md_cell_to_html(r["tactic"])}</td>\n'
+            f'                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">{md_cell_to_html(r["status"])}</td>\n'
             '                    </tr>'
         )
     return "\n".join(out)
@@ -322,48 +322,48 @@ def render_sigma_rows(rows) -> str:
 def render_footer(prefix: str) -> str:
     """The shared site footer. `prefix` is "" for root pages, "../" one deep, "../../" two."""
     p = prefix
-    return f'''<footer class="border-t border-[#2a2c38] mt-8">
+    return f'''<footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
                     <a href="{p}index.html" class="brand flex items-center gap-x-2.5 mb-4">
-                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#7aa2f7] to-[#bb9af7] flex items-center justify-center">
-                            <span class="font-bold text-[#1a1b26] text-lg leading-none mt-px">U</span>
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
-                    <p class="text-sm text-[#a9b1d6] max-w-[300px] leading-relaxed">
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
                         Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
                     </p>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Guide</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}guide/foundation.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Foundation</a></li>
-                        <li><a href="{p}guide/identity-and-access.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Identity &amp; Access</a></li>
-                        <li><a href="{p}guide/detection-and-response.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Detection &amp; Response</a></li>
-                        <li><a href="{p}guide/governance-and-maturity.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Governance &amp; Maturity</a></li>
+                        <li><a href="{p}guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="{p}guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="{p}guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="{p}guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Research</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}research/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All writeups</a></li>
-                        <li><a href="{p}feed.xml" class="text-[#a9b1d6] hover:text-[#7aa2f7]">RSS feed</a></li>
+                        <li><a href="{p}research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="{p}feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
-                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#565f89] uppercase mb-3">Open Source</div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}tools/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">All tools</a></li>
-                        <li><a href="{p}tools/blue-team-mapper/index.html" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#a9b1d6] hover:text-[#7aa2f7]">Codeberg</a></li>
+                        <li><a href="{p}tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="{p}tools/blue-team-mapper/index.html" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">Codeberg</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-[#2a2c38] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="font-mono text-xs text-[#a9b1d6]">
-                    © 2026 UMBRASEC · <a href="{p}services.html" class="hover:text-[#7aa2f7]">Services</a> · <a href="{p}about.html" class="hover:text-[#7aa2f7]">About</a> · <a href="{p}index.html#contact" class="hover:text-[#7aa2f7]">Contact</a>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="{p}services.html" class="hover:text-[#f25623]">Services</a> · <a href="{p}about.html" class="hover:text-[#f25623]">About</a> · <a href="{p}index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>
@@ -381,7 +381,7 @@ NAV_RE = re.compile(
     re.DOTALL,
 )
 
-_A = '<a href="{href}" class="text-sm text-[#7aa2f7] hover:text-[#7dcfff]">{text}</a>'
+_A = '<a href="{href}" class="text-sm text-[#f25623] hover:text-[#f56e0f]">{text}</a>'
 
 
 def nav_prev(articles, i):

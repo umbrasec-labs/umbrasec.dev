@@ -480,7 +480,7 @@
           const a = nodes[i], b = nodes[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < LINK) {
-            ctx.strokeStyle = "rgba(122,162,247," + (1 - d / LINK) * 0.22 + ")";
+            ctx.strokeStyle = "rgba(242,86,35," + (1 - d / LINK) * 0.22 + ")";
             ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
           }
@@ -492,11 +492,11 @@
         ctx.beginPath();
         ctx.arc(n.x, n.y, near ? 2.4 : 1.5, 0, Math.PI * 2);
         ctx.fillStyle = near
-          ? "rgba(187,154,247," + (0.5 + (1 - dm / MOUSE_R) * 0.5) + ")"
-          : "rgba(122,162,247,0.45)";
+          ? "rgba(245,110,15," + (0.5 + (1 - dm / MOUSE_R) * 0.5) + ")"
+          : "rgba(242,86,35,0.45)";
         ctx.fill();
         if (near) {
-          ctx.strokeStyle = "rgba(187,154,247," + (1 - dm / MOUSE_R) * 0.5 + ")";
+          ctx.strokeStyle = "rgba(245,110,15," + (1 - dm / MOUSE_R) * 0.5 + ")";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
         }
@@ -668,8 +668,17 @@
       }, { passive: true });
     }
 
-    fetch(url("assets/kev-latest.json"), { cache: "no-cache" })
+    // Live first: /api/kev is a Pages Function (functions/api/kev.js) that
+    // fetches and trims CISA's catalog on demand and edge-caches it, so the
+    // strip refreshes itself. If that fails (function error, local preview
+    // without wrangler), fall back to the committed snapshot that
+    // tools/local-sync/sync-kev.py maintains.
+    const load = (src) => fetch(src)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("http " + r.status))))
+      // an empty payload counts as a failure too, so the snapshot gets its turn
+      .then((d) => (((d && d.vulnerabilities) || []).length ? d : Promise.reject(new Error("empty"))));
+    load(url("api/kev"))
+      .catch(() => load(url("assets/kev-latest.json")))
       .then((data) => {
         const items = (data.vulnerabilities || []).slice(0, 10);
         if (!items.length) return; // nothing to show → stay hidden, never fake it
@@ -693,7 +702,10 @@
         // is disabled, so reduced-motion users don't see every item twice
         track.innerHTML = reduceMotion ? row() : row() + row();
         const tag = $(".kev-tag", strip);
-        if (tag && data.synced) tag.title = "Latest CISA KEV additions · synced " + data.synced;
+        if (tag) {
+          tag.title = "Latest CISA KEV additions · catalog " + (data.catalogVersion || "?") +
+            (data.mode === "live" ? " · live" : " · snapshot " + (data.synced || ""));
+        }
         strip.classList.remove("hidden");
 
         // Enable drag-to-scroll once the strip is laid out (reduced-motion keeps

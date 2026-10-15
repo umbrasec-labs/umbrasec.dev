@@ -9,6 +9,10 @@
 #  - strips repo plumbing (CI config, package manifests, README) from the staging
 #    copy, so the public site is site content and nothing else.
 #  - uploads the staging copy to the "umbrasec" Pages project on branch master.
+#  - ships functions/ (Cloudflare Pages Functions, e.g. /api/kev) from that same
+#    staging copy, so a function, like a page, only goes live once committed.
+#
+# Local preview with the function running:  npx wrangler pages dev .
 #
 # Usage:
 #   tools/local-deploy/deploy.sh              # stage, trim, deploy
@@ -100,9 +104,27 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
-npx wrangler pages deploy "$STAGE" \
-  --project-name "$PROJECT" \
-  --branch "$BRANCH" \
-  --commit-dirty=true
+# wrangler compiles Pages Functions from "<cwd>/functions", NOT from the deploy
+# directory, so it must run from inside the staging copy. Run from the repo root
+# it would ship the working-tree functions/ (uncommitted edits included) with a
+# committed set of pages. The local binary is addressed by path because npx
+# resolves from cwd and would not find node_modules from inside the temp dir.
+# Git metadata is passed explicitly for the same reason: the staging copy is not
+# a repository, so wrangler cannot read it there. The equals form matters: a
+# commit subject that starts with "-" would otherwise be parsed as flags and
+# abort the deploy.
+WRANGLER="$REPO/node_modules/.bin/wrangler"
+[ -x "$WRANGLER" ] || die "wrangler not installed in node_modules; run: npm ci"
+head_sha="$(git rev-parse HEAD)"
+head_msg="$(git log -1 --format=%s)"
+(
+  cd "$STAGE"
+  "$WRANGLER" pages deploy . \
+    --project-name "$PROJECT" \
+    --branch "$BRANCH" \
+    --commit-hash="$head_sha" \
+    --commit-message="$head_msg" \
+    --commit-dirty=false
+)
 
-echo "deploy: done. Verify with: curl -sI https://umbrasec.dev/"
+echo "deploy: done. Verify with: curl -sI https://umbrasec.dev/  and  curl -sI https://umbrasec.dev/api/kev"
