@@ -30,6 +30,11 @@
 <style>
 /* ═══════════════════════════════════════════════════════════
    CHARCOAL / ORANGE PALETTE + EXTENDED VARIABLES
+   Surfaces, text and borders are the site palette. The accent variables
+   keep their historical names and carry a muted eight-hue coding set so
+   categories and severities stay distinguishable: red = orange,
+   orange/yellow = gold, green = sage, cyan/teal = teal, blue = slate,
+   purple/magenta = mauve; medium severity uses khaki (#aeab94).
 ═══════════════════════════════════════════════════════════ */
 :root {
   --bg:           #171717;
@@ -44,22 +49,22 @@
   --text-dim:     #7d837d;
   --text-muted:   #686c69;
 
-  --blue:         #f25623;
-  --blue-dim:     rgba(242,86,35,0.12);
-  --cyan:         #f56e0f;
-  --cyan-dim:     rgba(245,110,15,0.10);
+  --blue:         #8fa3b8;
+  --blue-dim:     rgba(143,163,184,0.12);
+  --cyan:         #5fb3a1;
+  --cyan-dim:     rgba(95,179,161,0.10);
   --green:        #88a57d;
   --green-dim:    rgba(136,165,125,0.12);
-  --teal:         #88a57d;
-  --teal-dim:     rgba(136,165,125,0.10);
-  --orange:       #f56e0f;
-  --orange-dim:   rgba(245,110,15,0.12);
+  --teal:         #5fb3a1;
+  --teal-dim:     rgba(95,179,161,0.10);
+  --orange:       #d9a441;
+  --orange-dim:   rgba(217,164,65,0.12);
   --red:          #f25623;
   --red-dim:      rgba(242,86,35,0.12);
-  --purple:       #aeab94;
-  --purple-dim:   rgba(174,171,148,0.12);
-  --yellow:       #f56e0f;
-  --magenta:      #aeab94;
+  --purple:       #b48ead;
+  --purple-dim:   rgba(180,142,173,0.12);
+  --yellow:       #d9a441;
+  --magenta:      #b48ead;
 
   --sidebar-w:    260px;
   --content-max:  1120px;
@@ -646,10 +651,10 @@ code.c-teal   { background: var(--teal-dim);   color: var(--teal);   }
 
 /* ordinal scale within the palette: orange > ember > khaki > sage > grey-sage */
 .sev-crit { background: rgba(242,86,35,0.2);    color: var(--red); }
-.sev-high { background: rgba(245,110,15,0.2);   color: var(--orange); }
-.sev-med  { background: rgba(174,171,148,0.2);  color: var(--purple); }
+.sev-high { background: rgba(217,164,65,0.2);   color: var(--orange); }
+.sev-med  { background: rgba(174,171,148,0.2);  color: #aeab94; }
 .sev-low  { background: rgba(136,165,125,0.2);  color: var(--green); }
-.sev-info { background: rgba(149,156,149,0.2);  color: #959c95; }
+.sev-info { background: rgba(143,163,184,0.2);  color: var(--blue); }
 
 /* ═══════════════════════════════════════════════════════════
    CALLOUT BOXES
@@ -833,7 +838,7 @@ footer strong { color: var(--text-bright); }
 .section a, .card a, .callout a {
   color: var(--cyan);
   text-decoration: none;
-  border-bottom: 1px solid rgba(245,110,15,0.35);
+  border-bottom: 1px solid rgba(95,179,161,0.35);
   transition: color 0.15s, border-color 0.15s;
 }
 .section a:hover, .card a:hover, .callout a:hover {
