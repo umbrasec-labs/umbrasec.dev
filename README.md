@@ -97,8 +97,8 @@ or run `kev-watch`, which queries CISA's feed directly.
 
 ## Who's behind it
 
-UMBRASEC is an independent defensive security practice run by **0xdev1**,
-based in Australia. Seven years in governance, risk and compliance and in detection
+UMBRASEC is an independent defensive security practice run by **0xdev1**.
+Seven years in governance, risk and compliance and in detection
 engineering, including law-enforcement environments; the public practice started in
 2026 and publishes under a handle because of that background.
 

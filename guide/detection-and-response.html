@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stage 3: Detection &amp; Response - The SMB Security Guide | UMBRASEC</title>
-    <meta name="description" content="Someone has to watch the logs: turning on visibility, EDR everywhere, the build-vs-buy MDR decision honestly, an incident response plan, and Australian reporting obligations - mapped to NIST CSF 2.0 and ISO 27001.">
+    <meta name="description" content="Someone has to watch the logs: turning on visibility, EDR everywhere, the build-vs-buy MDR decision honestly, an incident response plan, and breach reporting deadlines - mapped to NIST CSF 2.0 and ISO 27001.">
     <link rel="canonical" href="https://umbrasec.dev/guide/detection-and-response">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
@@ -29,13 +29,13 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "Stage 3: Detection & Response - The SMB Security Guide",
-      "description": "Someone has to watch the logs: turning on visibility, EDR everywhere, the build-vs-buy MDR decision honestly, an incident response plan, and Australian reporting obligations, mapped to NIST CSF 2.0 and ISO 27001:2022.",
+      "description": "Someone has to watch the logs: turning on visibility, EDR everywhere, the build-vs-buy MDR decision honestly, an incident response plan, and breach reporting deadlines, mapped to NIST CSF 2.0 and ISO 27001:2022.",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/guide/detection-and-response",
       "isPartOf": { "@type": "Course", "name": "The SMB Security Guide", "url": "https://umbrasec.dev/guide/" },
-      "keywords": "SMB security, detection, incident response, EDR, MDR, MSSP, SOC, logging, tabletop exercise, notifiable data breaches, NIST CSF 2.0, ISO 27001"
+      "keywords": "SMB security, detection, incident response, EDR, MDR, MSSP, SOC, logging, tabletop exercise, breach notification, NIST CSF 2.0, ISO 27001"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -258,10 +258,10 @@
                 report; intrusions caught in weeks are a data breach notification.</p>
             <p><strong>Roughly what it costs.</strong> Rough order of magnitude only - this market is quote-driven.
                 MDR for a small business is commonly priced per endpoint or per user per month, and small-business
-                engagements tend to land in the hundreds to low thousands of Australian dollars per month for a few
+                engagements tend to land in the hundreds to low thousands of US dollars per month for a few
                 dozen endpoints, varying with scope (endpoint-only versus endpoint plus identity plus cloud) and
-                response authority. In-house, the cost is salary: a capable security-leaning IT professional is a
-                six-figure AUD salary, which is why the hybrid shape wins on value for most. Get at least two quotes
+                response authority. In-house, the cost is salary: a capable security-leaning IT professional costs a
+                full senior salary in most markets, which is why the hybrid shape wins on value for most. Get at least two quotes
                 and make providers answer the four questions above in writing.</p>
 
             <h2>5. Write the incident response plan before you need it</h2>
@@ -273,7 +273,8 @@
             <p><strong>What to do.</strong> Keep it to a few pages. Who declares an incident and who decides (a named
                 deputy for when they're on leave). The contact card: your MDR or IT provider, your cyber insurer's
                 24/7 hotline (most policies require calling them early - some cover hinges on it), legal counsel, and
-                ASD's ReportCyber / 1300 CYBER1. Severity in plain words ("one laptop is weird" versus "finance can't
+                your national cyber reporting line (ASD's ReportCyber in Australia, CISA in the US, the NCSC in the
+                UK). Severity in plain words ("one laptop is weird" versus "finance can't
                 work" versus "data is being demanded for ransom"). First moves: isolate, don't wipe - contain machines
                 via EDR rather than reinstalling them, and preserve logs and evidence before recovery. Out-of-band
                 comms for when email itself is compromised. And the Stage 1 backups are your recovery path - the plan
@@ -289,24 +290,30 @@
 
             <h2>6. Know your reporting clock - it's measured in hours</h2>
             <p>
-                Australian law now puts deadlines on incident reporting, and they're short enough that "we'll figure it
-                out during the incident" is a plan to miss them. Knowing the triggers in advance is itself a control.
+                Most jurisdictions now put deadlines on incident reporting, and they're short enough that "we'll figure
+                it out during the incident" is a plan to miss them. Knowing which ones apply to you, in advance, is
+                itself a control.
             </p>
-            <p><strong>What to do.</strong> Put three obligations in the IR plan with their clocks. Under the Privacy
-                Act's <em>Notifiable Data Breaches</em> scheme, if personal information is involved you have 30 days to
-                assess whether serious harm is likely, and must notify the OAIC and affected people as soon as
-                practicable if it is. Under the <em>Cyber Security Act 2024</em>, businesses over the turnover threshold
-                (AU$3 million) that make a ransomware or cyber-extortion payment must report it within 72 hours - check
-                the current rules on the Home Affairs site, and note the obligation sits on payment, which your insurer
-                and lawyer must be part of deciding anyway. Sector add-ons: APRA-regulated entities have CPS 234's
-                72-hour incident notification; critical-infrastructure operators have SOCI Act timelines shorter still.
-                Reporting to ASD's ReportCyber is good practice regardless and feeds national defence.</p>
+            <p><strong>What to do.</strong> Work out which regimes apply - where you operate, where your customers
+                live, and what sector you're in - and put each one in the IR plan with its clock. Common examples:
+                under the EU and UK <em>GDPR</em>, a personal data breach goes to the regulator within 72 hours of
+                becoming aware of it, unless it's unlikely to put people at risk; EU entities in scope of
+                <em>NIS2</em> owe a 24-hour early warning for significant incidents. In the US, every state has its own
+                breach notification law with its own triggers and deadlines - the affected customers' states count,
+                not just yours. In Australia, the <em>Notifiable Data Breaches</em> scheme gives you 30 days to assess
+                a suspected breach and then requires notifying the OAIC and affected people as soon as practicable,
+                and under the <em>Cyber Security Act 2024</em> businesses over AU$3 million turnover must report a
+                ransomware or cyber-extortion payment within 72 hours. Singapore's PDPA expects notification to the
+                PDPC within 3 calendar days of assessing a breach as notifiable. Regulated sectors - financial
+                services, critical infrastructure, health - usually add shorter clocks on top. Check the current rules
+                with each regulator, and note that any payment decision involves your insurer and lawyer anyway.
+                Reporting to your national cyber agency is good practice regardless and feeds collective defence.</p>
             <p><strong>Why it matters.</strong> This is where Stage 3 meets the board-accountability thread running
                 through this guide: regulators have pursued companies over cyber failures, and missed statutory
                 deadlines are the easiest failure to prove. Pre-written notification criteria also remove the panic
                 decision - whether something is reportable gets decided by your plan, not by 3am adrenaline.</p>
-            <p><strong>Roughly what it costs.</strong> Free to know; expensive to not know. An hour with the OAIC and
-                Home Affairs guidance pages, the triggers written into the IR plan, and - if you have legal counsel - a
+            <p><strong>Roughly what it costs.</strong> Free to know; expensive to not know. An hour with your regulators'
+                guidance pages, the triggers written into the IR plan, and - if you have legal counsel - a
                 one-time review of the thresholds against your business.</p>
 
             <h2>7. Test it: run a tabletop exercise</h2>
@@ -320,8 +327,9 @@
                 pays it. Walk the plan step by step with the actual decision-makers in the room - including the owner
                 or CEO, because in a real incident they will absolutely be in the room. Inject complications ("the
                 file server backups failed last night", "a journalist is calling"). Write down every gap - the missing
-                phone number, the unclear authority, the backup nobody can locate - and fix them. ASD publishes free
-                exercise-in-a-box style materials to base scenarios on.</p>
+                phone number, the unclear authority, the backup nobody can locate - and fix them. National cyber agencies
+                publish free scenarios to start from - the UK NCSC's Exercise in a Box and CISA's Tabletop Exercise
+                Packages are good ones.</p>
             <p><strong>Why it matters.</strong> ISO 27001 expects response plans to be tested, and CSF 2.0's Improvement
                 category (ID.IM) is built on exactly this loop. Tabletops are also the cheapest leadership buy-in
                 generator in security: an executive who has sat through a simulated ransomware Monday stops treating
@@ -335,7 +343,7 @@
             <p>
                 Stage 3 is where the guide moves past the Essential Eight on purpose - the E8 column below gets thin
                 because the E8 is a prevention baseline, and this stage covers the detection and response functions it
-                explicitly leaves to other frameworks. International readers: CIS Controls v8.1 covers this stage in
+                explicitly leaves to other frameworks. Working from CIS Controls v8.1 instead? It covers this stage in
                 Controls 8 (audit logs), 13 (network monitoring), and 17 (incident response).
             </p>
             <div class="table-wrap">
@@ -390,7 +398,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security practice in Australia - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                        Attackers improve. Defenders should too. An independent defensive security practice - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
                     </p>
                 </div>
                 <div>
