@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://umbrasec.dev"><img src="assets/umbra-avatar.png" alt="UMBRASEC logo" width="96" height="96"></a>
+  <a href="https://umbrasec.dev"><img src="assets/umbra-icon-v2.png" alt="UMBRASEC logo" width="96" height="96"></a>
 </p>
 
 # UMBRASEC
