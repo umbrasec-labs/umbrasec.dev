@@ -29,14 +29,22 @@ cd "$repo_root"
 
 # Secret scan on the staged patch. Called on every exit path.
 scan_secrets() {
-    if command -v gitleaks >/dev/null 2>&1; then
-        if ! gitleaks git --pre-commit --staged --no-banner --redact; then
-            echo "pre-commit: gitleaks found a secret in the staged changes; aborting commit" >&2
-            echo "pre-commit: review above, or bypass once with: git commit --no-verify" >&2
-            exit 1
-        fi
-    else
-        echo "pre-commit: gitleaks not found; skipping secret scan" >&2
+    if ! command -v gitleaks >/dev/null 2>&1; then
+        echo "pre-commit: gitleaks not found; refusing to commit unscanned changes" >&2
+        echo "pre-commit: install gitleaks (see README), or bypass once with: git commit --no-verify" >&2
+        exit 1
+    fi
+    # Scan only the lines this commit adds, fed directly to gitleaks, so a
+    # scanner that errors out cannot pass as "nothing found": any non-zero exit,
+    # whether a leak or a failure to scan, blocks the commit.
+    local added
+    added="$(git diff --cached --no-color --no-ext-diff | grep -E '^\+' | grep -vE '^\+\+\+ ' || true)"
+    [ -n "$added" ] || return 0
+    if ! printf '%s
+' "$added" | gitleaks stdin --no-banner --redact --config .gitleaks.toml; then
+        echo "pre-commit: gitleaks found a secret or PII in the staged changes, or failed to scan; aborting commit" >&2
+        echo "pre-commit: review above, or bypass once with: git commit --no-verify" >&2
+        exit 1
     fi
 }
 
