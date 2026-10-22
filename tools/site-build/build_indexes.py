@@ -361,7 +361,7 @@ def render_footer(prefix: str) -> str:
                     <ul class="space-y-2 text-sm">
                         <li><a href="{p}tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
                         <li><a href="{p}tools/blue-team-mapper/index.html" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
-                        <li><a href="https://codeberg.org/0xdev1/umbrasec" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">Codeberg</a></li>
+                        <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
                     </ul>
                 </div>
             </div>

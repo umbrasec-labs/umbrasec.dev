@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploy umbrasec.dev to Cloudflare Pages by hand. There is no CI for this site
-# on purpose - the GitHub repo that used to drive Pages' Git integration is gone,
-# and Pages cannot connect to Codeberg, so every deploy is a deliberate local act.
+# on purpose - the repo lives at github.com/umbrasec-labs/umbrasec.dev but Pages'
+# Git integration is deliberately not enabled, so every deploy is a local act.
 #
 # What it does:
 #  - stages "git archive HEAD", so ONLY committed files can ever ship. A stray

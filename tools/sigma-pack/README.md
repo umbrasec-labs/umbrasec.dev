@@ -131,6 +131,6 @@ Sigma rules convert to your SIEM's query language with
 ## A rule misbehaved?
 
 That's exactly the feedback this project wants -
-[open an issue](https://codeberg.org/0xdev1/Umbrasec/issues). Corrections are credited.
+[open an issue](https://github.com/umbrasec-labs/umbrasec.dev/issues). Corrections are credited.
 
 License: MIT, same as the rest of the repo's code.

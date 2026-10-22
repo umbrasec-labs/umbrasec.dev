@@ -18,7 +18,7 @@ These are artefacts from the published research, not a product line.
 `kev-watch` needs Python 3.9+ and nothing else - no packages, no install step:
 
 ```bash
-git clone https://codeberg.org/0xdev1/Umbrasec
+git clone https://github.com/umbrasec-labs/umbrasec.dev
 python3 Umbrasec/tools/kev-watch/kev_watch.py --watch fortinet ivanti citrix
 ```
 
@@ -153,12 +153,12 @@ for your own project, swap these for your own details:
 - **Contact email** - `0xdev1@umbrasec.dev`, used in `index.html`, `services.html`,
   `about.html`, the palette in `assets/umbra.js`, and the hand-written footer of
   `tools/blue-team-mapper/index.html` (the site generator does not rewrite it).
-- **Codeberg** - `codeberg.org/0xdev1/Umbrasec` throughout.
+- **GitHub** - `github.com/umbrasec-labs/umbrasec.dev` throughout.
 
 ## Corrections
 
 Found a detection that misbehaves, a wrong citation, or an analysis that's off? That
-feedback is welcome - [open an issue](https://codeberg.org/0xdev1/Umbrasec/issues).
+feedback is welcome - [open an issue](https://github.com/umbrasec-labs/umbrasec.dev/issues).
 Corrections are credited.
 
 ## License
