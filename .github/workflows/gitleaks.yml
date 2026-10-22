@@ -1,0 +1,16 @@
+# Secret and PII scan on every push and pull request. This is the only gate for
+# commits made from Claude Code cloud sessions, which bypass .githooks/pre-commit.
+name: gitleaks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

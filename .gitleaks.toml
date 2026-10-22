@@ -1,0 +1,25 @@
+# UMBRASEC gitleaks config. Extends the default secret rules with a PII rule:
+# any email address that is not a business, noreply or documentation address
+# blocks the commit. Add a vendor domain here deliberately if a research piece
+# needs to quote one. Runs locally via .githooks/pre-commit and in CI via
+# .github/workflows/gitleaks.yml (cloud sessions never run local hooks).
+title = "umbrasec"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "email-address"
+description = "Email address outside the allowlisted business and documentation domains"
+regex = '''[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'''
+keywords = ["@"]
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+  '''@umbrasec\.(dev|com)$''',
+  '''@noreply\.codeberg\.org$''',
+  '''@users\.noreply\.github\.com$''',
+  '''@(example|domain)\.(com|org|net)$''',
+  '''@n-able\.com$''',
+]
