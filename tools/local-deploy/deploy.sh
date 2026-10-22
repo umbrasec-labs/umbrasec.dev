@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Deploy umbrasec.dev to Cloudflare Pages by hand. There is no CI for this site
-# on purpose - the repo lives at github.com/umbrasec-labs/umbrasec.dev but Pages'
-# Git integration is deliberately not enabled, so every deploy is a local act.
+# Deploy umbrasec.dev to Cloudflare Pages by hand. The repo lives at
+# github.com/umbrasec-labs/umbrasec.dev; when Pages' Git integration is enabled
+# it builds master with tools/local-deploy/stage.sh, and this script is the
+# by-hand equivalent of that build.
 #
 # What it does:
-#  - stages "git archive HEAD", so ONLY committed files can ever ship. A stray
-#    file in the working tree cannot leak onto the public site.
-#  - strips repo plumbing (CI config, package manifests, README) from the staging
-#    copy, so the public site is site content and nothing else.
+#  - runs stage.sh, which stages "git archive HEAD" (so ONLY committed files can
+#    ever ship) and strips repo plumbing (CI config, package manifests, README),
+#    so the public site is site content and nothing else.
 #  - uploads the staging copy to the "umbrasec" Pages project on branch master.
 #  - ships functions/ (Cloudflare Pages Functions, e.g. /api/kev) from that same
 #    staging copy, so a function, like a page, only goes live once committed.
@@ -35,22 +35,6 @@ cd "$REPO"
 
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
-
-# Repo plumbing that should never be served from umbrasec.dev. Paths are
-# relative to the staging root. Deleting from the staging copy leaves the real
-# working tree untouched.
-TRIM=(
-  ".githooks"
-  ".gitignore"
-  "README.md"
-  "package.json"
-  "package-lock.json"
-  "tools/local-deploy"
-  "tools/local-sync"
-  "tools/site-build"
-  "research/articles.json"
-  "assets/vciso-journey.mmd"
-)
 
 die() { echo "deploy: $*" >&2; exit 1; }
 
@@ -90,15 +74,7 @@ fi
 STAGE="$(mktemp -d "${TMPDIR:-/tmp}/umbrasec-deploy.XXXXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 
-git archive HEAD | tar -x -C "$STAGE"
-staged=$(find "$STAGE" -type f | wc -l)
-
-for path in "${TRIM[@]}"; do
-  rm -rf "${STAGE:?}/$path"
-done
-deployed=$(find "$STAGE" -type f | wc -l)
-
-echo "deploy: HEAD $(git rev-parse --short HEAD), $staged tracked -> $deployed deployed ($((staged - deployed)) trimmed)"
+bash "$REPO/tools/local-deploy/stage.sh" "$STAGE"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "deploy: --dry-run, not uploading. Staging tree:"

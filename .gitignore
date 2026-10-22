@@ -11,3 +11,6 @@ node_modules/
 
 # Agent/session config - local only, never committed
 .claude/
+
+# Pages Git build output (tools/local-deploy/stage.sh dist)
+dist/
