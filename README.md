@@ -99,7 +99,7 @@ or run `kev-watch`, which queries CISA's feed directly.
 
 UMBRASEC is an independent defensive security practice run by **0xdev1**.
 Seven years in governance, risk and compliance and in detection
-engineering, including law-enforcement environments; the public practice started in
+engineering, including regulated and public-sector environments; the public practice started in
 2026 and publishes under a handle because of that background.
 
 The research and tools here are free and open; there is also a
@@ -112,7 +112,7 @@ Everything published is **defensive in scope**. The research explains how attack
 *so defenders can detect and stop them* - no working exploits, malware, or offensive
 tooling ships from here.
 
-Site: **[umbrasec.dev](https://umbrasec.dev)** · Contact: **0xdev1@umbrasec.dev**
+Site: **[umbrasec.dev](https://umbrasec.dev)** - contact details are on the site.
 
 ## Roadmap (later)
 
@@ -150,7 +150,7 @@ for your own project, swap these for your own details:
 - **Scheduling link** - `services.html` has a `Book a scoping call` button pointing at
   `https://cal.com/0xdev1`. To change it, edit that one URL (marked with a
   `<!-- SCHEDULING: ... -->` comment).
-- **Contact email** - `0xdev1@umbrasec.dev`, used in `index.html`, `services.html`,
+- **Contact email** - the practice address is set in `index.html`, `services.html`,
   `about.html`, the palette in `assets/umbra.js`, and the hand-written footer of
   `tools/blue-team-mapper/index.html` (the site generator does not rewrite it).
 - **GitHub** - `github.com/umbrasec-labs/umbrasec.dev` throughout.
