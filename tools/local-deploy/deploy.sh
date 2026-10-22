@@ -27,7 +27,7 @@
 
 set -euo pipefail
 
-PROJECT="umbrasec"
+PROJECT="umbrasec-dev"
 BRANCH="master"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
