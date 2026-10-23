@@ -76,7 +76,7 @@ Writeup: [Detecting the LiteLLM Command Injection (CVE-2026-42271) in Your AI Ga
 
 | File | What it catches | Level |
 |---|---|---|
-| [`rules/linux/litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | The LiteLLM proxy process spawning a shell or recon/download utility - the command-injection landing (high fidelity) | high |
+| [`rules/linux/litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | The LiteLLM proxy process spawning a shell or recon/download utility - the command-injection landing (high fidelity). Covers versioned interpreters (`python3.9` to `python3.14`), `nc.openbsd` / `nc.traditional` / `netcat` and `busybox` | high |
 | [`rules/web/litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | POST requests to the vulnerable MCP preview endpoints (`/mcp-rest/test/connection`, `/mcp-rest/test/tools/list`) - the front-door signal | medium |
 
 Prerequisite: for the host rule, Linux process-creation telemetry (Auditd execve,
@@ -107,7 +107,7 @@ named.
 |---|---|---|
 | [`rules/linux/litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | `cook.pth` / `cook.py` landing in a `site-packages` or `dist-packages` root, or the compiled `cook.*.pyc` - 1.107.0 was installed. Files under `/tmp/.pc_sq_*` / `/tmp/.pc_e_*`, the `/tmp/.pc_once_72129118c59f5636c0bb` run-once marker or `/tmp/remote_code_loader.lock` - it ran | high |
 | [`rules/windows/litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | The same `cook.pth` / `cook.py` / `.pyc` drop on Windows. Files under `.pc_sq_*` / `.pc_e_*` in the temp folder, or the `\tmp\.pc_once_72129118c59f5636c0bb` marker on the few hosts where a `\tmp` directory exists - it ran | high |
-| [`rules/web/litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Any request to `litellm.dev` (lookalike; the real domains are `litellm.ai` / `docs.litellm.ai`) - the stealer POSTs to `www.litellm.dev/healthcheck` with a hardcoded `X-Token` header | high |
+| [`rules/web/litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Any request to `litellm.dev` (lookalike; the real domains are `litellm.ai` / `docs.litellm.ai`), including hosts logged with a port or a trailing dot - the stealer POSTs to `www.litellm.dev/healthcheck` with a hardcoded `X-Token` header | high |
 
 Prerequisite: file-creation telemetry (Sysmon Event 11 on either platform, auditd,
 or EDR) from hosts that run Python, and proxy logs that retain the destination
@@ -161,7 +161,7 @@ Writeup: [Sixteen Days From KEV to Exfiltration](https://umbrasec.dev/research/m
 
 | Rule | What it catches | Level |
 |---|---|---|
-| [`rules/web/metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | SQL metacharacters in a request to Metabase's unauthenticated `/api/session/reset_password` endpoint - the front-door signal | high |
+| [`rules/web/metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | SQL metacharacters, literal or percent-encoded, in a request to Metabase's unauthenticated `/api/session/reset_password` endpoint - the front-door signal | high |
 
 Prerequisite: web server, reverse proxy or WAF logs for the Metabase host, with
 the request line retained. A payload carried in the POST body is invisible to

@@ -6,13 +6,16 @@ description: >
     or a common recon/download utility. A web proxy has no legitimate
     reason to do this; consistent with exploitation of CVE-2026-42271,
     where the MCP stdio preview endpoints spawn an attacker-supplied
-    command on the proxy host.
+    command on the proxy host. Sensors often report the resolved binary, so
+    the rule also lists versioned interpreter names, the Debian/Ubuntu names
+    nc resolves to, and busybox, which is /bin/sh on Alpine and Wolfi images.
 references:
     - https://nvd.nist.gov/vuln/detail/CVE-2026-42271
     - https://github.com/BerriAI/litellm/security/advisories/GHSA-v4p8-mg3p-g94g
     - https://umbrasec.dev/research/detecting-litellm-command-injection.html
 author: UMBRASEC
 date: 2026-06-13
+modified: 2026-10-23
 tags:
     - attack.initial-access
     - attack.t1190
@@ -26,6 +29,12 @@ detection:
         ParentImage|endswith:
             - '/python'
             - '/python3'
+            - '/python3.9'
+            - '/python3.10'
+            - '/python3.11'
+            - '/python3.12'
+            - '/python3.13'
+            - '/python3.14'
             - '/uvicorn'
             - '/gunicorn'
     selection_child:
@@ -38,9 +47,15 @@ detection:
             - '/nc'
             - '/ncat'
             - '/nohup'
+            - '/busybox'
+            - '/nc.openbsd'
+            - '/nc.traditional'
+            - '/netcat'
     condition: selection_parent and selection_child
 falsepositives:
     - Init/entrypoint scripts that legitimately shell out at container start
     - Health-check or sidecar tooling that wraps the proxy in a shell
     - Scope to LiteLLM hosts/containers to cut generic python parent noise
+    - On busybox-based images every shell and utility runs as /bin/busybox,
+      so the entrypoint and health-check cases above appear under that name too
 level: high
