@@ -1,0 +1,4 @@
+# Cloudflare Pages redirects.
+# The Blue Team Mapper moved to its own repo and GitHub Pages site.
+/tools/blue-team-mapper/*  https://umbrasec-labs.github.io/BlueTeamMapper/  301
+/tools/blue-team-mapper    https://umbrasec-labs.github.io/BlueTeamMapper/  301
