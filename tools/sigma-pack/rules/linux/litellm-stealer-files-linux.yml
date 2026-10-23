@@ -8,10 +8,11 @@ description: >
     site-packages root (dist-packages on Debian and Ubuntu system Python)
     so that every Python start - pip included - reruns a credential
     stealer. The .pth/.py pair and the compiled .pyc show the poisoned
-    release was installed. On first run the stealer writes a run-once
-    marker under /tmp, and a detached loader daemon holds
-    /tmp/remote_code_loader.lock; either of those shows it ran. All
-    paths are suffix matches so that host sensors on a Docker or
+    release was installed. The stealer works out of /tmp/.pc_sq_* and
+    /tmp/.pc_e_* directories, writes a run-once marker under /tmp once
+    exfiltration succeeds, and a detached loader daemon holds
+    /tmp/remote_code_loader.lock; any of those shows it ran. No path is
+    anchored to the start so that host sensors on a Docker or
     Kubernetes node, which see container writes under the overlay or
     rootfs path, still fire. The release also drops sitecustomize.py (the
     loader for the never-activated second stage) beside the hook, but
@@ -21,6 +22,7 @@ description: >
 references:
     - https://docs.litellm.ai/blog/security-incident-oct-21-2026
     - https://www.wiz.io/blog/litellm-compromised-steals-credentials
+    - https://www.stepsecurity.io/blog/litellm-1-107-0-compromised-pypi-backdoored-wheels-credential-stealer
 author: UMBRASEC
 date: 2026-10-23
 tags:
@@ -48,6 +50,10 @@ detection:
         TargetFilename|endswith:
             - '/tmp/.pc_once_72129118c59f5636c0bb'
             - '/tmp/remote_code_loader.lock'
+    selection_temp_dirs:
+        TargetFilename|contains:
+            - '/tmp/.pc_sq_'
+            - '/tmp/.pc_e_'
     condition: 1 of selection_*
 falsepositives:
     - Unlikely. A legitimate package that ships a module named cook with a .pth hook would collide on the first two selections; check the package metadata before closing

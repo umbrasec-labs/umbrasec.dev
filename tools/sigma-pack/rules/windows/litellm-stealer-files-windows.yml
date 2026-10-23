@@ -7,15 +7,18 @@ description: >
     published separate Windows and Linux/macOS hashes for them - dropped
     into the site-packages root so that every Python start reruns the
     credential stealer. The .pth/.py pair and the compiled .pyc show the
-    poisoned release was installed. The /tmp run-once marker usually
+    poisoned release was installed. The stealer works out of .pc_sq_*
+    and .pc_e_* directories in the system temp folder (%TEMP% for a
+    user, C:\Windows\Temp for a service), so files written under those
+    show it ran on any Windows host. The /tmp run-once marker usually
     fails on Windows because the path rarely exists, but where a \tmp
-    directory is present (Git for Windows, MSYS2) it is written and is
-    the one artifact that shows the stealer ran, so it is matched too.
-    The sitecustomize.py second-stage loader only runs on Linux and
-    macOS.
+    directory is present (Git for Windows, MSYS2) it is written once
+    exfiltration succeeds, so it is matched too. The sitecustomize.py
+    second-stage loader only runs on Linux and macOS.
 references:
     - https://docs.litellm.ai/blog/security-incident-oct-21-2026
     - https://www.wiz.io/blog/litellm-compromised-steals-credentials
+    - https://www.stepsecurity.io/blog/litellm-1-107-0-compromised-pypi-backdoored-wheels-credential-stealer
 author: UMBRASEC
 date: 2026-10-23
 tags:
@@ -35,6 +38,10 @@ detection:
             - '\site-packages\cook.py'
     selection_pyc:
         TargetFilename|contains: '\site-packages\__pycache__\cook.'
+    selection_temp_dirs:
+        TargetFilename|contains:
+            - '\Temp\.pc_sq_'
+            - '\Temp\.pc_e_'
     selection_marker:
         TargetFilename|endswith: '\tmp\.pc_once_72129118c59f5636c0bb'
     condition: 1 of selection_*

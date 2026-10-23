@@ -105,8 +105,8 @@ named.
 
 | Rule | What it catches | Level |
 |---|---|---|
-| [`rules/linux/litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | `cook.pth` / `cook.py` landing in a `site-packages` or `dist-packages` root, or the compiled `cook.*.pyc` - 1.107.0 was installed. The `/tmp/.pc_once_72129118c59f5636c0bb` run-once marker or `/tmp/remote_code_loader.lock` - it ran | high |
-| [`rules/windows/litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | The same `cook.pth` / `cook.py` / `.pyc` drop on Windows, plus the `\tmp\.pc_once_72129118c59f5636c0bb` marker on the few hosts where a `\tmp` directory exists | high |
+| [`rules/linux/litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | `cook.pth` / `cook.py` landing in a `site-packages` or `dist-packages` root, or the compiled `cook.*.pyc` - 1.107.0 was installed. Files under `/tmp/.pc_sq_*` / `/tmp/.pc_e_*`, the `/tmp/.pc_once_72129118c59f5636c0bb` run-once marker or `/tmp/remote_code_loader.lock` - it ran | high |
+| [`rules/windows/litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | The same `cook.pth` / `cook.py` / `.pyc` drop on Windows. Files under `.pc_sq_*` / `.pc_e_*` in the temp folder, or the `\tmp\.pc_once_72129118c59f5636c0bb` marker on the few hosts where a `\tmp` directory exists - it ran | high |
 | [`rules/web/litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Any request to `litellm.dev` (lookalike; the real domains are `litellm.ai` / `docs.litellm.ai`) - the stealer POSTs to `www.litellm.dev/healthcheck` with a hardcoded `X-Token` header | high |
 
 Prerequisite: file-creation telemetry (Sysmon Event 11 on either platform, auditd,
