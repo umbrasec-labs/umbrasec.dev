@@ -275,12 +275,24 @@ description: >
     SQL metacharacters. CVE-2026-72898 is an unauthenticated SQL injection in
     /api/session/reset_password that yields administrator access to the
     Metabase instance, and through it every database connection that instance
-    holds.
+    holds. Metabase confirmed active exploitation on the day of disclosure,
+    6 August 2026, and CISA added the CVE to the KEV catalog on 11 August.
+    The vendor's own interim workaround is to block this endpoint outright, so
+    on a patched and hardened instance any match here is worth review.
+    The markers are matched both literally and percent-encoded, because many
+    access logs keep the query string encoded.
+    Limitation: this matches metacharacters in the request line only. An
+    exploit that carries its payload in the POST body is invisible to
+    webserver-category logs, so pair this with body-capturing proxy or WAF
+    logs and with the volume hunt in the writeup.
 references:
     - https://github.com/metabase/metabase/security/advisories/GHSA-vwf4-m7j8-wcjf
     - https://www.cve.org/CVERecord?id=CVE-2026-72898
+    - https://attack.mitre.org/techniques/T1190/
+    - https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html
 author: UMBRASEC
 date: 2026-09-17
+modified: 2026-10-23
 tags:
     - attack.initial-access
     - attack.t1190
@@ -299,10 +311,33 @@ detection:
             - 'sleep('
             - 'pg_sleep'
             - '--'
-            - '/*'
+            - '/\*'
             - ';'
+            - '%27'
+            - '%20or%20'
+            - '+or+'
+            - '%20and%20'
+            - '+and+'
+            - 'sleep%28'
+            - '%2d%2d'
+            - '%2f%2a'
+            - '%2f\*'
+            - '/%2a'
+            - '%3b'
     condition: endpoint and sqli_markers
+falsepositives:
+    - Vulnerability scanners probing the path after public disclosure
+    - Authorised security testing against the patched endpoint
+    - A password-reset token that legitimately contains a matched character,
+      which is why the markers are matched in the query string rather than
+      across the whole request
 level: high</code></pre>
+            <p>
+                Updated 2026-10-23: the comment marker is now escaped as <code>/\*</code>, so it matches a literal
+                <code>/*</code> and no longer fires on any slash in the query string. The markers are also matched
+                percent-encoded, because many access logs keep the query string encoded. The block above is the full
+                rule; the sigma-pack holds the canonical copy.
+            </p>
             <p>
                 Be clear about what this does not do. Webserver-category logs record the request line. An exploit that
                 carries its payload in the POST body will not match, and you should assume a competent one does. This

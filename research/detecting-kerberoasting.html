@@ -300,8 +300,10 @@ description: >
     window - consistent with bulk Kerberoasting enumeration.
 references:
     - https://attack.mitre.org/techniques/T1558/003/
+    - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
+modified: 2026-10-23
 tags:
     - attack.credential-access
     - attack.t1558.003
@@ -315,6 +317,9 @@ correlation:
     condition:
         gte: 15
         field: ServiceName
+falsepositives:
+    - Vulnerability scanners and monitoring accounts that request tickets for many services in a burst - allowlist them
+    - Busy legitimate accounts above the default threshold - run it report-only first and set gte above your noisiest legitimate account
 ---
 title: Kerberoasting 4769 base
 id: 2d0e5c88-3f66-4012-cc4b-7e9f0a1b2c33
@@ -329,6 +334,11 @@ detection:
     filter_machine:
         TargetUserName|endswith: '$'
     condition: selection and not filter_machine</code></pre>
+            <p>
+                Updated 2026-10-23: the correlation rule now carries a <code>falsepositives</code> list - vulnerability
+                scanners and monitoring accounts, and busy legitimate accounts above the default threshold - taken from
+                the tuning advice below. The sigma-pack holds the canonical copy of this rule.
+            </p>
             <p>
                 The <code>gte: 15</code> threshold and <code>5m</code> window are starting points, not gospel. Run it in
                 report-only mode for a week, look at your top talkers (vulnerability scanners and monitoring accounts will

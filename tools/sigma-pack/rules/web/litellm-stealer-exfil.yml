@@ -14,15 +14,16 @@ description: >
     second stage read a domain from a GitHub dead drop
     (letters9813/pythonclient-test) and would have fetched
     http://<domain>/codepy; the repo is gone and the drop was never
-    populated beyond test values, so it is not matched here. The URI
-    selection is a fallback for proxies that log the host with a port or
-    only log the full URL.
+    populated beyond test values, so it is not matched here. Hosts logged
+    with a port or with a trailing dot are matched. The URI selection covers
+    proxies that only log the full URL.
 references:
     - https://docs.litellm.ai/blog/security-incident-oct-21-2026
     - https://www.wiz.io/blog/litellm-compromised-steals-credentials
     - https://litellm.ai
 author: UMBRASEC
 date: 2026-10-23
+modified: 2026-10-23
 tags:
     - attack.exfiltration
     - attack.t1041
@@ -30,9 +31,21 @@ logsource:
     category: proxy
 detection:
     selection_host:
-        cs-host: 'litellm.dev'
+        cs-host:
+            - 'litellm.dev'
+            - 'litellm.dev.'
     selection_subdomain:
-        cs-host|endswith: '.litellm.dev'
+        cs-host|endswith:
+            - '.litellm.dev'
+            - '.litellm.dev.'
+    selection_hostport:
+        cs-host|startswith:
+            - 'litellm.dev:'
+            - 'litellm.dev.:'
+    selection_subdomain_port:
+        cs-host|contains:
+            - '.litellm.dev:'
+            - '.litellm.dev.:'
     selection_uri:
         c-uri|contains:
             - '//litellm.dev'
