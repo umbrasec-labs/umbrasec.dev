@@ -23,3 +23,12 @@ regexes = [
   '''@(example|domain)\.(com|org|net)$''',
   '''@n-able\.com$''',
 ]
+
+# Published malware indicators quoted verbatim so analysts can hunt for them.
+# Each entry is one exact string from a vendor or vendor-incident writeup.
+[allowlist]
+description = "Published IOCs, not secrets"
+regexTarget = "match"
+regexes = [
+  '''XWiA8gZNa7NcX2XRoAEb''',  # LiteLLM 1.107.0 stealer X-Token header (Wiz, 2026-10-21)
+]

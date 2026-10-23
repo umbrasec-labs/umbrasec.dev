@@ -1,0 +1,55 @@
+title: LiteLLM 1.107.0 Credential Stealer Dropped on Linux Host
+id: 4b113653-9759-4c81-9fe0-eb8df655df30
+status: experimental
+description: >
+    The compromised LiteLLM 1.107.0 release (PyPI wheels live 11:39-13:23
+    UTC on 21 Oct 2026, and the v1.107.0, latest, main-latest and
+    main-stable Docker/GHCR tags) drops cook.pth and cook.py into the
+    site-packages root (dist-packages on Debian and Ubuntu system Python)
+    so that every Python start - pip included - reruns a credential
+    stealer. The .pth/.py pair and the compiled .pyc show the poisoned
+    release was installed. On first run the stealer writes a run-once
+    marker under /tmp, and a detached loader daemon holds
+    /tmp/remote_code_loader.lock; either of those shows it ran. All
+    paths are suffix matches so that host sensors on a Docker or
+    Kubernetes node, which see container writes under the overlay or
+    rootfs path, still fire. The release also drops sitecustomize.py (the
+    loader for the never-activated second stage) beside the hook, but
+    distributions and deployments ship legitimate sitecustomize.py files,
+    so that name is left to a hunt: look for one created within a minute
+    of cook.pth.
+references:
+    - https://docs.litellm.ai/blog/security-incident-oct-21-2026
+    - https://www.wiz.io/blog/litellm-compromised-steals-credentials
+author: UMBRASEC
+date: 2026-10-23
+tags:
+    - attack.initial-access
+    - attack.t1195.002
+    - attack.persistence
+    - attack.t1546
+    - attack.credential-access
+    - attack.t1552
+logsource:
+    category: file_event
+    product: linux
+detection:
+    selection_hook:
+        TargetFilename|endswith:
+            - '/site-packages/cook.pth'
+            - '/site-packages/cook.py'
+            - '/dist-packages/cook.pth'
+            - '/dist-packages/cook.py'
+    selection_pyc:
+        TargetFilename|contains:
+            - '/site-packages/__pycache__/cook.'
+            - '/dist-packages/__pycache__/cook.'
+    selection_tmp:
+        TargetFilename|endswith:
+            - '/tmp/.pc_once_72129118c59f5636c0bb'
+            - '/tmp/remote_code_loader.lock'
+    condition: 1 of selection_*
+falsepositives:
+    - Unlikely. A legitimate package that ships a module named cook with a .pth hook would collide on the first two selections; check the package metadata before closing
+    - An analyst or test harness recreating the indicator files to exercise this rule
+level: high

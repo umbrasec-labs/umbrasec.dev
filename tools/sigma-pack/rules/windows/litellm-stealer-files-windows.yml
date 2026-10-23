@@ -1,0 +1,44 @@
+title: LiteLLM 1.107.0 Credential Stealer Dropped on Windows Host
+id: 1cc5748a-ebcf-4958-b479-d231563e20e1
+status: experimental
+description: >
+    Windows twin of litellm-stealer-files-linux. The compromised LiteLLM
+    1.107.0 wheels (PyPI, 21 Oct 2026) carry cook.pth and cook.py - Wiz
+    published separate Windows and Linux/macOS hashes for them - dropped
+    into the site-packages root so that every Python start reruns the
+    credential stealer. The .pth/.py pair and the compiled .pyc show the
+    poisoned release was installed. The /tmp run-once marker usually
+    fails on Windows because the path rarely exists, but where a \tmp
+    directory is present (Git for Windows, MSYS2) it is written and is
+    the one artifact that shows the stealer ran, so it is matched too.
+    The sitecustomize.py second-stage loader only runs on Linux and
+    macOS.
+references:
+    - https://docs.litellm.ai/blog/security-incident-oct-21-2026
+    - https://www.wiz.io/blog/litellm-compromised-steals-credentials
+author: UMBRASEC
+date: 2026-10-23
+tags:
+    - attack.initial-access
+    - attack.t1195.002
+    - attack.persistence
+    - attack.t1546
+    - attack.credential-access
+    - attack.t1552
+logsource:
+    category: file_event
+    product: windows
+detection:
+    selection_hook:
+        TargetFilename|endswith:
+            - '\site-packages\cook.pth'
+            - '\site-packages\cook.py'
+    selection_pyc:
+        TargetFilename|contains: '\site-packages\__pycache__\cook.'
+    selection_marker:
+        TargetFilename|endswith: '\tmp\.pc_once_72129118c59f5636c0bb'
+    condition: 1 of selection_*
+falsepositives:
+    - Unlikely. A legitimate package that ships a module named cook with a .pth hook would collide; check the package metadata before closing
+    - An analyst or test harness recreating the indicator files to exercise this rule
+level: high

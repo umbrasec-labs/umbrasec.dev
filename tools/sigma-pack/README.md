@@ -3,7 +3,9 @@
 
 The detection rules and queries published in [UMBRASEC research writeups](https://umbrasec.dev/research/),
 collected as runnable files. Honest status: **early** - this pack grows one writeup
-at a time, and right now it contains exactly what the published writeups cover.
+at a time, and right now it contains exactly what the published writeups cover,
+with one exception: the October 2026 LiteLLM release-compromise rules below shipped
+ahead of their writeup because the indicators were too time-sensitive to sit on.
 Nothing here claims to be more finished than it is.
 
 Every rule ships with the context that makes it usable: the writeup explains the
@@ -28,6 +30,9 @@ sigma check tools/sigma-pack/rules/
 | [`app-role-assignment.kql`](queries/kql/app-role-assignment.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
 | [`litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App; [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting | Initial Access / Execution | experimental |
 | [`litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
+| [`litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
+| [`litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
+| [`litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Sigma | [T1041](https://attack.mitre.org/techniques/T1041/) Exfiltration Over C2 Channel | Exfiltration | experimental |
 | [`masquerading-svchost-outside-system32.yml`](rules/windows/masquerading-svchost-outside-system32.yml) | Sigma | [T1036.005](https://attack.mitre.org/techniques/T1036/005/) Match Legitimate Resource Name or Location | Defense Evasion | experimental |
 | [`cloudflared-tunnel-service-install.yml`](rules/windows/cloudflared-tunnel-service-install.yml) | Sigma | [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service; [T1572](https://attack.mitre.org/techniques/T1572/) Protocol Tunneling | Persistence / Command &amp; Control | experimental |
 | [`metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
@@ -80,6 +85,57 @@ access logs from the reverse proxy / ingress in front of LiteLLM. Scope the host
 rule to your LiteLLM hosts to cut generic `python` parent noise. Patch status is
 the real control - these cover the window before you've patched and the assets you
 haven't found yet.
+
+### LiteLLM release compromise - 1.107.0, 21 October 2026 (MITRE ATT&CK T1195.002 / T1546 / T1552 / T1041)
+
+Writeup: pending. Until it lands, the sources are LiteLLM's
+[incident post](https://docs.litellm.ai/blog/security-incident-oct-21-2026) and
+Wiz's [analysis](https://www.wiz.io/blog/litellm-compromised-steals-credentials),
+which is where the indicators below come from.
+
+The June rules above cover a command injection *in* the LiteLLM proxy. On 21
+October 2026 the project's own release pipeline was hijacked: stolen developer
+GitHub CLI tokens, branch protection overridden, and the releaser pointed at a
+lookalike repository (`Berri-AI`, not `BerriAI`). `litellm==1.107.0` shipped a
+credential stealer to PyPI (live 11:39-13:23 UTC) and to the `v1.107.0`, `latest`,
+`main-latest` and `main-stable` Docker/GHCR tags. 1.106.2 is the last clean
+release. LiteLLM suspects the tokens were lifted from the logs of its own
+internet-exposed deployment through a recently patched vulnerability it has not
+named.
+
+| Rule | What it catches | Level |
+|---|---|---|
+| [`rules/linux/litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | `cook.pth` / `cook.py` landing in a `site-packages` or `dist-packages` root, or the compiled `cook.*.pyc` - 1.107.0 was installed. The `/tmp/.pc_once_72129118c59f5636c0bb` run-once marker or `/tmp/remote_code_loader.lock` - it ran | high |
+| [`rules/windows/litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | The same `cook.pth` / `cook.py` / `.pyc` drop on Windows, plus the `\tmp\.pc_once_72129118c59f5636c0bb` marker on the few hosts where a `\tmp` directory exists | high |
+| [`rules/web/litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Any request to `litellm.dev` (lookalike; the real domains are `litellm.ai` / `docs.litellm.ai`) - the stealer POSTs to `www.litellm.dev/healthcheck` with a hardcoded `X-Token` header | high |
+
+Prerequisite: file-creation telemetry (Sysmon Event 11 on either platform, auditd,
+or EDR) from hosts that run Python, and proxy logs that retain the destination
+host (DNS logs work for a manual hunt on `litellm.dev`, not for the rule). Every
+path is a suffix match on purpose: virtualenvs, conda, Debian's `dist-packages` and
+containers all put the files somewhere different, and a sensor on a Docker or
+Kubernetes node sees a container's `/tmp` under the overlay or rootfs path.
+
+**Hunt, not a rule - the stolen keys get used.** Treat any host that started Python
+with 1.107.0 and had outbound internet as breached. Wiz saw the stealer take the
+instance role via IMDS, the process environment, `~/.aws` and up to 500 rows of
+`LiteLLM_CredentialsTable`. LiteLLM's rotation list is wider - treat the instance or
+task IAM role, every provider key in the proxy database, master and virtual keys,
+`DATABASE_URL` and every secret in the environment of any process on the host as
+taken. Wiz watched stolen instance-role credentials get validated about 4.5 hours after
+exfiltration: `sts:GetCallerIdentity`, then `bedrock:ListFoundationModels` (the
+LLMjacking tell), in some accounts followed by `iam:ListRoles`, `ListUsers` and
+`ListAccessKeys`. Hunt CloudTrail for `GetCallerIdentity` by your instance roles
+from a source IP outside your own ranges, and for Bedrock model listing by a role
+that never touched Bedrock before. The IPs Wiz saw (`168.100.8[.]57`,
+`165.227.201[.]8`) are already stale; the sequence is the signal.
+
+Remediation order matters. Start rotating everything listed above immediately -
+it is already gone, and the stolen keys were in use within hours. In parallel,
+and without running `pip` or Python on the host first (any Python start reruns
+the payload), delete the dropped files from a shell, kill the daemon holding
+`/tmp/remote_code_loader.lock`, then rebuild images and virtualenvs from scratch
+pinned to `litellm==1.106.2`.
 
 ### N-able N-central intrusion artifacts - CVE-2026-18556 / CVE-2026-18577 (T1036.005, T1543.003, T1572)
 

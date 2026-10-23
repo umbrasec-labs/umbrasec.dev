@@ -12,9 +12,9 @@ references:
     - https://github.com/BerriAI/litellm/security/advisories/GHSA-v4p8-mg3p-g94g
     - https://umbrasec.dev/research/detecting-litellm-command-injection.html
 author: UMBRASEC
-date: 2026/06/13
+date: 2026-06-13
 tags:
-    - attack.initial_access
+    - attack.initial-access
     - attack.t1190
     - attack.execution
     - attack.t1059

@@ -15,11 +15,11 @@ references:
     - https://www.n-able.com/blog/n-central-security-update-august-6-2026
     - https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html
 author: UMBRASEC
-date: 2026/08/12
+date: 2026-08-12
 tags:
     - attack.persistence
     - attack.t1543.003
-    - attack.command_and_control
+    - attack.command-and-control
     - attack.t1572
 logsource:
     product: windows

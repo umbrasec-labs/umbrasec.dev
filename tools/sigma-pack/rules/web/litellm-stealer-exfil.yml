@@ -1,0 +1,44 @@
+title: LiteLLM 1.107.0 Stealer Exfiltration to Lookalike Domain
+id: 6f6f10d8-c46a-46dc-89ad-c5b9a800ee72
+status: experimental
+description: >
+    The credential stealer shipped in the compromised LiteLLM 1.107.0
+    release POSTs its encrypted bundle (cloud, AI-provider, browser, SSH
+    and GPG credentials, plus rows from the proxy's
+    LiteLLM_CredentialsTable) to www.litellm.dev/healthcheck. litellm.dev
+    is an attacker-controlled lookalike; the project's real domains are
+    litellm.ai and docs.litellm.ai, so any request to it from your estate
+    is worth a ticket. Where your proxy retains request headers, the
+    hardcoded "X-Token: XWiA8gZNa7NcX2XRoAEb" header and an Internet
+    Explorer 7 user agent on a POST from a Python host confirm it. The
+    second stage read a domain from a GitHub dead drop
+    (letters9813/pythonclient-test) and would have fetched
+    http://<domain>/codepy; the repo is gone and the drop was never
+    populated beyond test values, so it is not matched here. The URI
+    selection is a fallback for proxies that log the host with a port or
+    only log the full URL.
+references:
+    - https://docs.litellm.ai/blog/security-incident-oct-21-2026
+    - https://www.wiz.io/blog/litellm-compromised-steals-credentials
+    - https://litellm.ai
+author: UMBRASEC
+date: 2026-10-23
+tags:
+    - attack.exfiltration
+    - attack.t1041
+logsource:
+    category: proxy
+detection:
+    selection_host:
+        cs-host: 'litellm.dev'
+    selection_subdomain:
+        cs-host|endswith: '.litellm.dev'
+    selection_uri:
+        c-uri|contains:
+            - '//litellm.dev'
+            - '//www.litellm.dev'
+    condition: 1 of selection_*
+falsepositives:
+    - Analysts or sandboxes deliberately resolving or fetching the indicator
+    - If the domain ever changes hands, retire the rule. The signal is the domain, not behaviour
+level: high
