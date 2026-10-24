@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When the Allowlist Isn't a Boundary - UMBRASEC</title>
+    <meta name="description" content="Five auto-approve bypasses in Roo Code (CVE-2026-110202 to 110206) let a planted instruction run shell commands past the allowlist in an AI coding agent whose repository was archived in May. Why command allowlists are not a security boundary, and what a defender does about an abandoned extension.">
+    <link rel="canonical" href="https://umbrasec.dev/research/roo-code-auto-approve-bypass">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="UMBRASEC">
+    <meta property="og:url" content="https://umbrasec.dev/research/roo-code-auto-approve-bypass">
+    <meta property="og:title" content="When the Allowlist Isn't a Boundary - UMBRASEC">
+    <meta property="og:description" content="The code that checks an AI agent's command and the shell that runs it parse differently. Five Roo Code auto-approve bypasses, indirect prompt injection as the delivery, no fix because the project was archived in May, and what a defender does.">
+    <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
+    <meta property="article:published_time" content="2026-10-25">
+    <meta property="article:author" content="UMBRASEC">
+    <meta property="article:section" content="AI &amp; LLM Security">
+    <meta property="article:tag" content="Roo Code">
+    <meta property="article:tag" content="AI coding agents">
+    <meta property="article:tag" content="Indirect prompt injection">
+    <meta property="article:tag" content="CVE-2026-110205">
+    <meta property="article:tag" content="Excessive agency">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="When the Allowlist Isn't a Boundary - UMBRASEC">
+    <meta name="twitter:description" content="Five auto-approve bypasses in Roo Code let planted text run commands past the allowlist. No fix - the repo was archived in May. Why allowlists aren't a boundary and what defenders should do.">
+    <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
+    <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent",
+      "description": "Five command auto-approve bypasses in Roo Code (CVE-2026-110202 through CVE-2026-110206) let indirect prompt injection run shell commands past the allowlist. All affect versions through 3.54.0, the repository was archived in May 2026, and there is no fix. Why a command allowlist is not a security boundary, and the defender response to an unmaintained AI agent.",
+      "datePublished": "2026-10-25",
+      "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
+      "image": "https://umbrasec.dev/assets/og.png",
+      "mainEntityOfPage": "https://umbrasec.dev/research/roo-code-auto-approve-bypass",
+      "about": "AI coding agent command allowlist bypasses, indirect prompt injection, and the risk of unmaintained developer tooling",
+      "keywords": "Roo Code, CVE-2026-110202, CVE-2026-110203, CVE-2026-110204, CVE-2026-110205, CVE-2026-110206, auto-approve, command allowlist, parseCommandLine, getCommandDecision, indirect prompt injection, AI coding agent, excessive agency, confused deputy, VulnCheck, archived repository, unmaintained, MITRE ATLAS, T1059"
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon-v2.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-icon-v2.png">
+    <link rel="apple-touch-icon" href="../assets/umbra-icon-v2.png">
+    <meta name="theme-color" content="#171717">
+    <link rel="stylesheet" href="../assets/umbra.css">
+</head>
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../" data-reading>
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
+        <div class="max-w-[1280px] mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="../index.html" class="brand flex items-center gap-x-2.5">
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                    </div>
+                    <div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                    <a href="../guide/index.html" class="nav-link">Guide</a>
+                    <a href="index.html" class="nav-link">Research</a>
+                    <a href="../tools/index.html" class="nav-link">Open Source</a>
+                    <a href="../about.html" class="nav-link">About</a>
+                    <a href="../index.html#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button data-cmdk type="button"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
+                            title="Open command palette">
+                        <span data-kbd>Ctrl K</span>
+                        <span class="text-[#959c95]">Search</span>
+                    </button>
+                    <a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener"
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="GitHub">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Article -->
+    <article class="max-w-[1280px] mx-auto px-8 py-16">
+        <!-- breadcrumb -->
+        <div class="font-mono text-xs text-[#7d837d] mb-8">
+            <a href="../index.html" class="hover:text-[#f25623]">home</a> /
+            <a href="index.html" class="hover:text-[#f25623]">research</a> /
+            <span class="text-[#959c95]">roo-code-auto-approve-bypass</span>
+        </div>
+
+        <header class="prose mx-auto">
+            <div class="flex items-center gap-x-3 mb-6 text-xs font-mono">
+                <span class="text-[#88a57d]">AI &amp; LLM SECURITY</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">Oct 25, 2026</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">~11 min</span>
+            </div>
+            <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
+                When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent
+            </h1>
+            <p class="text-xl text-[#959c95] leading-snug">
+                An AI coding agent that can run shell commands keeps a list of commands it is allowed to run without
+                asking. Five disclosed flaws in Roo Code show that the list was never a wall. The code that checks the
+                command and the shell that runs it read it differently, so a command can pass the check and then do
+                something else entirely. The instruction to run it does not even have to come from you. And there is no
+                patch coming, because the project was archived in May.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">AI Coding Agents</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Indirect Prompt Injection</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Excessive Agency</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Supply Chain</span>
+            </div>
+        </header>
+
+        <div class="prose mx-auto mt-10 article-body">
+            <aside class="toc-rail" data-toc aria-label="On this page"></aside>
+
+            <div class="callout">
+                <p class="text-sm"><strong>TL;DR for defenders.</strong> On 13 October 2026 VulnCheck disclosed five
+                command auto-approve bypasses in <strong>Roo Code</strong>, an open-source AI coding agent for VS Code:
+                <strong>CVE-2026-110202 through CVE-2026-110206</strong>, all affecting versions <strong>through
+                3.54.0</strong>. Each is a way to write a shell command that passes Roo Code's auto-approve allowlist
+                but makes the shell execute something the allowlist would have denied. The trigger is
+                <strong>indirect prompt injection</strong>: text planted in a file, repo, or page the agent reads, so
+                no local access is needed. All five require <strong>auto-approval to be enabled</strong>. There is
+                <strong>no fixed release</strong>: the Roo Code repository was archived on 15 May 2026 and is
+                read-only. Do three things: find who still has Roo Code installed and move them off it;
+                <strong>turn off auto-approval for command execution</strong> everywhere it survives; and treat any AI
+                agent's command allowlist as a convenience, never a security boundary, running agents in a disposable
+                environment that holds no production credentials.</p>
+            </div>
+
+            <h2>The rail that makes auto-approve feel safe</h2>
+            <p>
+                An AI coding agent earns its keep by doing things, not just suggesting them: running the test suite,
+                installing a dependency, grepping the tree. Asking a human to approve every single command destroys
+                the point, so these tools offer auto-approval, usually gated by an allowlist. You permit a set of safe
+                commands, say <code>npm test</code> or <code>echo</code>, and the agent runs anything matching the
+                list without stopping to ask. The allowlist is the safety rail. It is the thing that makes handing a
+                model a shell feel acceptable.
+            </p>
+            <p>
+                The five Roo Code CVEs are all the same shape: the rail has a gap, and the gap is structural rather
+                than a typo. To decide whether a command is allowed, Roo Code parses it and checks the result against
+                the list. To run it, the operating system shell parses it again. Those two parsers do not agree on
+                every input. Anywhere they disagree, you can write something that the checker reads as a harmless
+                allowlisted command and the shell reads as something else. This is a parser-differential bug, the same
+                class that defeats many denylists and web filters, and it is very hard to get right because you are
+                trying to predict a shell's full grammar in your own checker.
+            </p>
+
+            <h2>The five bypasses, at a defender's depth</h2>
+            <p>
+                We are describing what each flaw abuses, not how to weaponise it. No working command appears here. The
+                point is the pattern: five different ways the checker and the shell disagree.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>CVE</th><th>What the checker and shell disagree about</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>CVE-2026-110202</strong></td><td>A redirect prefix makes <code>getCommandDecision()</code> judge the command by the redirect target rather than the command that actually runs.</td></tr>
+                        <tr><td><strong>CVE-2026-110203</strong></td><td>Escaped or single-quoted double quotes confuse the quote-masking regex in <code>parseCommandLine()</code>, hiding a command separator from the checker.</td></tr>
+                        <tr><td><strong>CVE-2026-110204</strong></td><td>A brace-style command substitution is read by the checker as a harmless parameter expansion, but executed as a substitution on bash 5.3+ or ksh93.</td></tr>
+                        <tr><td><strong>CVE-2026-110205</strong></td><td>A command substitution placed next to a glob character (<code>*</code> or <code>?</code>) is dropped by the parser but still executed by the shell. CWE-184, CVSS v4.0 7.7.</td></tr>
+                        <tr><td><strong>CVE-2026-110206</strong></td><td>A command substitution in command position passes the <code>echo</code> allowlist check, and the shell runs its output as a command.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                Five is the number that matters more than any single entry. One bypass is a bug; five, found in one
+                pass over the same function, says the approach itself cannot be trusted to hold. A checker that has to
+                re-implement a shell's grammar will keep losing to the shell, because the shell is the ground truth
+                and the checker is a guess about it.
+            </p>
+
+            <h2>The instruction doesn't have to come from you</h2>
+            <p>
+                The second half of the problem is delivery. You might assume that to abuse the allowlist, an attacker
+                has to type into your agent. They do not. The disclosed vector is <strong>indirect prompt
+                injection</strong>: the attacker plants the instruction in content the agent reads on your behalf, a
+                source file, a dependency's README, an issue, a web page the agent fetches, and the agent, doing its
+                job, turns that text into a command. The allowlist is what was supposed to make that safe, because
+                even a hijacked agent could only run allowlisted commands. These flaws remove that floor.
+            </p>
+            <p>
+                Put the two halves together and you have the agent threat surface we have written about before in
+                <a href="securing-ai-agents.html">Securing AI Agents</a>: <em>excessive agency</em> (the agent can run
+                commands at all), <em>indirect injection</em> (its instructions come from untrusted content), and the
+                <em>confused deputy</em> (the agent acts with your privileges on an attacker's behalf). Roo Code is a
+                concrete, dated instance of all three at once, with the one control meant to contain them removed.
+            </p>
+
+            <h2>No fix is coming</h2>
+            <p>
+                The detail that changes the response is maintenance status. The Roo Code repository was
+                <strong>archived by its owner on 15 May 2026</strong>, and now carries a read-only banner stating the
+                extension was shut down that day. Version 3.54.0 was its last release and remains the latest on
+                GitHub. VulnCheck's advisories list no fixed version, because there is no one left to ship one.
+            </p>
+            <p>
+                This is the quiet half of the supply-chain risk in developer tooling. A library with a known CVE at
+                least gets a red mark in your scanner. An editor extension that has simply stopped updating does not
+                announce it. It keeps working, keeps its permissions, keeps running with the developer's full access
+                to code, credentials and cloud sessions, long after the people who could fix it have moved on.
+                "Install once, forget" is the default relationship most developers have with their extensions, and it
+                is exactly the relationship an attacker counts on.
+            </p>
+
+            <h2>Why this is hard to see, and what to watch instead</h2>
+            <p>
+                You cannot write a neat request-signature rule for this the way you might for a web exploit. The
+                malicious instruction is natural-language text buried in content the agent legitimately reads, and the
+                command it produces is run by a normal developer tool on a developer's own machine. The signal is not
+                in the request; it is in the <em>behaviour</em> of the endpoint.
+            </p>
+            <ul>
+                <li><strong>The editor spawning surprising children.</strong> On an endpoint running VS Code with an
+                    agent, watch for the editor or its extension host process spawning shells, <code>curl</code> or
+                    <code>wget</code>, package managers invoked outside an install, or interpreters launched with
+                    inline code, especially command substitutions (<code>$(...)</code>, backticks) in the command
+                    line. EDR process-ancestry telemetry is where this lives.</li>
+                <li><strong>Egress from developer machines.</strong> A dev workstation suddenly resolving and
+                    connecting to an unfamiliar host, or writing to a staging directory then reaching out, is the
+                    same post-exploitation tell as any other code execution. Baseline where your developers' machines
+                    normally talk.</li>
+                <li><strong>Inventory.</strong> Query your endpoint management or EDR for the Roo Code extension
+                    across the fleet. An archived extension will not prompt anyone to remove it, so its install base
+                    only shrinks if you go looking.</li>
+                <li><strong>The generalised rule.</strong> Any agent with command auto-approval is a candidate for the
+                    same parser-differential gap. Treat the presence of auto-approve on an internet-reading agent as a
+                    finding in its own right, not just Roo Code.</li>
+            </ul>
+
+            <h3>ATT&amp;CK and ATLAS</h3>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
+                    <tbody>
+                        <tr><td><a href="https://atlas.mitre.org/techniques/AML.T0051" target="_blank" rel="noopener">AML.T0051</a> LLM Prompt Injection (MITRE ATLAS)</td><td>The planted instruction in content the agent reads</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">T1059</a> Command and Scripting Interpreter</td><td>The command the shell actually runs</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1554/" target="_blank" rel="noopener">T1554</a> Compromise Host Software Binary / trusted tooling</td><td>An unmaintained, trusted editor extension as the execution path</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>What to do</h2>
+            <ol>
+                <li><strong>Find it.</strong> Inventory the fleet for Roo Code (and any VS Code agent extension). You
+                    cannot act on what you have not counted.</li>
+                <li><strong>Move off it.</strong> It is archived and will not be fixed. Migrate anyone still using it
+                    to a maintained agent, and track that as the real remediation.</li>
+                <li><strong>Turn off command auto-approval</strong> wherever Roo Code remains in the meantime. Every
+                    one of these bypasses needs auto-approval on; without it, the human is back in the loop.</li>
+                <li><strong>Shrink and distrust the allowlist.</strong> For any agent, keep the auto-approve list
+                    minimal and treat it as a convenience, never a security control. The checker cannot out-parse the
+                    shell.</li>
+                <li><strong>Contain the blast radius.</strong> Run coding agents in a container or dev VM that holds
+                    no production credentials and has constrained egress, so a hijacked agent reaches nothing that
+                    matters. Limit the untrusted content agents ingest where you can.</li>
+                <li><strong>Make maintenance a gate.</strong> Add "is it still maintained, and when was its last
+                    release?" to the questions asked before any AI extension is approved, and re-check periodically.</li>
+            </ol>
+
+            <h2>Honest limitations</h2>
+            <p>
+                This article contains no working bypass command and does not reconstruct one; the table describes the
+                class of parser disagreement each CVE abuses, from the public advisories. CVSS figures vary by source
+                and version of the metric (several entries list 8.8 under CVSS v3.1; CVE-2026-110205 is 7.7 under
+                v4.0); read the record for your own prioritisation. The indirect-injection vector and the
+                requirement for auto-approval are as stated by VulnCheck. We have not tested the flaws. The
+                detection guidance is behavioural and will vary with your EDR's visibility into editor process trees;
+                validate it against your own telemetry before relying on it.
+            </p>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://www.vulncheck.com/advisories/roo-code-through-3.54.0-auto-approve-bypass-via-glob-token-discarding-command-substitution" target="_blank" rel="noopener">VulnCheck - Roo-Code through 3.54.0 auto-approve bypass advisories (CVE-2026-110202 to 110206)</a></li>
+                <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2026-110205" target="_blank" rel="noopener">NVD - CVE-2026-110205</a> and <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-110202" target="_blank" rel="noopener">CVE-2026-110202</a></li>
+                <li><a href="https://github.com/RooCodeInc/Roo-Code" target="_blank" rel="noopener">Roo Code repository (archived 15 May 2026, read-only)</a></li>
+                <li><a href="https://cwe.mitre.org/data/definitions/184.html" target="_blank" rel="noopener">MITRE - CWE-184 (Incomplete List of Disallowed Inputs)</a></li>
+                <li><a href="https://atlas.mitre.org/techniques/AML.T0051" target="_blank" rel="noopener">MITRE ATLAS - AML.T0051 LLM Prompt Injection</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1059 Command and Scripting Interpreter</a></li>
+                <li><a href="securing-ai-agents.html">UMBRASEC - Securing AI Agents: A Defender's Guide to Tool-Calling LLMs</a></li>
+                <li><a href="owasp-llm-top-10-for-defenders.html">UMBRASEC - Prompt Injection and the OWASP LLM Top 10</a></li>
+            </ul>
+
+            <div class="callout mt-10">
+                <p class="text-sm"><strong>Scope note.</strong> Built from VulnCheck's public advisories, the NVD
+                records, and the state of the Roo Code repository. It contains no working exploit, payload or proof of
+                concept. The focus is the defensive lesson - command allowlists are not a security boundary, and
+                unmaintained developer tooling is a standing risk - rather than any single bypass string. UMBRASEC
+                publishes defense, not offense.</p>
+            </div>
+
+        </div>
+
+        <!-- end-of-article: share + nav -->
+        <div class="prose mx-auto mt-16 pt-8 border-t border-[#525252]">
+            <!-- newsletter: The Shipwreck (beehiiv) -->
+            <div class="callout mt-0 mb-8">
+                <div class="font-mono text-xs text-[#88a57d] mb-2">THE SHIPWRECK &middot; WEEKLY BRIEFING</div>
+                <p class="text-sm text-[#959c95]">Five security stories a week: what happened, what it broke, and what to do Monday. Free, sourced, five minutes.</p>
+                <a href="https://theshipwreck.beehiiv.com/subscribe" target="_blank" rel="noopener" class="inline-flex items-center gap-x-1.5 mt-2 text-sm font-semibold text-[#f25623] hover:text-[#f56e0f]">Subscribe free <span class="arrow">&rarr;</span></a>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <a href="php2shell-hallucinated-exploits.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← php2shell and the Hallucinated Exploit</a>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=When%20the%20Allowlist%20Isn%27t%20a%20Boundary&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Froo-code-auto-approve-bypass" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Froo-code-auto-approve-bypass" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+                <a href="beyondtrust-remote-support-armory-castle.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">The Remote Support Appliance Was Open for Seven Weeks →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-[#525252] mt-8">
+        <div class="max-w-[1280px] mx-auto px-8 py-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+                <div class="col-span-2">
+                    <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                        </div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                    </a>
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
+                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
+                        <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/umbra.js" defer></script>
+</body>
+</html>
