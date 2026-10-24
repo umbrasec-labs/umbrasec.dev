@@ -17,28 +17,28 @@
       <description>CVE-2026-72898 is an unauthenticated SQL injection in Metabase's /api/session/reset_password endpoint, CVSS 10.0 under both v3.1 and v4.0, yielding administrator access to the instance and through it every database it holds. Metabase confirmed active exploitation when it published the fix on 6 August 2026; CISA added the CVE to KEV on 11 August; an Australian edtech platform's self-hosted instance was accessed on 10 August and 1,079,819 records were downloaded on 27 August. The verified timeline, what S:C in the CVSS vector told you in advance, one Sigma rule plus a volume and egress hunt, the ATT&amp;CK mapping, and why asset discovery rather than patch speed is the control that failed.</description>
     </item>
     <item>
-      <title>Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for SMBs</title>
+      <title>Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for MSP Customers</title>
       <link>https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain</link>
       <guid isPermaLink="false">https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html</guid>
       <pubDate>Wed, 12 Aug 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
-      <description>CVE-2026-18556 and CVE-2026-18577 are authentication bypasses in N-able N-central, an RMM platform used by MSPs to manage client fleets. Both were added to CISA KEV in early August 2026 after in-the-wild exploitation, and the second exists because the fix for the first was incomplete. For an SMB with outsourced IT the vulnerable server is not theirs to patch - but the Take Control sessions, the svchost.exe dropped into a user's Documents folder, and the Cloudflared persistence service all executed on their endpoints. The timeline, what the published CVSS vectors tell a defender, two Sigma rules, a hunt procedure, and the supplier questions that follow.</description>
+      <description>CVE-2026-18556 and CVE-2026-18577 are authentication bypasses in N-able N-central, an RMM platform used by MSPs to manage client fleets. Both were added to CISA KEV in early August 2026 after in-the-wild exploitation, and the second exists because the fix for the first was incomplete. For an organisation with outsourced IT the vulnerable server is not theirs to patch - but the Take Control sessions, the svchost.exe dropped into a user's Documents folder, and the Cloudflared persistence service all executed on their endpoints. The timeline, what the published CVSS vectors tell a defender, two Sigma rules, a hunt procedure, and the supplier questions that follow.</description>
     </item>
     <item>
-      <title>SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius</title>
+      <title>SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius</title>
       <link>https://umbrasec.dev/research/safepay-australian-smb</link>
       <guid isPermaLink="false">https://umbrasec.dev/research/safepay-australian-smb.html</guid>
       <pubDate>Sat, 20 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
-      <description>SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate SMBs fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link. Built entirely from public vendor reporting, naming no individual victim.</description>
+      <description>SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link. Built entirely from public vendor reporting, naming no individual victim.</description>
     </item>
     <item>
-      <title>How INC Ransom Hits Australian SMBs - and the Essential Eight That Stops It</title>
+      <title>How INC Ransom Hits Australian Organisations - and the Essential Eight That Stops It</title>
       <link>https://umbrasec.dev/research/inc-ransom-australian-smb</link>
       <guid isPermaLink="false">https://umbrasec.dev/research/inc-ransom-australian-smb.html</guid>
       <pubDate>Mon, 15 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
-      <description>INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical SMB. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the ACSC/CERT NZ advisory.</description>
+      <description>INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical smaller organisation. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the ACSC/CERT NZ advisory.</description>
     </item>
     <item>
       <title>Securing AI Agents: A Defender's Guide to Tool-Calling LLMs</title>

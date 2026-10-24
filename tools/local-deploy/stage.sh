@@ -34,7 +34,6 @@ TRIM=(
   "tools/local-sync"
   "tools/site-build"
   "research/articles.json"
-  "assets/vciso-journey.mmd"
 )
 
 die() { echo "stage: $*" >&2; exit 1; }

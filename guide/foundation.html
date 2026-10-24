@@ -3,39 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stage 1: Foundation - The SMB Security Guide | UMBRASEC</title>
-    <meta name="description" content="The cheap, high-impact security basics every small business should do first: MFA, backups, patching, removing local admin, asset inventory, and email defence - mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
+    <title>Stage 1: Foundation - The Security Guide | UMBRASEC</title>
+    <meta name="description" content="The cheap, high-impact security basics every organisation should do first: MFA, backups, patching, removing local admin, asset inventory, and email defence - mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
     <link rel="canonical" href="https://umbrasec.dev/guide/foundation">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
     <meta property="og:url" content="https://umbrasec.dev/guide/foundation">
-    <meta property="og:title" content="Stage 1: Foundation - The SMB Security Guide">
-    <meta property="og:description" content="The cheap, high-impact security basics every small business should do first - what to do, why it matters, and roughly what it costs. Mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
+    <meta property="og:title" content="Stage 1: Foundation - The Security Guide">
+    <meta property="og:description" content="The cheap, high-impact security basics every organisation should do first - what to do, why it matters, and roughly what it costs. Mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Attackers improve. Defenders should too.">
-    <meta property="article:section" content="SMB Security Guide">
+    <meta property="article:section" content="Security Guide">
     <meta property="article:tag" content="Essential Eight">
     <meta property="article:tag" content="ISO 27001">
     <meta property="article:tag" content="NIST CSF 2.0">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Stage 1: Foundation - The SMB Security Guide">
-    <meta name="twitter:description" content="The cheap, high-impact security basics every small business should do first. Mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
+    <meta name="twitter:title" content="Stage 1: Foundation - The Security Guide">
+    <meta name="twitter:description" content="The cheap, high-impact security basics every organisation should do first. Mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
     <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
     <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "TechArticle",
-      "headline": "Stage 1: Foundation - The SMB Security Guide",
-      "description": "The cheap, high-impact security basics every small business should do first, mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0.",
+      "headline": "Stage 1: Foundation - The Security Guide",
+      "description": "The cheap, high-impact security basics every organisation should do first, mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0.",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/guide/foundation",
-      "isPartOf": { "@type": "Course", "name": "The SMB Security Guide", "url": "https://umbrasec.dev/guide/" },
-      "keywords": "SMB security, Essential Eight, MFA, backups, patching, asset inventory, ISO 27001, NIST CSF 2.0"
+      "isPartOf": { "@type": "Course", "name": "The Security Guide", "url": "https://umbrasec.dev/guide/" },
+      "keywords": "security guide, Essential Eight, MFA, backups, patching, asset inventory, ISO 27001, NIST CSF 2.0"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -66,7 +66,6 @@
                     <a href="index.html" class="nav-link text-[#ccd0cf]">Guide</a>
                     <a href="../research/index.html" class="nav-link">Research</a>
                     <a href="../tools/index.html" class="nav-link">Open Source</a>
-                    <a href="../services.html" class="nav-link">Services</a>
                     <a href="../about.html" class="nav-link">About</a>
                     <a href="../index.html#contact" class="nav-link">Contact</a>
                 </div>
@@ -121,7 +120,7 @@
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 Before you spend a dollar on security tooling, there's a short list of basics that block the majority of
-                the attacks small businesses actually face. None of it is glamorous, most of it is free or already in
+                the attacks organisations actually face. None of it is glamorous, most of it is free or already in
                 software you pay for, and all of it is what an auditor, insurer, or enterprise customer expects you to
                 have done first. This is Essential Eight Maturity Level 1 - the floor, not the ceiling.
             </p>
@@ -180,7 +179,7 @@
 
             <h2>2. Turn on MFA everywhere</h2>
             <p>
-                Multi-factor authentication is the single highest-impact security control available to a small business,
+                Multi-factor authentication is the single highest-impact security control available to any organisation,
                 and on most platforms it's already included in what you pay for. A stolen or guessed password is the most
                 common way in; MFA makes that password far less useful on its own.
             </p>
@@ -191,7 +190,7 @@
             <p><strong>Why it matters.</strong> MFA is one of the eight Essential Eight mitigation strategies and a near
                 universal requirement on cyber-insurance applications - many insurers now decline cover without it. It
                 directly addresses the password-based attacks (phishing, credential stuffing, password spraying) that
-                dominate small-business incidents.</p>
+                dominate real-world incidents.</p>
             <p><strong>Roughly what it costs.</strong> Effectively free. MFA is included in Microsoft 365 (including the
                 Business plans and via free Security Defaults), Google Workspace, and essentially every major identity
                 provider; authenticator apps are free. Hardware keys, if you choose them for admins, are a modest
@@ -281,7 +280,7 @@
                 security-awareness training so staff can recognise phishing and, critically, know to verify any change of
                 bank details through a second channel.</p>
             <p><strong>Why it matters.</strong> Business email compromise and invoice fraud are among the costliest
-                incidents for small businesses - especially in sectors like construction, where large supplier payments
+                incidents for organisations - especially in sectors like construction, where large supplier payments
                 move regularly and a redirected invoice can cost six figures in one transaction. Awareness and email
                 authentication are the controls that catch it. Staff training is also an explicit ISO 27001 control.</p>
             <p><strong>Roughly what it costs.</strong> The DNS records (SPF/DKIM/DMARC) are free to publish; DMARC
@@ -292,7 +291,7 @@
             <h2>One step that comes later: application control</h2>
             <p>
                 The eighth Essential Eight strategy - <strong>application control</strong> (allowing only approved
-                software to run) - is genuinely powerful but harder to implement well, and it's where small businesses
+                software to run) - is genuinely powerful but harder to implement well, and it's where organisations
                 most often stumble. It belongs on the roadmap rather than in day one of Foundation; you'll climb into it
                 as you move up the maturity levels in later stages. Getting the seven steps above solid first is the
                 right order.
@@ -319,14 +318,6 @@
                         <tr><td>Later: application control</td><td>Application control</td><td>A.8.19 Software on systems</td><td>PR.PS Platform Security</td></tr>
                     </tbody>
                 </table>
-            </div>
-
-            <div class="callout mt-8">
-                <p class="text-sm"><strong>Doing this with help.</strong> Everything in Foundation is achievable in-house,
-                and this guide is meant to let you do exactly that. If you'd rather have it assessed, prioritised, and
-                implemented with you - and carried up through the later stages - that's the
-                <a href="../services.html#vciso" class="text-[#f25623] hover:text-[#f56e0f]">virtual CISO engagement</a>:
-                the same method, delivered alongside you.</p>
             </div>
         </div>
 
@@ -355,7 +346,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security practice - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -385,7 +376,7 @@
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

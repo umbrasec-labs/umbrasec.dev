@@ -337,7 +337,7 @@ def render_footer(prefix: str) -> str:
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security practice - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -367,7 +367,7 @@ def render_footer(prefix: str) -> str:
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="{p}services.html" class="hover:text-[#f25623]">Services</a> · <a href="{p}about.html" class="hover:text-[#f25623]">About</a> · <a href="{p}index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="{p}about.html" class="hover:text-[#f25623]">About</a> · <a href="{p}index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>
@@ -427,7 +427,7 @@ def rewrite_footer(text, footer_html, path):
 
 def site_pages():
     """Every standard site page that carries the shared chrome (nav + footer)."""
-    pages = ["index.html", "about.html", "services.html", "tools/index.html",
+    pages = ["index.html", "about.html", "tools/index.html",
              "tools/sigma-pack/index.html"]
     for sub in ("guide", "research"):
         pages += sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in (ROOT / sub).glob("*.html"))

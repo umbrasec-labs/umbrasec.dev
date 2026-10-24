@@ -2,3 +2,7 @@
 # The Blue Team Mapper moved to its own repo and GitHub Pages site.
 /tools/blue-team-mapper/*  https://umbrasec-labs.github.io/BlueTeamMapper/  301
 /tools/blue-team-mapper    https://umbrasec-labs.github.io/BlueTeamMapper/  301
+# The services page was retired; send old links to About.
+/services       /about  301
+/services.html  /about  301
+/services/      /about  301
