@@ -337,7 +337,7 @@ def render_footer(prefix: str) -> str:
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -361,6 +361,7 @@ def render_footer(prefix: str) -> str:
                     <ul class="space-y-2 text-sm">
                         <li><a href="{p}tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
                         <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
                         <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
                     </ul>
                 </div>

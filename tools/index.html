@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="UMBRASEC - Attackers improve. Defenders should too.">
+    <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Open Source - UMBRASEC">
     <meta name="twitter:description" content="Small, useful, open-source tools for defenders - built in the open, with honest status labels.">
@@ -70,8 +70,9 @@
         <div class="section-label mb-4">OPEN SOURCE</div>
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">Open source.</h1>
         <p class="max-w-[640px] text-xl text-[#959c95]">
-            Small defensive artefacts from the writeups - rules, a KEV monitor, a blue-team reference.
-            They are evidence of how the work is done, not a product line. Status labels are honest.
+            Small defensive artefacts from the writeups - rules and the ledger that tests them, a KEV monitor,
+            Claude Code skills for blue teams, and two visual references. They are evidence of how the work is done,
+            not a product line. Status labels are honest.
         </p>
     </section>
 
@@ -103,13 +104,51 @@
                 <p class="mt-4 font-mono text-xs text-[#7d837d] break-all">curl -sO https://umbrasec.dev/tools/sigma-pack/rules/windows/kerberoasting-spn-fanout.yml</p>
             </div>
 
-            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222] md:col-span-2">
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
+                <div class="flex items-center gap-x-2 mb-2">
+                    <div class="font-semibold text-xl">detections</div>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
+                </div>
+                <p class="text-sm text-[#959c95]">The Claims Ledger for sigma-pack. Each rule's claims about itself - what it catches, which harmless activity trips it, what it cannot see - are written down and re-proved in CI against the live rule files, using labelled synthetic events. Every run, pass or fail, is signed for the exact rule digests.</p>
+                <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <a href="https://github.com/umbrasec-labs/detections/actions/workflows/claims.yml" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Latest results →</a>
+                    <a href="https://github.com/umbrasec-labs/detections" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
+                </div>
+            </div>
+
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
+                <div class="flex items-center gap-x-2 mb-2">
+                    <div class="font-semibold text-xl">umbra-blue</div>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#88a57d] border border-[#525252]">WORKING</span>
+                </div>
+                <p class="text-sm text-[#959c95]">77 defensive skills for Claude Code: drop-in <span class="font-mono text-xs">SKILL.md</span> files for detection engineering, incident response, threat hunting and hardening, mapped to ATT&amp;CK and D3FEND. The ten Tier 1 skills ship the tuned sigma-pack rule itself, with tuning and false-positive notes. No exploit code or offensive tooling.</p>
+                <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <a href="https://github.com/umbrasec-labs/umbra-blue" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
+                </div>
+            </div>
+
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
                 <div class="flex items-center gap-x-2 mb-2">
                     <div class="font-semibold text-xl">Blue Team Mapper</div>
                     <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#88a57d] border border-[#525252]">LIVE</span>
                 </div>
                 <p class="text-sm text-[#959c95]">An interactive map of blue team operations: a radial lifecycle map, architecture layers with P0/P1/P2 key controls, flow graphs for eight incident-response chains with decision branches and approval gates, a filterable ATT&amp;CK technique matrix, and search across all of it. Built for analysts who need actionable depth.</p>
-                <a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="mt-6 inline-block text-sm text-[#f25623] hover:text-[#f56e0f]">Open the mapper →</a>
+                <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Open the mapper →</a>
+                    <a href="https://github.com/umbrasec-labs/BlueTeamMapper" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
+                </div>
+            </div>
+
+            <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
+                <div class="flex items-center gap-x-2 mb-2">
+                    <div class="font-semibold text-xl">Red Team Mapper</div>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#88a57d] border border-[#525252]">LIVE</span>
+                </div>
+                <p class="text-sm text-[#959c95]">The Blue Team Mapper's counterpart: a visual reference of how attacker operations are structured - a radial operation lifecycle, reference sections and end-to-end flow chains - mapped so defenders know what to hunt for and where coverage is thin. A reference, not tooling: it describes techniques and names public tools, and ships nothing to run.</p>
+                <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Open the mapper →</a>
+                    <a href="https://github.com/umbrasec-labs/RedTeamMapper" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
+                </div>
             </div>
         </div>
 
@@ -133,7 +172,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -157,6 +196,7 @@
                     <ul class="space-y-2 text-sm">
                         <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
                         <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
                         <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
                     </ul>
                 </div>
