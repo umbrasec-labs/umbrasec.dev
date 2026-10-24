@@ -48,8 +48,10 @@ detection:
             - '.litellm.dev.:'
     selection_uri:
         c-uri|contains:
-            - '//litellm.dev'
-            - '//www.litellm.dev'
+            - '//litellm.dev/'
+            - '//litellm.dev:'
+            - '//www.litellm.dev/'
+            - '//www.litellm.dev:'
     condition: 1 of selection_*
 falsepositives:
     - Analysts or sandboxes deliberately resolving or fetching the indicator

@@ -14,4 +14,5 @@ AuditLogs
 | extend propName = tostring(mods.displayName), newVal = tostring(mods.newValue)
 | where propName in ("AppRole.Value", "ServicePrincipal.DisplayName")
 | project TimeGenerated, OperationName,
-          Actor = tostring(InitiatedBy.user.userPrincipalName), propName, newVal
+          Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName),
+                          tostring(InitiatedBy.app.displayName)), propName, newVal
