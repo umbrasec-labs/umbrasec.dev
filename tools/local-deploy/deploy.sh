@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Deploy umbrasec.dev to Cloudflare Pages by hand. The repo lives at
-# github.com/umbrasec-labs/umbrasec.dev; when Pages' Git integration is enabled
-# it builds master with tools/local-deploy/stage.sh, and this script is the
-# by-hand equivalent of that build.
+# github.com/umbrasec-labs/umbrasec.dev. Pages' Git integration builds every
+# push to master with tools/local-deploy/stage.sh; this script is the by-hand
+# fallback for that build.
 #
 # What it does:
 #  - runs stage.sh, which stages "git archive HEAD" (so ONLY committed files can
 #    ever ship) and strips repo plumbing (CI config, package manifests, README),
 #    so the public site is site content and nothing else.
-#  - uploads the staging copy to the "umbrasec" Pages project on branch master.
+#  - uploads the staging copy to the "umbrasec-dev" Pages project on branch master.
 #  - ships functions/ (Cloudflare Pages Functions, e.g. /api/kev) from that same
 #    staging copy, so a function, like a page, only goes live once committed.
 #
