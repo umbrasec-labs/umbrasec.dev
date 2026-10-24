@@ -64,7 +64,7 @@ State is written next to the script by default; override with the
 
 ## Why this exists
 
-Part of [UMBRASEC](https://umbrasec.dev) - an independent defensive security practice.
+Part of [UMBRASEC](https://umbrasec.dev) - an independent defensive security project.
 The KEV catalog is the single best public signal for "patch this now": it only
 lists vulnerabilities with confirmed in-the-wild exploitation. This tool just
 makes it easy to watch the slice of it that's relevant to you.

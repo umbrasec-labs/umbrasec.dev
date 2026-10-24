@@ -17,7 +17,7 @@
 # Generated files: index.html, research/index.html, feed.xml, sitemap.xml,
 # assets/umbra.js (command palette), each research/<slug>.html prev/next nav,
 # the tools/sigma-pack/index.html coverage table, and the shared footer on
-# every site page (about, services, guide/*, tools/index, tools/sigma-pack).
+# every site page (about, guide/*, tools/index, tools/sigma-pack).
 #
 # Bypass with: git commit --no-verify
 # Enable (once per clone): git config core.hooksPath .githooks
@@ -68,7 +68,7 @@ fi
 
 # Stage only already-tracked generated files (-u never adds new untracked files,
 # so a brand-new article you have not git-added yet is left for you to add).
-git add -u -- index.html about.html services.html feed.xml sitemap.xml \
+git add -u -- index.html about.html feed.xml sitemap.xml \
     assets/umbra.js research guide tools/index.html tools/sigma-pack/index.html
 
 # Gate: regeneration fixes drift but not orphans. If --check still fails, an

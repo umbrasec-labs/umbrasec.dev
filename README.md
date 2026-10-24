@@ -47,8 +47,8 @@ Public data only; it reads one JSON feed and never touches a target system.
 | [`tools/sigma-pack/`](tools/sigma-pack/) | The detection rules from the research writeups as runnable files: Kerberoasting Sigma rules (T1558.003), OAuth consent-phishing KQL queries (T1528), LiteLLM command-injection Sigma rules (CVE-2026-42271, T1190), N-central post-exploitation rules (svchost masquerading T1036.005, cloudflared tunnel service install T1543.003 / T1572) and a Metabase reset-password SQL injection rule (CVE-2026-72898, T1190), each with tuning and false-positive notes. A per-rule [ATT&CK coverage table](tools/sigma-pack/#attck-coverage) maps every artifact to its technique. |
 | [`functions/api/kev.js`](functions/api/kev.js) | The `/api/kev` endpoint behind the homepage ticker: a Cloudflare Pages Function that serves the 10 newest CISA KEV entries live, edge-cached, with the committed snapshot as fallback. Tests: `npm test`. |
 | [Blue Team Mapper](https://github.com/umbrasec-labs/BlueTeamMapper) | An interactive map of blue team operations: lifecycle map, architecture layers, incident-response flow graphs and an ATT&CK technique matrix. Lives in its own repo; [use it live](https://umbrasec-labs.github.io/BlueTeamMapper/). The old `/tools/blue-team-mapper/` URL redirects there via `_redirects`. |
-| [`research/`](https://umbrasec.dev/research/) | Detection and threat writeups: [Kerberoasting](https://umbrasec.dev/research/detecting-kerberoasting.html), [OAuth consent phishing in M365](https://umbrasec.dev/research/detecting-oauth-consent-phishing.html), [OWASP LLM Top 10 for defenders](https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html), [Securing AI agents](https://umbrasec.dev/research/securing-ai-agents.html), [LiteLLM command injection (CVE-2026-42271)](https://umbrasec.dev/research/detecting-litellm-command-injection.html), plus threat profiles and incident analyses aimed at Australian SMBs - [INC Ransom](https://umbrasec.dev/research/inc-ransom-australian-smb.html), [SafePay](https://umbrasec.dev/research/safepay-australian-smb.html), [the N-able N-central MSP compromise](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html) and [the Mathspace / Metabase breach](https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html). Every rule in `sigma-pack` comes from one of the detection writeups. |
-| [`guide/`](https://umbrasec.dev/guide/) | A free, staged security guide for small and mid-sized businesses - from zero to a defensible baseline, with every recommendation mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0, and each step explained as what it is, why it matters, and what it costs. |
+| [`research/`](https://umbrasec.dev/research/) | Detection and threat writeups: [Kerberoasting](https://umbrasec.dev/research/detecting-kerberoasting.html), [OAuth consent phishing in M365](https://umbrasec.dev/research/detecting-oauth-consent-phishing.html), [OWASP LLM Top 10 for defenders](https://umbrasec.dev/research/owasp-llm-top-10-for-defenders.html), [Securing AI agents](https://umbrasec.dev/research/securing-ai-agents.html), [LiteLLM command injection (CVE-2026-42271)](https://umbrasec.dev/research/detecting-litellm-command-injection.html), plus Australian threat profiles and incident analyses - [INC Ransom](https://umbrasec.dev/research/inc-ransom-australian-smb.html), [SafePay](https://umbrasec.dev/research/safepay-australian-smb.html), [the N-able N-central MSP compromise](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html) and [the Mathspace / Metabase breach](https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html). Every rule in `sigma-pack` comes from one of the detection writeups. |
+| [`guide/`](https://umbrasec.dev/guide/) | A free, staged security guide for organisations without a dedicated security team - from zero to a defensible baseline, with every recommendation mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0, and each step explained as what it is, why it matters, and what it costs. |
 
 ## The KEV feed, as a feed
 
@@ -90,21 +90,17 @@ or run `kev-watch`, which queries CISA's feed directly.
 - **Open-source defensive tooling** - small, useful tools for defenders, built in the open.
 - **LLM / AI security** - defensive coverage of prompt injection, the OWASP LLM Top 10,
   and securing tool-calling AI agents as a class of risk (several writeups live).
-- **SMB security guidance** - a free, framework-grounded [guide](https://umbrasec.dev/guide/)
-  taking a small business from zero to a defensible baseline, one stage at a time (plus a
-  paid [vCISO service](https://umbrasec.dev/services) for businesses that want
-  hands-on help getting there).
+- **Security guidance** - a free, framework-grounded [guide](https://umbrasec.dev/guide/)
+  taking an organisation from zero to a defensible baseline, one stage at a time.
 
 ## Who's behind it
 
-UMBRASEC is an independent defensive security practice run by **0xdev1**.
-Seven years in governance, risk and compliance and in detection
-engineering, including regulated and public-sector environments; the public practice started in
+UMBRASEC is an independent defensive security project run by **0xdev1**.
+A background in governance, risk and compliance and in detection
+engineering, including regulated and public-sector environments; the public project started in
 2026 and publishes under a handle because of that background.
 
-The research and tools here are free and open; there is also a
-[vCISO advisory service](https://umbrasec.dev/services) for small and mid-sized
-businesses, with a Microsoft 365 / Entra ID review as the usual entry point. The
+The research and tools here are free and open. The
 approach is the straightforward one - publish genuinely useful, well-sourced work,
 and let it be checked.
 
@@ -147,11 +143,8 @@ and the hook will flag it as an orphan until you do.
 This repo is also the source of [umbrasec.dev](https://umbrasec.dev). If you fork it
 for your own project, swap these for your own details:
 
-- **Scheduling link** - `services.html` has a `Book a scoping call` button pointing at
-  `https://cal.com/0xdev1`. To change it, edit that one URL (marked with a
-  `<!-- SCHEDULING: ... -->` comment).
-- **Contact email** - the practice address is set in `index.html`, `services.html`,
-  `about.html` and the palette in `assets/umbra.js`.
+- **Contact email** - the contact address is set in `index.html`, `about.html` and the
+  palette in `assets/umbra.js`.
 - **GitHub** - `github.com/umbrasec-labs/umbrasec.dev` throughout.
 
 ## Corrections

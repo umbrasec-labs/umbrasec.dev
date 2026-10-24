@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stage 2: Identity &amp; Access - The SMB Security Guide | UMBRASEC</title>
+    <title>Stage 2: Identity &amp; Access - The Security Guide | UMBRASEC</title>
     <meta name="description" content="Identity is the perimeter now: one identity provider, stronger MFA, tiered admin access, a joiner-mover-leaver process, conditional access, and governed non-human identities - mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
     <link rel="canonical" href="https://umbrasec.dev/guide/identity-and-access">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
     <meta property="og:url" content="https://umbrasec.dev/guide/identity-and-access">
-    <meta property="og:title" content="Stage 2: Identity &amp; Access - The SMB Security Guide">
+    <meta property="og:title" content="Stage 2: Identity &amp; Access - The Security Guide">
     <meta property="og:description" content="Identity is the perimeter now. One identity provider, stronger MFA, tiered admin access, joiner-mover-leaver, conditional access, and non-human identities - what to do, why it matters, and roughly what it costs.">
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Attackers improve. Defenders should too.">
-    <meta property="article:section" content="SMB Security Guide">
+    <meta property="article:section" content="Security Guide">
     <meta property="article:tag" content="Essential Eight">
     <meta property="article:tag" content="ISO 27001">
     <meta property="article:tag" content="NIST CSF 2.0">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Stage 2: Identity &amp; Access - The SMB Security Guide">
+    <meta name="twitter:title" content="Stage 2: Identity &amp; Access - The Security Guide">
     <meta name="twitter:description" content="Identity is the perimeter now. One identity provider, stronger MFA, tiered admin access, joiner-mover-leaver, conditional access. Mapped to the Essential Eight, ISO 27001, and NIST CSF 2.0.">
     <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
     <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
@@ -28,14 +28,14 @@
     {
       "@context": "https://schema.org",
       "@type": "TechArticle",
-      "headline": "Stage 2: Identity & Access - The SMB Security Guide",
+      "headline": "Stage 2: Identity & Access - The Security Guide",
       "description": "Identity is the perimeter now: one identity provider, stronger MFA, tiered admin access, a joiner-mover-leaver process, conditional access, and governed non-human identities, mapped to the ASD Essential Eight, ISO 27001:2022, and NIST CSF 2.0.",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/guide/identity-and-access",
-      "isPartOf": { "@type": "Course", "name": "The SMB Security Guide", "url": "https://umbrasec.dev/guide/" },
-      "keywords": "SMB security, identity, access management, SSO, conditional access, joiner mover leaver, MFA, Essential Eight, ISO 27001, NIST CSF 2.0"
+      "isPartOf": { "@type": "Course", "name": "The Security Guide", "url": "https://umbrasec.dev/guide/" },
+      "keywords": "security guide, identity, access management, SSO, conditional access, joiner mover leaver, MFA, Essential Eight, ISO 27001, NIST CSF 2.0"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -66,7 +66,6 @@
                     <a href="index.html" class="nav-link text-[#ccd0cf]">Guide</a>
                     <a href="../research/index.html" class="nav-link">Research</a>
                     <a href="../tools/index.html" class="nav-link">Open Source</a>
-                    <a href="../services.html" class="nav-link">Services</a>
                     <a href="../about.html" class="nav-link">About</a>
                     <a href="../index.html#contact" class="nav-link">Contact</a>
                 </div>
@@ -162,7 +161,7 @@
 
             <h2>1. Put every login behind one identity provider</h2>
             <p>
-                Most small businesses accumulate logins the way drawers accumulate cables: every SaaS tool with its own
+                Most organisations accumulate logins the way drawers accumulate cables: every SaaS tool with its own
                 username, password, and forgotten account list. Every one of those is a separate door an attacker can
                 try, and a separate place you have to remember to close when someone leaves. The fix is single sign-on:
                 one identity provider that every other application trusts.
@@ -207,7 +206,7 @@
             <h2>3. Tier your admin access</h2>
             <p>
                 Stage 1 separated daily work from admin work. Stage 2 tightens who holds admin at all, and what an admin
-                account is allowed to touch. The pattern that hurts small businesses: one all-powerful account, used by
+                account is allowed to touch. The pattern that hurts most organisations: one all-powerful account, used by
                 whoever needs it, signed in everywhere, with the password in a shared document.
             </p>
             <p><strong>What to do.</strong> Keep the global-administrator list tiny - most platforms and Microsoft's own
@@ -230,7 +229,7 @@
             <h2>4. Write the joiner-mover-leaver process down</h2>
             <p>
                 Ghost accounts - logins that outlive the employment, the contract, or the role change - are the quiet
-                failure mode of small-business identity. Nobody decided to leave the ex-employee's account active;
+                failure mode of identity management. Nobody decided to leave the ex-employee's account active;
                 there was just no process that made someone turn it off.
             </p>
             <p><strong>What to do.</strong> Write a one-page checklist for each of the three events. <em>Joiner:</em>
@@ -288,8 +287,8 @@
                 lists where your platform supports it.</p>
             <p><strong>Why it matters.</strong> Reused passwords turn somebody else's breach into yours: credential
                 stuffing is exactly the replay of leaked passwords against your services. ISO 27001 A.5.17 requires
-                authentication information to be managed properly, and a password manager is the only realistic way a
-                small business does that at scale. It also quietly fixes the leaver problem for non-SSO accounts -
+                authentication information to be managed properly, and a password manager is the only realistic way an
+                organisation does that at scale. It also quietly fixes the leaver problem for non-SSO accounts -
                 revoke vault access, rotate the handful of shared secrets, done.</p>
             <p><strong>Roughly what it costs.</strong> Business password manager tiers cluster around US$2-8 per user
                 per month depending on vendor and plan (rough range; check current pricing). For a 20-person business
@@ -313,8 +312,8 @@
                 Microsoft 365</a>. Finally, give contractor and vendor accounts an expiry date at creation, so access
                 ends by default instead of by memory.</p>
             <p><strong>Why it matters.</strong> ISO 27001 A.5.16 explicitly covers non-human identities, and NIST CSF
-                2.0 PR.AA-01 manages credentials for "users, services, and hardware". In practice this is where mature
-                small businesses still get burned: the forgotten integration with tenant-wide permissions, the API key
+                2.0 PR.AA-01 manages credentials for "users, services, and hardware". In practice this is where otherwise mature
+                organisations still get burned: the forgotten integration with tenant-wide permissions, the API key
                 in a script that never rotates, the vendor login from a project that ended two years ago.</p>
             <p><strong>Roughly what it costs.</strong> Free - inventory, ownership, and consent settings are
                 configuration and process. The OAuth consent restriction in particular is a single admin setting in
@@ -343,14 +342,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="callout mt-8">
-                <p class="text-sm"><strong>Doing this with help.</strong> Stage 2 is where licensing tiers, conditional
-                access design, and process writing start to benefit from someone who has done it before. That's the
-                <a href="../services.html#vciso" class="text-[#f25623] hover:text-[#f56e0f]">virtual CISO engagement</a> -
-                the same method as this guide, assessed against your actual tenant and delivered alongside you. The
-                guide remains free and complete either way.</p>
-            </div>
         </div>
 
         <!-- end-of-stage: share + nav -->
@@ -378,7 +369,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security practice - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -408,7 +399,7 @@
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius - UMBRASEC</title>
-    <meta name="description" content="A defender-focused profile of SafePay, the centralized ransomware crew now claiming Australian victims: how it gets in, the living-off-the-land playbook it runs, why real-estate SMBs are a soft target, and the Essential Eight controls that break each stage.">
+    <title>SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius - UMBRASEC</title>
+    <meta name="description" content="A defender-focused profile of SafePay, the centralized ransomware crew now claiming Australian victims: how it gets in, the living-off-the-land playbook it runs, why real-estate agencies are a soft target, and the Essential Eight controls that break each stage.">
     <link rel="canonical" href="https://umbrasec.dev/research/safepay-australian-smb">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
     <meta property="og:url" content="https://umbrasec.dev/research/safepay-australian-smb">
-    <meta property="og:title" content="SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius">
-    <meta property="og:description" content="SafePay is a centralized ransomware crew now claiming Australian victims. The playbook stage by stage, why real-estate SMBs fit its target profile, and the Essential Eight controls that break each link in the chain.">
+    <meta property="og:title" content="SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius">
+    <meta property="og:description" content="SafePay is a centralized ransomware crew now claiming Australian victims. The playbook stage by stage, why real-estate agencies fit its target profile, and the Essential Eight controls that break each link in the chain.">
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -22,25 +22,25 @@
     <meta property="article:tag" content="Ransomware">
     <meta property="article:tag" content="Essential Eight">
     <meta property="article:tag" content="Real Estate">
-    <meta property="article:tag" content="Australian SMB">
+    <meta property="article:tag" content="Australian Organisations">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius">
-    <meta name="twitter:description" content="The SafePay playbook stage by stage, why real-estate SMBs fit its target profile, and the Essential Eight controls that break each link in the chain.">
+    <meta name="twitter:title" content="SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius">
+    <meta name="twitter:description" content="The SafePay playbook stage by stage, why real-estate agencies fit its target profile, and the Essential Eight controls that break each link in the chain.">
     <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
     <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "TechArticle",
-      "headline": "SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius",
-      "description": "A defender-focused profile of SafePay, the centralized ransomware crew now claiming Australian victims: how it gets in, the living-off-the-land playbook it runs, why real-estate SMBs are a soft target, and the Essential Eight controls that break each stage.",
+      "headline": "SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius",
+      "description": "A defender-focused profile of SafePay, the centralized ransomware crew now claiming Australian victims: how it gets in, the living-off-the-land playbook it runs, why real-estate agencies are a soft target, and the Essential Eight controls that break each stage.",
       "datePublished": "2026-06-20",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/research/safepay-australian-smb",
       "about": "SafePay ransomware threat profile, real-estate sector risk, and Essential Eight mitigations",
-      "keywords": "SafePay, ransomware, double extortion, Essential Eight, Australian SMB, real estate, infostealer, edge device, RDP, rclone, ACSC"
+      "keywords": "SafePay, ransomware, double extortion, Essential Eight, Australian organisations, real estate, infostealer, edge device, RDP, rclone, ACSC"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,7 +71,6 @@
                     <a href="../guide/index.html" class="nav-link">Guide</a>
                     <a href="index.html" class="nav-link">Research</a>
                     <a href="../tools/index.html" class="nav-link">Open Source</a>
-                    <a href="../services.html" class="nav-link">Services</a>
                     <a href="../about.html" class="nav-link">About</a>
                     <a href="../index.html#contact" class="nav-link">Contact</a>
                 </div>
@@ -109,7 +108,7 @@
                 <span class="text-[#959c95]">~12 min</span>
             </div>
             <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
-                SafePay Is Claiming Australian Victims - Why Real Estate SMBs Are in the Blast Radius
+                SafePay Is Claiming Australian Victims - Why Real Estate Agencies Are in the Blast Radius
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 SafePay is a centralized ransomware crew that turned, in barely a year, into one of the most active
@@ -154,7 +153,7 @@
                 anyone's stolen data.
             </p>
             <p>
-                The pattern that matters for small and mid-sized businesses is the <em>victimology</em>. SafePay is not
+                The pattern that matters for defenders is the <em>victimology</em>. SafePay is not
                 picky about industry; what its victims share is a posture, not a sector. They are organisations with a
                 real internet footprint - a remote-access portal, a VPN appliance, an edge firewall - but without a
                 24/7 security team watching it. That is the gap a financially motivated crew is built to exploit, and it
@@ -196,7 +195,7 @@
                 stopping the intrusion early matters more than being able to restore.
             </p>
 
-            <h2>Why real-estate SMBs are a soft, target-rich vertical</h2>
+            <h2>Why real-estate agencies are a soft, target-rich vertical</h2>
             <p>
                 Australian real estate is one of the largest small-business sectors in the country, and structurally it
                 looks like exactly what these crews want. Four features stack up:
@@ -221,7 +220,7 @@
             <p>
                 None of that means SafePay specifically hunts real estate - it means the sector's everyday posture
                 matches the profile these crews convert most easily. A vertical full of data-rich, cash-handling,
-                thinly-defended SMBs sitting under recognisable national brands is a soft target whether or not any one
+                thinly-defended agencies sitting under recognisable national brands is a soft target whether or not any one
                 crew set out to find it.
             </p>
 
@@ -241,7 +240,7 @@
             </p>
             <p>
                 Where those valid credentials come from deserves its own sentence, because it is the route most
-                relevant to a real-estate SMB. <strong>Infostealer malware</strong> - picked up from a cracked app, a
+                relevant to a real-estate agency. <strong>Infostealer malware</strong> - picked up from a cracked app, a
                 malicious download or a personal device that also logs into work - quietly harvests every saved browser
                 credential and session and ships them to a marketplace. A property manager's saved login to the agency
                 portal, or a contractor's reused password, becomes a clean front-door key sold in bulk. No exploit, no
@@ -348,7 +347,7 @@
 
             <h2>If you only do three things</h2>
             <p>
-                For an Australian real-estate SMB that wants the most risk reduction per dollar against this crew, in
+                For an Australian real-estate agency that wants the most risk reduction per dollar against this crew, in
                 order:
             </p>
             <ul>
@@ -380,9 +379,8 @@
                 is that the layers overlap, so a step that slips past one is caught by the next.
             </p>
             <p>
-                If you want help working out which of these controls you actually have versus which you only think you
-                have, that gap assessment is exactly what the <a href="../services.html#vciso">vCISO engagement</a> is for -
-                but the guide is free and stands on its own, so start there.
+                If you want to check which of these controls you actually have versus which you only think you
+                have, the <a href="../guide/index.html">guide</a> walks through each one.
             </p>
 
             <h2>References</h2>
@@ -415,10 +413,10 @@
                 <a href="https://theshipwreck.beehiiv.com/subscribe" target="_blank" rel="noopener" class="inline-flex items-center gap-x-1.5 mt-2 text-sm font-semibold text-[#f25623] hover:text-[#f56e0f]">Subscribe free <span class="arrow">&rarr;</span></a>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <a href="inc-ransom-australian-smb.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← How INC Ransom Hits Australian SMBs</a>
+                <a href="inc-ransom-australian-smb.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← How INC Ransom Hits Australian Organisations</a>
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
-                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=SafePay%20Is%20Claiming%20Australian%20Victims%20-%20Why%20Real%20Estate%20SMBs%20Are%20in%20the%20Blast%20Radius&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fsafepay-australian-smb" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=SafePay%20Is%20Claiming%20Australian%20Victims%20-%20Why%20Real%20Estate%20Agencies%20Are%20in%20the%20Blast%20Radius&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fsafepay-australian-smb" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
                     <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fsafepay-australian-smb" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
                 </div>
                 <a href="n-able-ncentral-msp-supply-chain.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Your MSP's RMM Is Your Attack Surface →</a>
@@ -437,7 +435,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Attackers improve. Defenders should too. An independent defensive security practice - detection engineering, threat analysis, a free SMB guide, and scoped advisory work.
+                        Attackers improve. Defenders should too. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -467,7 +465,7 @@
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="../services.html" class="hover:text-[#f25623]">Services</a> · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>

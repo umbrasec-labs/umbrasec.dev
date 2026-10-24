@@ -42,7 +42,7 @@ body {
     font-weight: 600;
 }
 
-/* Section-page hero (Research, Open source, Services) - smaller than the
+/* Section-page hero (Research, Open source) - smaller than the
    landing hero. Must be a class, not an inline style: an inline font-size
    outranks the media query below and pins these headings at desktop size
    on phones, where a single long word then overflows the viewport. */
