@@ -39,8 +39,8 @@
   </g>
 
   <!-- headline -->
-  <text x="88" y="320" font-size="84" font-weight="bold" fill="#ccd0cf" letter-spacing="-3">Attackers improve.</text>
-  <text x="88" y="416" font-size="84" font-weight="bold" fill="#f25623" letter-spacing="-3">Defenders should too.</text>
+  <text x="88" y="320" font-size="84" font-weight="bold" fill="#ccd0cf" letter-spacing="-3">Show the query.</text>
+  <text x="88" y="416" font-size="84" font-weight="bold" fill="#f25623" letter-spacing="-3">Cite the source.</text>
 
   <!-- subtitle -->
   <text x="90" y="486" font-size="27" fill="#959c95">Independent defensive security research - detection engineering,</text>
