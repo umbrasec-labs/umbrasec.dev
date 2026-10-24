@@ -27,6 +27,7 @@ correlation:
 falsepositives:
     - Vulnerability scanners and monitoring accounts that request tickets for many services in a burst - allowlist them
     - Busy legitimate accounts above the default threshold - run it report-only first and set gte above your noisiest legitimate account
+level: medium
 ---
 title: Kerberoasting 4769 base
 id: 2d0e5c88-3f66-4012-cc4b-7e9f0a1b2c33
