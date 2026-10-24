@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Remote Support Appliance Was Open for Seven Weeks - UMBRASEC</title>
+    <meta name="description" content="CVE-2026-102764 is a critical authentication bypass in BeyondTrust Remote Support, exploited as a zero-day since late August 2026 by the suspected China-nexus group ARMORY CASTLE. What they left behind on the appliance, the published hunt artifacts, and why patching does not remove persistence.">
+    <link rel="canonical" href="https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="UMBRASEC">
+    <meta property="og:url" content="https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle">
+    <meta property="og:title" content="The Remote Support Appliance Was Open for Seven Weeks - UMBRASEC">
+    <meta property="og:description" content="A remote support appliance reaches every machine you support, with the credentials to do it. CVE-2026-102764 let a China-nexus espionage group onto it for seven weeks. The hunt, the artifacts Mandiant published, and why a patch is not the end.">
+    <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
+    <meta property="article:published_time" content="2026-10-25">
+    <meta property="article:author" content="UMBRASEC">
+    <meta property="article:section" content="Threat Analysis">
+    <meta property="article:tag" content="BeyondTrust">
+    <meta property="article:tag" content="CVE-2026-102764">
+    <meta property="article:tag" content="ARMORY CASTLE">
+    <meta property="article:tag" content="Remote Support">
+    <meta property="article:tag" content="Third-Party Risk">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Remote Support Appliance Was Open for Seven Weeks - UMBRASEC">
+    <meta name="twitter:description" content="CVE-2026-102764: a BeyondTrust Remote Support auth bypass exploited since August by ARMORY CASTLE. SAWFLY, BARECLAW, root persistence, log deletion - the published hunt and why patching is not the end.">
+    <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
+    <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "The Remote Support Appliance Was Open for Seven Weeks - CVE-2026-102764 and What ARMORY CASTLE Left Behind",
+      "description": "CVE-2026-102764 is a CVSS 9.3 authentication bypass in BeyondTrust Remote Support, exploited as a zero-day since late August 2026 by ARMORY CASTLE (formerly UNC5221). The timeline, the SAWFLY web shell and BARECLAW tunneler, root persistence via SUID and sudoers, anti-forensic log deletion, the published hashes and YARA, and why patching does not remove persistence.",
+      "datePublished": "2026-10-25",
+      "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
+      "image": "https://umbrasec.dev/assets/og.png",
+      "mainEntityOfPage": "https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle",
+      "about": "BeyondTrust Remote Support authentication bypass, an espionage intrusion of a privileged-access appliance, and post-patch threat hunting",
+      "keywords": "BeyondTrust, Remote Support, Bomgar, CVE-2026-102764, authentication bypass, CWE-290, ARMORY CASTLE, UNC5221, Warp Panda, Mandiant, Google Threat Intelligence, SAWFLY, mangoapi.php, BARECLAW, SOCKS5, WebSocket, HAProxy, SUID, sudoers, bt-secrets, credential vault, log deletion, CISA KEV, MSP, third-party risk, Sigma, T1190, T1505.003, T1548.001, T1070"
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon-v2.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-icon-v2.png">
+    <link rel="apple-touch-icon" href="../assets/umbra-icon-v2.png">
+    <meta name="theme-color" content="#171717">
+    <link rel="stylesheet" href="../assets/umbra.css">
+</head>
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../" data-reading>
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
+        <div class="max-w-[1280px] mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="../index.html" class="brand flex items-center gap-x-2.5">
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                    </div>
+                    <div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                    <a href="../guide/index.html" class="nav-link">Guide</a>
+                    <a href="index.html" class="nav-link">Research</a>
+                    <a href="../tools/index.html" class="nav-link">Open Source</a>
+                    <a href="../about.html" class="nav-link">About</a>
+                    <a href="../index.html#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button data-cmdk type="button"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
+                            title="Open command palette">
+                        <span data-kbd>Ctrl K</span>
+                        <span class="text-[#959c95]">Search</span>
+                    </button>
+                    <a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener"
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="GitHub">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Article -->
+    <article class="max-w-[1280px] mx-auto px-8 py-16">
+        <!-- breadcrumb -->
+        <div class="font-mono text-xs text-[#7d837d] mb-8">
+            <a href="../index.html" class="hover:text-[#f25623]">home</a> /
+            <a href="index.html" class="hover:text-[#f25623]">research</a> /
+            <span class="text-[#959c95]">beyondtrust-remote-support-armory-castle</span>
+        </div>
+
+        <header class="prose mx-auto">
+            <div class="flex items-center gap-x-3 mb-6 text-xs font-mono">
+                <span class="text-[#88a57d]">THREAT ANALYSIS</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">Oct 25, 2026</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">~13 min</span>
+            </div>
+            <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
+                The Remote Support Appliance Was Open for Seven Weeks - CVE-2026-102764 and What ARMORY CASTLE Left Behind
+            </h1>
+            <p class="text-xl text-[#959c95] leading-snug">
+                A remote support appliance exists to reach every machine you support, holding the credentials to do
+                it. That is exactly what makes it worth seven quiet weeks of an espionage group's time. CVE-2026-102764
+                is a critical authentication bypass in BeyondTrust Remote Support, exploited as a zero-day since late
+                August 2026 before anyone knew it existed. The vulnerability is one sentence. What the operators built
+                on the box afterwards is the part a defender has to read.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Privileged Access</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Third-Party Risk</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Threat Hunting</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Espionage</span>
+            </div>
+        </header>
+
+        <div class="prose mx-auto mt-10 article-body">
+            <aside class="toc-rail" data-toc aria-label="On this page"></aside>
+
+            <div class="callout">
+                <p class="text-sm"><strong>TL;DR for defenders.</strong> <strong>CVE-2026-102764</strong> is an
+                authentication bypass by spoofing (CWE-290) in <strong>BeyondTrust Remote Support</strong>, CVSS v4.0
+                <strong>9.3</strong>, letting an unauthenticated remote attacker perform file operations on the
+                appliance. It was exploited as a zero-day from <strong>late August 2026</strong> by
+                <strong>ARMORY CASTLE</strong> (formerly UNC5221), a suspected PRC-nexus espionage actor. Affects all
+                supported versions <strong>up to 26.2.3</strong>; patch <strong>BT26-05-RS</strong> covers 24.3.1 to
+                26.2.3, older builds must upgrade first, SaaS tenants were patched 9 October, and
+                <strong>Privileged Remote Access shares the code</strong> and should be patched too. CISA added it to
+                KEV on 16 October. The hard part: <strong>patching does not remove persistence</strong>. If an
+                appliance was reachable on a vulnerable version during the window, treat it as potentially
+                compromised, preserve evidence before you change anything, hunt the specific artifacts below, rotate
+                credentials only after patching or rebuilding, and forward logs off the box.</p>
+            </div>
+
+            <h2>The appliance is the point</h2>
+            <p>
+                BeyondTrust Remote Support (the product formerly called Bomgar) is the console a help desk uses to
+                take control of the machines it supports. To do that job it sits in a privileged position: reachable,
+                trusted, and holding or brokering the credentials needed to reach endpoints across the estate. Every
+                property that makes it useful to your support team makes it valuable to an intruder. Compromise it and
+                you are not at the edge of the network, you are at the hub of the one system built to touch everything
+                else.
+            </p>
+            <p>
+                This is the same lesson as our writeup on the
+                <a href="n-able-ncentral-msp-supply-chain.html">N-central RMM compromise</a>, and it is not the first
+                time this specific product has been the way in: the US Treasury breach of December 2024 ran through a
+                stolen key for BeyondTrust's Remote Support cloud service. A tool that reaches everything is a tool
+                worth breaking into, and it will be broken into again.
+            </p>
+
+            <h2>What happened, in dates</h2>
+            <p>
+                Every date here is from BeyondTrust's advisory, the Google Threat Intelligence Group and Mandiant
+                analysis, Rapid7's writeup, or the CISA KEV catalog.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Date (2026)</th><th>Event</th></tr></thead>
+                    <tbody>
+                        <tr><td>29 Aug</td><td>Date BeyondTrust assigns to both known compromises, one hosted and one self-hosted - exploitation as a zero-day begins</td></tr>
+                        <tr><td>28 Sep</td><td>BeyondTrust discovers and contains the hosted compromise</td></tr>
+                        <tr><td>30 Sep</td><td>Mandiant shares corroborating findings from the self-hosted investigation</td></tr>
+                        <tr><td>9 Oct</td><td>All SaaS (BeyondTrust-hosted) tenants patched</td></tr>
+                        <tr><td><strong>15 Oct</strong></td><td>BeyondTrust discloses CVE-2026-102764; Google/Mandiant publish the ARMORY CASTLE analysis</td></tr>
+                        <tr><td>16 Oct</td><td>CISA adds the CVE to the KEV catalog</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                Roughly seven weeks from first exploitation to public disclosure. For a self-hosted customer, that is
+                seven weeks in which a privileged appliance could have been compromised with no advisory to react to.
+                The clock that matters now is not patch speed alone; it is whether you can still see what happened in
+                that window.
+            </p>
+
+            <h2>What the flaw is</h2>
+            <div class="table-wrap">
+                <table class="data">
+                    <tbody>
+                        <tr><td>CVE</td><td><strong>CVE-2026-102764</strong></td></tr>
+                        <tr><td>Weakness</td><td>CWE-290, authentication bypass by spoofing - internal Remote Support components do not properly validate the origin of incoming messages</td></tr>
+                        <tr><td>CVSS v4.0</td><td>9.3, critical</td></tr>
+                        <tr><td>Effect</td><td>An unauthenticated remote attacker can perform file operations on the appliance (upload and modification), without user interaction</td></tr>
+                        <tr><td>Affected</td><td>All supported Remote Support versions up to and including 26.2.3</td></tr>
+                        <tr><td>Fixed by</td><td>Patch BT26-05-RS (for 24.3.1 to 26.2.3); older builds must upgrade to a patch-supported version first</td></tr>
+                        <tr><td>Also</td><td>Privileged Remote Access shares the affected code; BeyondTrust advises patching self-hosted PRA even though no exploitation path there has been found</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                BeyondTrust is deliberately withholding lower-level exploitation detail, and so are we. The file-write
+                primitive is the foothold; everything that matters to a defender is what the operators did with it,
+                which is unusually well documented because Mandiant published it.
+            </p>
+
+            <h2>What ARMORY CASTLE left behind</h2>
+            <p>
+                Mandiant attributes the activity to ARMORY CASTLE, a suspected PRC-nexus espionage actor formerly
+                tracked as UNC5221 and tracked by CrowdStrike as Warp Panda. The post-exploitation tradecraft is the
+                detection surface, so it is worth walking through what the report describes.
+            </p>
+
+            <h3>SAWFLY: the web shell that answers 404</h3>
+            <p>
+                The first sign was a POST request to a crafted <code>.php</code> path. About eleven minutes later a
+                PHP web shell, <strong>SAWFLY</strong>, was written into the appliance's Laravel public directory as
+                <code>mangoapi.php</code>. Its design is built to stay invisible to scanning: if the request does not
+                carry a specific parameter, the script immediately returns <code>http_response_code(404)</code> and
+                exits, so a crawler or vulnerability scanner sees nothing but a missing page. Its traffic is wrapped
+                in a custom Base32 transport with RC4, so the body is opaque.
+            </p>
+            <p>
+                The defensive implication is specific: you cannot find this by scanning for a live page, because it
+                denies it exists. The visible signal is <em>POST traffic to an unexpected <code>.php</code> path that
+                returns 404</em>, which is why logging request bodies and response sizes on the appliance's web tier
+                matters more than status codes alone.
+            </p>
+
+            <h3>Root, and a foothold that survives a rebuild of config</h3>
+            <p>
+                From the web shell the operators escalated and dug in. The report describes privilege escalation by
+                copying <code>/bin/sh</code> to a service-looking path, <code>/usr/bin/dbus-authd</code>, setting it
+                root-owned and SUID. They attempted to dump the credential vault with <code>/ns/sbin/bt-secrets</code>,
+                iterating through several CLI syntaxes, then deleted its log at
+                <code>/home/bomgar/log/bt-secrets.log</code>. Most durably, they planted a persistence script at
+                <code>/home/bomgar/sbin/post_boot.d/zz-root-persist</code> that appends a <code>NOPASSWD</code> sudo
+                entry to <code>/ns/config/sudoers.template</code> and runs <code>bt-sysconfig</code> to rebuild
+                <code>/etc/sudoers</code>. As Mandiant puts it, this "ensures the threat actor's privilege escalation
+                survives system reboots and configuration resets."
+            </p>
+            <p>
+                That last detail is why a patch is not the end. The persistence is seeded into the appliance's own
+                configuration-rebuild machinery, so it is designed to come back after exactly the kind of reset an
+                operator might perform while remediating.
+            </p>
+
+            <h3>BARECLAW: a tunnel hidden behind the appliance's own proxy</h3>
+            <p>
+                For command and control the operators deployed <strong>BARECLAW</strong>, a SOCKS5 proxy written in C
+                carried over WebSocket, as <code>ingredi_ws</code> in <code>/tmp</code>, bound to a local port. Rather
+                than open a port to the internet, they edited the appliance's own <code>/ns/config/haproxy.conf</code>
+                to add an ACL matching a chosen WebSocket path and a backend pointing at the local listener. The
+                tunnel's listener is bound to localhost only, so it is invisible to an external port scan and can be
+                reached solely through HAProxy's redirection, blending into normal HTTPS. A quiet flag suppresses the
+                tunneler's own logging.
+            </p>
+            <p>
+                So the detection cannot rely on host logs or a visible open port. It relies on <em>integrity of the
+                HAProxy configuration</em> (an unexpected ACL and backend), an unusual WebSocket path in proxy or
+                network telemetry, and flow data.
+            </p>
+
+            <h3>Erasing the trail, and the tell it leaves</h3>
+            <p>
+                The actor routinely deleted appliance logs, including <code>/ns/log/auth.log</code>,
+                <code>/ns/log/ssl.log</code>, <code>/ns/log/http-access.log</code>, <code>/ns/log/php-fpm.log</code>,
+                <code>/var/log/messages</code> and <code>/tmp/sshauth.*</code>. Deletion is itself detectable if you
+                are looking for the shape of it: Mandiant notes that "an interruption bounded by a single session is a
+                strong indicator of log tampering." A clean gap that starts and ends with one session is not a logging
+                glitch. The durable answer is to forward logs off the appliance, because an on-box log an attacker can
+                reach is an on-box log an attacker can erase.
+            </p>
+            <p>
+                Lateral movement used a compromised Administrator account to log into <code>/login</code> and raise
+                Jump Item and Team permissions from <code>No Access</code> to <code>Administrator</code>, recorded in
+                syslog as a <code>user_changed</code> event.
+            </p>
+
+            <h2>The hunt</h2>
+            <p>
+                Mandiant published file hashes and YARA rules, which makes this one of the more actionable intrusions
+                of the month. Use the published indicators, then hunt the behaviour, because indicators age and
+                behaviour does not.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Look for</th><th>Where</th></tr></thead>
+                    <tbody>
+                        <tr><td>SAWFLY and BARECLAW by hash</td><td>Published SHA-256 for <code>mangoapi.php</code> and <code>ingredi_ws</code>; Mandiant's YARA <code>G_Hunting_Webshell_SAWFLY_1</code> and <code>G_Hunting_Backdoor_BARECLAW_1</code></td></tr>
+                        <tr><td>POST requests to unexpected <code>.php</code> paths that return 404</td><td>Appliance web / php-fpm access logs (log bodies and response sizes, not just status)</td></tr>
+                        <tr><td>Unexpected SUID binaries with service-like names</td><td><code>/usr/bin</code> (e.g. a shell copied to <code>dbus-authd</code>); compare against the package database</td></tr>
+                        <tr><td>Persistence scripts and sudoers tampering</td><td><code>/home/bomgar/sbin/post_boot.d/</code> and any <code>NOPASSWD</code> entry in <code>/ns/config/sudoers.template</code></td></tr>
+                        <tr><td>Repeated credential-vault access</td><td>Multiple <code>bt-secrets</code> invocations; a missing or truncated <code>bt-secrets.log</code></td></tr>
+                        <tr><td>Hidden tunnel</td><td>Unexpected ACL / backend in <code>/ns/config/haproxy.conf</code>; an unusual WebSocket path in proxy and flow logs</td></tr>
+                        <tr><td>Log-tampering shape</td><td>A log gap bounded by a single session, across auth, ssl, http-access, php-fpm and messages</td></tr>
+                        <tr><td>Privilege changes</td><td><code>user_changed</code> syslog events raising Jump Item or Team roles to Administrator; <code>/login</code> sessions from residential broadband or commercial VPN space</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                A caveat BeyondTrust states and we repeat: the absence of these indicators does not prove an appliance
+                is clean. Self-hosted customers cannot fully audit the appliance host filesystem themselves and should
+                coordinate host-level inspection with BeyondTrust Support.
+            </p>
+
+            <h3>ATT&amp;CK</h3>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
+                    <tbody>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener">T1190</a> Exploit Public-Facing Application</td><td>The authentication bypass against the appliance</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1505/003/" target="_blank" rel="noopener">T1505.003</a> Web Shell</td><td>SAWFLY (<code>mangoapi.php</code>)</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1548/001/" target="_blank" rel="noopener">T1548.001</a> Abuse Elevation Control: SUID</td><td>Shell copied to a root-owned SUID binary</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1572/" target="_blank" rel="noopener">T1572</a> Protocol Tunneling</td><td>BARECLAW SOCKS5 over WebSocket via HAProxy</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1070/" target="_blank" rel="noopener">T1070</a> Indicator Removal</td><td>Deletion of appliance logs</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>What to do this week</h2>
+            <ol>
+                <li><strong>Patch.</strong> Apply BT26-05-RS to self-hosted Remote Support (24.3.1 to 26.2.3; older must upgrade first). SaaS tenants were patched 9 October. Patch self-hosted <strong>Privileged Remote Access</strong> too, since it shares the code; confirm the correct patch with BeyondTrust Support.</li>
+                <li><strong>Assume compromise for anything that was exposed.</strong> If an appliance was internet-reachable on a vulnerable version during the window (from late August), treat it as potentially compromised until reviewed. Patching does not remove persistence.</li>
+                <li><strong>Preserve evidence before you change anything.</strong> Snapshot memory and export the disk before rebooting or reconfiguring, because reboots and config resets are exactly what the persistence is built to survive.</li>
+                <li><strong>Hunt the artifacts above</strong>, then rotate credentials the appliance held or brokered - but only <em>after</em> patching or rebuilding, so you are not handing fresh secrets to an attacker who still has access.</li>
+                <li><strong>Forward logs off-box now</strong> with retention covering the full window. It cannot recover already-deleted evidence, but it ends the attacker's ability to erase what happens next.</li>
+                <li><strong>If your MSP runs it for you</strong>, ask them which build they are on, when they patched, whether they treated exposed appliances as compromised, and what they hunted for. The appliance is theirs; the access it brokers is to your fleet.</li>
+            </ol>
+
+            <h2>Honest limitations</h2>
+            <p>
+                This article contains no exploit code and no proof of concept; BeyondTrust is withholding low-level
+                detail and so are we. The vulnerability classification and scoring are as reported by Rapid7 citing
+                the CVE record and by BeyondTrust's advisory; one secondary source lists a different CVSS figure, so
+                confirm against the record for your prioritisation. The intrusion tradecraft, file paths, hashes and
+                YARA rule names are from the Google Threat Intelligence Group and Mandiant analysis; we have not
+                independently reproduced them, and indicators like filenames and paths are operator choices that will
+                differ in other intrusions. Hunt the behaviour, not only the strings. A public proof-of-concept
+                repository exists for this CVE; we did not use it and do not link it.
+            </p>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-beyondtrust" target="_blank" rel="noopener">Google Threat Intelligence Group / Mandiant - ARMORY CASTLE exploits BeyondTrust (CVE-2026-102764)</a></li>
+                <li><a href="https://www.beyondtrust.com/trust-center/security-advisories/bt26-05" target="_blank" rel="noopener">BeyondTrust - security advisory BT26-05</a></li>
+                <li><a href="https://www.rapid7.com/blog/post/etr-cve-2026-102764-critical-beyondtrust-remote-support-authentication-bypass-exploited-in-the-wild" target="_blank" rel="noopener">Rapid7 - CVE-2026-102764 analysis and hunt guidance</a></li>
+                <li><a href="https://www.cve.org/CVERecord?id=CVE-2026-102764" target="_blank" rel="noopener">CVE - CVE-2026-102764</a></li>
+                <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2026-102764" target="_blank" rel="noopener">NVD - CVE-2026-102764</a></li>
+                <li><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA - Known Exploited Vulnerabilities catalog</a></li>
+                <li><a href="https://cwe.mitre.org/data/definitions/290.html" target="_blank" rel="noopener">MITRE - CWE-290 (Authentication Bypass by Spoofing)</a></li>
+                <li><a href="https://www.techtarget.com/searchsecurity/news/366617509/Treasury-Department-breached-through-BeyondTrust-service" target="_blank" rel="noopener">TechTarget - the 2024 Treasury breach via BeyondTrust Remote Support</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1505/003/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1505.003 Web Shell</a></li>
+                <li><a href="n-able-ncentral-msp-supply-chain.html">UMBRASEC - Your MSP's RMM Is Your Attack Surface (N-central)</a></li>
+            </ul>
+
+            <div class="callout mt-10">
+                <p class="text-sm"><strong>Scope note.</strong> Built from BeyondTrust's advisory, the Google Threat
+                Intelligence Group and Mandiant analysis, Rapid7's writeup, the CVE and NVD records and the CISA KEV
+                catalog. It contains no exploit code and does not reconstruct the vulnerability; the value here is the
+                timeline, the published hunt artifacts and the post-patch response. Indicators are reproduced to help
+                defenders hunt, not to profile any victim. UMBRASEC publishes defense, not offense.</p>
+            </div>
+
+        </div>
+
+        <!-- end-of-article: share + nav -->
+        <div class="prose mx-auto mt-16 pt-8 border-t border-[#525252]">
+            <!-- newsletter: The Shipwreck (beehiiv) -->
+            <div class="callout mt-0 mb-8">
+                <div class="font-mono text-xs text-[#88a57d] mb-2">THE SHIPWRECK &middot; WEEKLY BRIEFING</div>
+                <p class="text-sm text-[#959c95]">Five security stories a week: what happened, what it broke, and what to do Monday. Free, sourced, five minutes.</p>
+                <a href="https://theshipwreck.beehiiv.com/subscribe" target="_blank" rel="noopener" class="inline-flex items-center gap-x-1.5 mt-2 text-sm font-semibold text-[#f25623] hover:text-[#f56e0f]">Subscribe free <span class="arrow">&rarr;</span></a>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <a href="roo-code-auto-approve-bypass.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← When the Allowlist Isn't a Boundary</a>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=The%20Remote%20Support%20Appliance%20Was%20Open%20for%20Seven%20Weeks&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fbeyondtrust-remote-support-armory-castle" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fbeyondtrust-remote-support-armory-castle" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+                <a href="index.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">All research →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-[#525252] mt-8">
+        <div class="max-w-[1280px] mx-auto px-8 py-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+                <div class="col-span-2">
+                    <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                        </div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                    </a>
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
+                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
+                        <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/umbra.js" defer></script>
+</body>
+</html>

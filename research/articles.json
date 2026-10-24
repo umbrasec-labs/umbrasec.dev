@@ -2,6 +2,40 @@
   "_comment": "Single source of truth for all research articles. Add one entry per article (newest first), then run: python3 tools/site-build/build_indexes.py. The generator rewrites the homepage featured trio, the research index cards + count, feed.xml, the sitemap research entries, the command palette, and every article's prev/next nav. Raw text only: use literal & and \" - the generator escapes per output format. Categories: threat | detection | ai | tooling.",
   "articles": [
     {
+      "slug": "beyondtrust-remote-support-armory-castle",
+      "title": "The Remote Support Appliance Was Open for Seven Weeks - CVE-2026-102764 and What ARMORY CASTLE Left Behind",
+      "nav_title": "The Remote Support Appliance Was Open for Seven Weeks",
+      "category": "threat",
+      "date": "2026-10-25",
+      "read_min": 13,
+      "home_blurb": "A remote support appliance reaches every machine you support, with the credentials to do it. CVE-2026-102764, a critical BeyondTrust auth bypass, let the suspected China-nexus group ARMORY CASTLE onto it as a zero-day from late August 2026. The vulnerability is one sentence; what they built on the box - a 404-answering web shell, a tunnel hidden behind the appliance's own proxy, root persistence that survives a config reset - is the part to read.",
+      "card_blurb": "CVE-2026-102764 is a CVSS 9.3 authentication bypass in BeyondTrust Remote Support, exploited as a zero-day since late August 2026 by ARMORY CASTLE (formerly UNC5221). The timeline, the SAWFLY web shell that returns 404 to scanners, the BARECLAW SOCKS5-over-WebSocket tunnel hidden via HAProxy, SUID and sudoers persistence, anti-forensic log deletion, the hashes and YARA Mandiant published, and why patching does not remove persistence.",
+      "feed_desc": "CVE-2026-102764 is an authentication bypass by spoofing (CWE-290) in BeyondTrust Remote Support, CVSS v4.0 9.3, letting an unauthenticated remote attacker perform file operations on the appliance. It was exploited as a zero-day from late August 2026 by ARMORY CASTLE (formerly UNC5221; CrowdStrike Warp Panda), a suspected PRC-nexus espionage actor; affects all supported versions up to 26.2.3, patch BT26-05-RS, SaaS patched 9 October, Privileged Remote Access shares the code, CISA KEV 16 October. The dated timeline, the SAWFLY web shell (mangoapi.php, 404 scanner evasion), the BARECLAW tunneler hidden behind the appliance HAProxy config, root persistence via a SUID shell and a sudoers template, log-deletion anti-forensics and the tell it leaves, the published SHA-256 hashes and YARA rules, a full hunt table, the ATT&CK mapping, and why patching does not remove persistence.",
+      "palette": {
+        "label": "The Remote Support Appliance Was Open for Seven Weeks",
+        "hint": "BeyondTrust + privileged access",
+        "icon": "fa-headset",
+        "keywords": "beyondtrust remote support bomgar cve-2026-102764 authentication bypass spoofing cwe-290 armory castle unc5221 warp panda mandiant google threat intelligence sawfly mangoapi webshell bareclaw socks5 websocket haproxy suid sudoers bt-secrets credential vault log deletion anti-forensics cisa kev msp third party risk privileged access espionage sigma t1190 t1505.003 t1548.001 t1572 t1070"
+      }
+    },
+    {
+      "slug": "roo-code-auto-approve-bypass",
+      "title": "When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent",
+      "nav_title": "When the Allowlist Isn't a Boundary",
+      "category": "ai",
+      "date": "2026-10-25",
+      "read_min": 11,
+      "home_blurb": "An AI coding agent that can run shell commands keeps an allowlist of commands it runs without asking. Five disclosed Roo Code flaws (CVE-2026-110202 to 110206) show the list was never a wall: the code that checks the command and the shell that runs it read it differently. The instruction can arrive by indirect prompt injection, and there is no patch - the project was archived in May.",
+      "card_blurb": "Five command auto-approve bypasses in Roo Code (CVE-2026-110202 through 110206), all through version 3.54.0, let a command pass the allowlist check and then run something else in the shell. The delivery is indirect prompt injection, no local access needed; every bypass needs auto-approval on. There is no fix - the repository was archived on 15 May 2026. Why a command allowlist is not a security boundary, how it maps to excessive agency and the confused deputy, and what a defender does about an unmaintained AI agent.",
+      "feed_desc": "On 13 October 2026 VulnCheck disclosed five command auto-approve bypasses in Roo Code, an open-source AI coding agent for VS Code: CVE-2026-110202 through CVE-2026-110206, all affecting versions through 3.54.0. Each is a parser-differential: the checker that judges a command against the auto-approve allowlist and the shell that executes it disagree, so a command passes the check and runs something the allowlist would deny. The trigger is indirect prompt injection - text planted in content the agent reads - and all five require auto-approval enabled. There is no fixed release: the repository was archived on 15 May 2026 and is read-only. The five bypasses at a defender's depth, how this is excessive agency plus indirect injection plus the confused deputy with the one containing control removed, why it is hard to detect and the endpoint behaviour to watch instead, the ATT&CK and ATLAS mapping, and the response to an unmaintained AI agent.",
+      "palette": {
+        "label": "When the Allowlist Isn't a Boundary",
+        "hint": "Roo Code + AI agent auto-approve",
+        "icon": "fa-robot",
+        "keywords": "roo code cve-2026-110202 cve-2026-110203 cve-2026-110204 cve-2026-110205 cve-2026-110206 auto-approve command allowlist parsecommandline getcommanddecision parser differential indirect prompt injection ai coding agent vs code excessive agency confused deputy vulncheck archived unmaintained supply chain mitre atlas aml.t0051 t1059 t1554"
+      }
+    },
+    {
       "slug": "php2shell-hallucinated-exploits",
       "title": "php2shell and the Hallucinated Exploit - What Defenders Should Actually Do About CVE-2026-109618/109619",
       "nav_title": "php2shell and the Hallucinated Exploit",

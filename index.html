@@ -117,7 +117,7 @@
 
                     <div class="flex flex-col sm:flex-row flex-wrap gap-3 mt-10">
                         <!-- AUTO:hero START -->
-                        <a href="research/php2shell-hallucinated-exploits.html"
+                        <a href="research/beyondtrust-remote-support-armory-castle.html"
                            class="btn-primary w-full sm:w-auto sm:whitespace-nowrap inline-flex items-center justify-center px-8 py-3.5 rounded-2xl bg-[#f25623] text-[#171717] font-semibold hover:bg-[#f56e0f] transition-all">
                             Read the latest research <span class="arrow ml-1.5">→</span>
                         </a>
@@ -202,6 +202,46 @@
                 </p>
 
                 <!-- AUTO:featured START -->
+                <a href="research/beyondtrust-remote-support-armory-castle.html" class="block">
+                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
+                        <div class="md:col-span-5">
+                            <div class="font-mono text-xs text-[#88a57d] mb-2">THREAT ANALYSIS</div>
+                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
+                                The Remote Support Appliance Was Open for Seven Weeks - CVE-2026-102764 and What ARMORY CASTLE Left Behind
+                            </div>
+                        </div>
+                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
+                            A remote support appliance reaches every machine you support, with the credentials to do it. CVE-2026-102764, a critical BeyondTrust auth bypass, let the suspected China-nexus group ARMORY CASTLE onto it as a zero-day from late August 2026. The vulnerability is one sentence; what they built on the box - a 404-answering web shell, a tunnel hidden behind the appliance's own proxy, root persistence that survives a config reset - is the part to read.
+                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
+                                <span class="text-[#f25623]">Oct 2026</span>
+                                <span class="text-[#7d837d]">·</span>
+                                <span class="text-[#7d837d]">~13 min read</span>
+                                <span class="row-chev ml-auto">Read →</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="research/roo-code-auto-approve-bypass.html" class="block">
+                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
+                        <div class="md:col-span-5">
+                            <div class="font-mono text-xs text-[#88a57d] mb-2">AI &amp; LLM SECURITY</div>
+                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
+                                When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent
+                            </div>
+                        </div>
+                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
+                            An AI coding agent that can run shell commands keeps an allowlist of commands it runs without asking. Five disclosed Roo Code flaws (CVE-2026-110202 to 110206) show the list was never a wall: the code that checks the command and the shell that runs it read it differently. The instruction can arrive by indirect prompt injection, and there is no patch - the project was archived in May.
+                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
+                                <span class="text-[#f25623]">Oct 2026</span>
+                                <span class="text-[#7d837d]">·</span>
+                                <span class="text-[#7d837d]">~11 min read</span>
+                                <span class="row-chev ml-auto">Read →</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
                 <a href="research/php2shell-hallucinated-exploits.html" class="block">
                     <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
                         <div class="md:col-span-5">
@@ -216,46 +256,6 @@
                                 <span class="text-[#f25623]">Oct 2026</span>
                                 <span class="text-[#7d837d]">·</span>
                                 <span class="text-[#7d837d]">~12 min read</span>
-                                <span class="row-chev ml-auto">Read →</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="research/mathspace-metabase-internal-tooling.html" class="block">
-                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
-                        <div class="md:col-span-5">
-                            <div class="font-mono text-xs text-[#88a57d] mb-2">THREAT ANALYSIS</div>
-                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
-                                Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling
-                            </div>
-                        </div>
-                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
-                            Metabase patched an unauthenticated SQL injection on 6 August 2026 and said the flaw was already being exploited. CISA listed it on 11 August. On 27 August, 1,079,819 records left an Australian platform's self-hosted instance. Every date was public before the data moved - the failure was that nothing connected the advisory to the asset.
-                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
-                                <span class="text-[#f25623]">Sep 2026</span>
-                                <span class="text-[#7d837d]">·</span>
-                                <span class="text-[#7d837d]">~10 min read</span>
-                                <span class="row-chev ml-auto">Read →</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="research/n-able-ncentral-msp-supply-chain.html" class="block">
-                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
-                        <div class="md:col-span-5">
-                            <div class="font-mono text-xs text-[#88a57d] mb-2">THREAT ANALYSIS</div>
-                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
-                                Your MSP's RMM Is Your Attack Surface - What the N-central Compromise Means for MSP Customers
-                            </div>
-                        </div>
-                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
-                            Two authentication bypasses in N-able N-central were exploited in the wild in early August 2026. If your IT is outsourced, the vulnerable server sits in your provider's rack and you have no patch to apply - but the remote-control sessions, the masqueraded binary and the tunnel service all landed on your endpoints. What you can still detect, and what to ask your MSP.
-                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
-                                <span class="text-[#f25623]">Aug 2026</span>
-                                <span class="text-[#7d837d]">·</span>
-                                <span class="text-[#7d837d]">~11 min read</span>
                                 <span class="row-chev ml-auto">Read →</span>
                             </div>
                         </div>

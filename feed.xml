@@ -9,6 +9,22 @@
     <!-- AUTO:builddate START --><lastBuildDate>Sun, 25 Oct 2026 12:00:00 +0000</lastBuildDate><!-- AUTO:builddate END -->
     <!-- AUTO:items START -->
     <item>
+      <title>The Remote Support Appliance Was Open for Seven Weeks - CVE-2026-102764 and What ARMORY CASTLE Left Behind</title>
+      <link>https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle.html</guid>
+      <pubDate>Sun, 25 Oct 2026 12:00:00 +0000</pubDate>
+      <category>Threat Analysis</category>
+      <description>CVE-2026-102764 is an authentication bypass by spoofing (CWE-290) in BeyondTrust Remote Support, CVSS v4.0 9.3, letting an unauthenticated remote attacker perform file operations on the appliance. It was exploited as a zero-day from late August 2026 by ARMORY CASTLE (formerly UNC5221; CrowdStrike Warp Panda), a suspected PRC-nexus espionage actor; affects all supported versions up to 26.2.3, patch BT26-05-RS, SaaS patched 9 October, Privileged Remote Access shares the code, CISA KEV 16 October. The dated timeline, the SAWFLY web shell (mangoapi.php, 404 scanner evasion), the BARECLAW tunneler hidden behind the appliance HAProxy config, root persistence via a SUID shell and a sudoers template, log-deletion anti-forensics and the tell it leaves, the published SHA-256 hashes and YARA rules, a full hunt table, the ATT&amp;CK mapping, and why patching does not remove persistence.</description>
+    </item>
+    <item>
+      <title>When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent</title>
+      <link>https://umbrasec.dev/research/roo-code-auto-approve-bypass</link>
+      <guid isPermaLink="false">https://umbrasec.dev/research/roo-code-auto-approve-bypass.html</guid>
+      <pubDate>Sun, 25 Oct 2026 12:00:00 +0000</pubDate>
+      <category>AI &amp; LLM Security</category>
+      <description>On 13 October 2026 VulnCheck disclosed five command auto-approve bypasses in Roo Code, an open-source AI coding agent for VS Code: CVE-2026-110202 through CVE-2026-110206, all affecting versions through 3.54.0. Each is a parser-differential: the checker that judges a command against the auto-approve allowlist and the shell that executes it disagree, so a command passes the check and runs something the allowlist would deny. The trigger is indirect prompt injection - text planted in content the agent reads - and all five require auto-approval enabled. There is no fixed release: the repository was archived on 15 May 2026 and is read-only. The five bypasses at a defender's depth, how this is excessive agency plus indirect injection plus the confused deputy with the one containing control removed, why it is hard to detect and the endpoint behaviour to watch instead, the ATT&amp;CK and ATLAS mapping, and the response to an unmaintained AI agent.</description>
+    </item>
+    <item>
       <title>php2shell and the Hallucinated Exploit - What Defenders Should Actually Do About CVE-2026-109618/109619</title>
       <link>https://umbrasec.dev/research/php2shell-hallucinated-exploits</link>
       <guid isPermaLink="false">https://umbrasec.dev/research/php2shell-hallucinated-exploits.html</guid>
