@@ -128,7 +128,7 @@ def render_home_rows(articles) -> str:
         label = he(CATEGORIES[a["category"]][0])
         mon_year = a["_date"].strftime("%b %Y")
         rows.append(
-f'''                <a href="research/{a['slug']}.html" class="block">
+f'''                <a href="research/{a['slug']}" class="block">
                     <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
                         <div class="md:col-span-5">
                             <div class="font-mono text-xs text-[#88a57d] mb-2">{label}</div>
@@ -153,7 +153,7 @@ f'''                <a href="research/{a['slug']}.html" class="block">
 def render_hero(articles) -> str:
     a = articles[0]
     anchor = (
-f'''                        <a href="research/{a['slug']}.html"
+f'''                        <a href="research/{a['slug']}"
                            class="btn-primary w-full sm:w-auto sm:whitespace-nowrap inline-flex items-center justify-center px-8 py-3.5 rounded-2xl bg-[#f25623] text-[#171717] font-semibold hover:bg-[#f56e0f] transition-all">
                             Read the latest research <span class="arrow ml-1.5">→</span>
                         </a>''')
@@ -167,7 +167,7 @@ def render_cards(articles) -> str:
         cat = CATEGORIES[a["category"]][2]
         date_str = a["_date"].strftime("%b %d, %Y")
         cards.append(
-f'''            <a href="{a['slug']}.html"
+f'''            <a href="{a['slug']}"
                class="research-card u-card block p-6 border border-[#525252] rounded-3xl bg-[#222222]" data-cat="{cat}">
                 <div class="flex items-center justify-between mb-3">
                     <span class="font-mono text-xs text-[#88a57d]">{label}</span>
@@ -243,7 +243,7 @@ def render_palette(articles) -> str:
         lines.append(
             f'    {{ group: "Articles", label: "{js(p["label"])}", '
             f'hint: "{js(p["hint"])}", icon: "{p["icon"]}", '
-            f'href: "research/{a["slug"]}.html", keywords: "{js(p["keywords"])}" }},'
+            f'href: "research/{a["slug"]}", keywords: "{js(p["keywords"])}" }},'
         )
     return _wrap(lines, "\n", 4)
 
@@ -333,13 +333,18 @@ def render_sigma_rows(rows) -> str:
 
 
 def render_footer(prefix: str) -> str:
-    """The shared site footer. `prefix` is "" for root pages, "../" one deep, "../../" two."""
+    """The shared site footer. `prefix` is "" for root pages, "../" one deep, "../../" two.
+
+    Links use the extensionless URLs Pages serves (x.html 308s to x, and
+    dir/index.html to dir/), so `home` is "./" on root pages, not "".
+    """
     p = prefix
+    home = p or "./"
     return f'''<footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
-                    <a href="{p}index.html" class="brand flex items-center gap-x-2.5 mb-4">
+                    <a href="{home}" class="brand flex items-center gap-x-2.5 mb-4">
                         <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
                             <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
@@ -352,23 +357,23 @@ def render_footer(prefix: str) -> str:
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
-                        <li><a href="{p}guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
-                        <li><a href="{p}guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
-                        <li><a href="{p}guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                        <li><a href="{p}guide/foundation" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="{p}guide/identity-and-access" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="{p}guide/detection-and-response" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="{p}guide/governance-and-maturity" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="{p}research/" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
                         <li><a href="{p}feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{p}tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="{p}tools/" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
                         <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
                         <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
                         <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
@@ -377,7 +382,7 @@ def render_footer(prefix: str) -> str:
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="{p}about.html" class="hover:text-[#f25623]">About</a> · <a href="{p}index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="{p}about" class="hover:text-[#f25623]">About</a> · <a href="{home}#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>
@@ -401,15 +406,15 @@ _A = '<a href="{href}" class="text-sm text-[#f25623] hover:text-[#f56e0f]">{text
 def nav_prev(articles, i):
     if i + 1 < len(articles):  # an older article exists
         older = articles[i + 1]
-        return _A.format(href=f"{older['slug']}.html", text=f"← {he(older['nav_title'])}")
-    return _A.format(href="index.html", text="← All research")
+        return _A.format(href=older['slug'], text=f"← {he(older['nav_title'])}")
+    return _A.format(href="./", text="← All research")
 
 
 def nav_next(articles, i):
     if i > 0:  # a newer article exists
         newer = articles[i - 1]
-        return _A.format(href=f"{newer['slug']}.html", text=f"{he(newer['nav_title'])} →")
-    return _A.format(href="index.html", text="All research →")
+        return _A.format(href=newer['slug'], text=f"{he(newer['nav_title'])} →")
+    return _A.format(href="./", text="All research →")
 
 
 def rewrite_nav(text, prev_html, next_html, path):
@@ -507,6 +512,20 @@ def csp_hash_problems():
     return missing
 
 
+PRE_RE = re.compile(r"<pre\b.*?</pre>", re.DOTALL)
+# an internal href (relative, root-relative or on umbrasec.dev) that ends in .html
+HTML_HREF_RE = re.compile(r'href="((?:https://umbrasec\.dev/|(?![a-z]+:|//|#))[^"#?]*\.html(?:[#?][^"]*)?)"')
+
+
+def html_link_problems():
+    """Internal links still written as x.html (Pages 308s them); code blocks are skipped."""
+    found = []
+    for rel in site_pages() + ["404.html"]:
+        text = PRE_RE.sub("", (ROOT / rel).read_text(encoding="utf-8"))
+        found += [(rel, h) for h in HTML_HREF_RE.findall(text)]
+    return found
+
+
 def build(check: bool, list_drift: bool = False) -> int:
     articles = load_articles()
     transforms = {}  # rel path -> list of text->text callables, applied in order
@@ -574,6 +593,7 @@ def build(check: bool, list_drift: bool = False) -> int:
                if not all(s in (ROOT / rel).read_text(encoding="utf-8")
                           for s in ('<a href="#main" class="skip-link">', '<main id="main">'))]
     bad_hashes = csp_hash_problems()
+    html_links = html_link_problems()
 
     if check:
         problems = False
@@ -600,6 +620,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in no_main:
                 print(f"  - {rel}")
             print("\nCopy both from an existing page (first child of <body>, and <main> between </nav> and <footer>).")
+            problems = True
+        if html_links:
+            print("site-build: LINKS - internal links written as .html (each one is a 308 redirect):")
+            for rel, h in html_links:
+                print(f"  - {rel}: {h}")
+            print("\nUse the served URL: x.html -> x, dir/index.html -> dir/, index.html -> ./ (see tools/site-build/README.md).")
             problems = True
         if bad_hashes:
             print("site-build: CSP - 404.html inline script hash not in _headers:")
