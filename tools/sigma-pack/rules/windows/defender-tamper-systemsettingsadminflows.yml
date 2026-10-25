@@ -47,9 +47,10 @@ detection:
     filter_main_settings_app:
         # Huntress tunes its own rule the same way: the binary is often used
         # legitimately with SystemSettings.exe as the parent. Anchor on the
-        # folder so a copy named SystemSettings.exe elsewhere still fires;
-        # endswith allows a system drive other than C:.
-        ParentImage|endswith: '\Windows\ImmersiveControlPanel\SystemSettings.exe'
+        # drive root (the colon) so a copy named SystemSettings.exe in any
+        # other folder, a nested look-alike Windows folder included, still
+        # fires; any drive letter is allowed.
+        ParentImage|endswith: ':\Windows\ImmersiveControlPanel\SystemSettings.exe'
     condition: all of selection_* and not 1 of filter_main_*
 falsepositives:
     - An administrator or deployment script that runs
@@ -64,4 +65,8 @@ falsepositives:
       this binary (da92713f) names Explorer.exe as well as SystemSettings.exe
       as expected parents for GUI changes, so check the logged-on session
       before escalating an Explorer.exe parent
+    - The genuine Settings app on a sensor that logs the parent as an NT
+      device path (\Device\HarddiskVolumeN\Windows\...) instead of a drive
+      letter. The filter is anchored on the drive colon, so add your
+      sensor's form of the system path to the filter
 level: medium
