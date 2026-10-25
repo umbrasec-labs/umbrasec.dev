@@ -27,6 +27,7 @@ TRIM=(
   ".github"
   ".gitignore"
   ".gitleaks.toml"
+  "CLAUDE.md"
   "README.md"
   "package.json"
   "package-lock.json"

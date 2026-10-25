@@ -50,7 +50,7 @@ Writeup: [Detecting Kerberoasting: A Practical Walkthrough with Sigma](https://u
 | File | What it catches | Level |
 |---|---|---|
 | [`rules/windows/kerberoasting-rc4-service-ticket.yml`](rules/windows/kerberoasting-rc4-service-ticket.yml) | RC4 (0x17) service-ticket request in an AES-capable domain - the deliberate downgrade signal | medium |
-| [`rules/windows/kerberoasting-spn-fanout.yml`](rules/windows/kerberoasting-spn-fanout.yml) | One account requesting tickets for many distinct SPNs in a short window (Sigma correlation rule) | - |
+| [`rules/windows/kerberoasting-spn-fanout.yml`](rules/windows/kerberoasting-spn-fanout.yml) | One account requesting tickets for many distinct SPNs in a short window (Sigma correlation rule) | medium |
 | [`rules/windows/kerberoasting-honeypot-spn.yml`](rules/windows/kerberoasting-honeypot-spn.yml) | Any ticket request naming your decoy SPN account - edit the `ServiceName` to your decoy first | high |
 
 Prerequisite: *Audit Kerberos Service Ticket Operations* (Success) enabled on all
@@ -76,7 +76,7 @@ Writeup: [Detecting the LiteLLM Command Injection (CVE-2026-42271) in Your AI Ga
 
 | File | What it catches | Level |
 |---|---|---|
-| [`rules/linux/litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | The LiteLLM proxy process spawning a shell or recon/download utility - the command-injection landing (high fidelity). Covers versioned interpreters (`python3.9` to `python3.14`), `nc.openbsd` / `nc.traditional` / `netcat` and `busybox` | high |
+| [`rules/linux/litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | The LiteLLM proxy process spawning a shell or recon/download utility - the command-injection landing (high fidelity). Covers versioned interpreters (`python3.7` to `python3.14`), `nc.openbsd` / `nc.traditional` / `netcat` and `busybox` | high |
 | [`rules/web/litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | POST requests to the vulnerable MCP preview endpoints (`/mcp-rest/test/connection`, `/mcp-rest/test/tools/list`) - the front-door signal | medium |
 
 Prerequisite: for the host rule, Linux process-creation telemetry (Auditd execve,

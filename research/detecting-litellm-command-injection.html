@@ -276,7 +276,7 @@ references:
     - https://umbrasec.dev/research/detecting-litellm-command-injection.html
 author: UMBRASEC
 date: 2026-06-13
-modified: 2026-10-23
+modified: 2026-10-25
 tags:
     - attack.initial-access
     - attack.t1190
@@ -290,6 +290,8 @@ detection:
         ParentImage|endswith:
             - '/python'
             - '/python3'
+            - '/python3.7'
+            - '/python3.8'
             - '/python3.9'
             - '/python3.10'
             - '/python3.11'
@@ -327,6 +329,11 @@ level: high</code></pre>
                 and <code>busybox</code>, which is <code>/bin/sh</code> on Alpine and Wolfi images. The sigma-pack holds
                 the canonical copy of this rule.
             </p>
+            <p>
+                Updated 2026-10-25: the interpreter list now also covers <code>python3.8</code>, the floor of the early
+                affected releases (1.74.x to 1.76.x declare Python 3.8.1 or later), and <code>python3.7</code> as a
+                harmless extra.
+            </p>
             <div class="callout">
                 <p class="text-sm"><strong>Tuning note.</strong> Parenting on a generic <code>python</code> is broad, so
                 scope this rule to your LiteLLM hosts or containers (by host tag, image name, or a more specific
@@ -347,9 +354,11 @@ id: 2c8e5b41-6d77-4a90-bb1e-3f0a9c2d4e56
 status: experimental
 description: >
     A request hit one of LiteLLM's MCP preview endpoints. These accept a
-    full MCP server config and, for stdio transport, spawn the supplied
-    command (CVE-2026-42271). They are an admin-only preview feature, so
-    requests - especially from untrusted sources - warrant review.
+    full MCP server config and, for the stdio transport, spawn the
+    supplied command on the proxy host (CVE-2026-42271). They are an
+    admin-only preview feature, so requests - especially from untrusted
+    sources - warrant review. Chained with CVE-2026-48710 (Starlette
+    BadHost) the path becomes unauthenticated RCE.
 references:
     - https://nvd.nist.gov/vuln/detail/CVE-2026-42271
     - https://github.com/BerriAI/litellm/security/advisories/GHSA-v4p8-mg3p-g94g
@@ -369,7 +378,7 @@ detection:
             - '/mcp-rest/test/tools/list'
     condition: selection
 falsepositives:
-    - An administrator legitimately previewing an MCP server in the UI
+    - An administrator legitimately previewing an MCP server in the LiteLLM UI
     - Vulnerability scanners probing the path after public disclosure
 level: medium</code></pre>
             <div class="callout">
