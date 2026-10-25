@@ -65,6 +65,17 @@ keeps its own footer), with relative links adjusted for page depth. New pages ju
 need any `<footer>...</footer>` placeholder - the generator replaces it wholesale -
 which you get for free by copying an existing page.
 
+## Links
+
+Internal links use the URLs Pages actually serves: `about`, `research/<slug>`,
+`guide/`, `tools/sigma-pack/` and `./` for the home page from a root page.
+Pages 308-redirects `x.html` to `x` and `dir/index.html` to `dir/`, so a `.html`
+link still works but costs every visitor and crawler a redirect. The generator
+emits the extensionless form; write hand-made links the same way. Preview with
+`npx wrangler pages dev .`, which follows the same rules (a plain static file
+server or `file://` does not). The feed `<guid>` keeps its `.html` form on
+purpose (see `render_feed_items`).
+
 ## Manifest fields (`research/articles.json`)
 
 Per article: `slug`, `title`, `nav_title` (short label for prev/next), `category`
@@ -95,7 +106,8 @@ python3 tools/site-build/build_indexes.py --list-drift  # print the files a rege
 
 `--check` also exits 1, even with no drift, when a `research/*.html` page is
 missing from `articles.json`, when a site page lacks the "Skip to content" link
-or the `<main id="main">` landmark, when the sha256 of an inline script in
+or the `<main id="main">` landmark, when a page has an internal link written as
+`.html` (outside `<pre>` blocks), when the sha256 of an inline script in
 `404.html` is missing from the Content-Security-Policy lines in `_headers` (it
 prints the new hash), when a sigma-pack `rules/**/*.yml` or
 `queries/**/*.kql` file has no row in the ATT&CK table, or when a table row

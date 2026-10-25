@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detecting the LiteLLM Command Injection (CVE-2026-42271) in Your AI Gateway - UMBRASEC</title>
-    <meta name="description" content="CVE-2026-42271 turns LiteLLM's MCP preview endpoints into authenticated command execution, and chains with the Starlette BadHost bug (CVE-2026-48710) for unauthenticated RCE. What to log, two runnable Sigma rules, and how to contain it.">
+    <title>LiteLLM CVE-2026-42271: What to Log and Detect - UMBRASEC</title>
+    <meta name="description" content="LiteLLM CVE-2026-42271 is authenticated command execution, and unauthenticated RCE chained with Starlette CVE-2026-48710. What to log, and two Sigma rules.">
     <link rel="canonical" href="https://umbrasec.dev/research/detecting-litellm-command-injection">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
@@ -59,7 +59,7 @@
     <nav aria-label="Site" class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
         <div class="max-w-[1280px] mx-auto px-8">
             <div class="flex items-center justify-between h-16">
-                <a href="../index.html" class="brand flex items-center gap-x-2.5">
+                <a href="../" class="brand flex items-center gap-x-2.5">
                     <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
                         <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                     </div>
@@ -69,11 +69,11 @@
                     </div>
                 </a>
                 <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
-                    <a href="../guide/index.html" class="nav-link">Guide</a>
-                    <a href="index.html" class="nav-link">Research</a>
-                    <a href="../tools/index.html" class="nav-link">Open Source</a>
-                    <a href="../about.html" class="nav-link">About</a>
-                    <a href="../index.html#contact" class="nav-link">Contact</a>
+                    <a href="../guide/" class="nav-link">Guide</a>
+                    <a href="./" class="nav-link">Research</a>
+                    <a href="../tools/" class="nav-link">Open Source</a>
+                    <a href="../about" class="nav-link">About</a>
+                    <a href="../#contact" class="nav-link">Contact</a>
                 </div>
                 <div class="flex items-center gap-x-3">
                     <button data-cmdk type="button"
@@ -97,8 +97,8 @@
     <article class="max-w-[1280px] mx-auto px-8 py-16">
         <!-- breadcrumb -->
         <div class="font-mono text-xs text-[#7d837d] mb-8">
-            <a href="../index.html" class="hover:text-[#f25623]">home</a> /
-            <a href="index.html" class="hover:text-[#f25623]">research</a> /
+            <a href="../" class="hover:text-[#f25623]">home</a> /
+            <a href="./" class="hover:text-[#f25623]">research</a> /
             <span class="text-[#959c95]">detecting-litellm-command-injection</span>
         </div>
 
@@ -209,6 +209,12 @@ POST /mcp-rest/test/tools/list</code></pre>
                 affects far more than LiteLLM.
             </p>
             <p>
+                Updated 2026-10-25: CISA added CVE-2026-48710 to the
+                <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">KEV
+                catalog</a> on 2 September 2026, with a federal remediation deadline of 16 September. The Starlette
+                upgrade is no longer the second clock; treat it as urgent as the LiteLLM patch.
+            </p>
+            <p>
                 Public reporting (Horizon3.ai, The Hacker News, Help Net Security) confirms active exploitation of
                 CVE-2026-42271 and documents the chain, but does not publish indicators from the in-the-wild attacks.
                 So rather than chase IOCs that aren't public, detect the <em>behavior</em> - which is durable anyway.
@@ -217,7 +223,7 @@ POST /mcp-rest/test/tools/list</code></pre>
             <h2>Are you affected? Find it first</h2>
             <p>
                 You can't defend an asset you don't know you run, which is the whole point of
-                <a href="../guide/foundation.html">knowing what you own</a>. LiteLLM often arrives as a container or a
+                <a href="../guide/foundation">knowing what you own</a>. LiteLLM often arrives as a container or a
                 developer-stood-up service rather than something procurement signed off, so look in a few places:
             </p>
             <ul>
@@ -407,7 +413,7 @@ level: medium</code></pre>
             <h2>If a rule fires: contain it</h2>
             <p>
                 Treat a confirmed hit on rule&nbsp;#1 as host compromise of a system that holds your LLM provider keys.
-                Working from your <a href="../guide/detection-and-response.html">incident response plan</a>:
+                Working from your <a href="../guide/detection-and-response">incident response plan</a>:
             </p>
             <ul>
                 <li><strong>Isolate</strong> the LiteLLM host/container via EDR rather than wiping it - preserve the
@@ -420,7 +426,7 @@ level: medium</code></pre>
                 <li><strong>Patch then redeploy</strong> from a known-good image at 1.83.7+ (and Starlette 1.0.1+),
                     rather than cleaning in place.</li>
                 <li><strong>Scope the reporting question early.</strong> If provider keys or customer data were within
-                    reach, your <a href="../guide/detection-and-response.html">notification clocks</a> may have started -
+                    reach, your <a href="../guide/detection-and-response">notification clocks</a> may have started -
                     decide that with the plan, not at 2am.</li>
             </ul>
 
@@ -488,13 +494,13 @@ level: medium</code></pre>
                 <a href="https://theshipwreck.beehiiv.com/subscribe" target="_blank" rel="noopener" class="inline-flex items-center gap-x-1.5 mt-2 text-sm font-semibold text-[#f25623] hover:text-[#f56e0f]">Subscribe free <span class="arrow">&rarr;</span></a>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <a href="owasp-llm-top-10-for-defenders.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← OWASP LLM Top 10 for Defenders</a>
+                <a href="owasp-llm-top-10-for-defenders" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← OWASP LLM Top 10 for Defenders</a>
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
                     <a class="share-btn" href="https://twitter.com/intent/tweet?text=Detecting%20the%20LiteLLM%20Command%20Injection%20%28CVE-2026-42271%29&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-litellm-command-injection" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
                     <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-litellm-command-injection" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
                 </div>
-                <a href="securing-ai-agents.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Securing AI Agents →</a>
+                <a href="securing-ai-agents" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Securing AI Agents →</a>
             </div>
         </div>
     </article>
@@ -505,7 +511,7 @@ level: medium</code></pre>
         <div class="max-w-[1280px] mx-auto px-8 py-14">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
                 <div class="col-span-2">
-                    <a href="../index.html" class="brand flex items-center gap-x-2.5 mb-4">
+                    <a href="../" class="brand flex items-center gap-x-2.5 mb-4">
                         <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
                             <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
                         </div>
@@ -518,23 +524,23 @@ level: medium</code></pre>
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../guide/foundation.html" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
-                        <li><a href="../guide/identity-and-access.html" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
-                        <li><a href="../guide/detection-and-response.html" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
-                        <li><a href="../guide/governance-and-maturity.html" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                        <li><a href="../guide/foundation" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../research/index.html" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../research/" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
                         <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="../tools/index.html" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="../tools/" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
                         <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
                         <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
                         <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
@@ -543,7 +549,7 @@ level: medium</code></pre>
             </div>
             <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="font-mono text-xs text-[#959c95]">
-                    © 2026 UMBRASEC · <a href="../about.html" class="hover:text-[#f25623]">About</a> · <a href="../index.html#contact" class="hover:text-[#f25623]">Contact</a>
+                    © 2026 UMBRASEC · <a href="../about" class="hover:text-[#f25623]">About</a> · <a href="../#contact" class="hover:text-[#f25623]">Contact</a>
                 </div>
             </div>
         </div>
