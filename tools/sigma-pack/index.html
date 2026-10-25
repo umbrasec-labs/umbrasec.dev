@@ -71,8 +71,10 @@
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">sigma-pack.</h1>
         <p class="max-w-[720px] text-xl text-[#959c95]">
             The detection rules and queries from the UMBRASEC research writeups, as runnable files.
-            Every rule comes out of a writeup that explains the technique, the log artifacts, the
-            tuning knobs, and the false-positive profile. Read that before you deploy the rule.
+            Each rule comes out of a writeup that explains the technique, the log artifacts, the
+            tuning knobs, and the false-positive profile. Read that before you deploy the rule. The one
+            exception: the three LiteLLM 1.107.0 release-compromise stealer rules shipped ahead of their
+            writeup, because the indicators were too time-sensitive to hold.
         </p>
         <p class="max-w-[720px] text-sm text-[#7d837d] mt-5">
             Each file below is served directly over HTTPS - no account, no clone. Validate anything
@@ -262,7 +264,7 @@
             <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
                 <div class="font-mono text-xs text-[#f56e0f] mb-3">TAKE THE WHOLE PACK</div>
                 <p class="font-mono text-xs text-[#959c95] break-all">git clone https://github.com/umbrasec-labs/umbrasec.dev</p>
-                <p class="text-sm text-[#959c95] mt-4">The pack lives in <code class="font-mono text-xs">tools/sigma-pack/</code>, alongside the writeups each rule came from.</p>
+                <p class="text-sm text-[#959c95] mt-4">The pack lives in <code class="font-mono text-xs">tools/sigma-pack/</code>, alongside the writeups most rules came from.</p>
             </div>
         </div>
 

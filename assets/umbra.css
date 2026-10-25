@@ -140,6 +140,7 @@ body {
 .prose strong { color: var(--text); font-weight: 600; }
 
 .prose code {
+    overflow-wrap: anywhere;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85em;
     background: var(--bg-soft);
@@ -148,6 +149,11 @@ body {
     padding: 0.1em 0.4em;
     color: var(--ember);
 }
+
+/* Article and guide titles: a long word wraps instead of widening the page, and the
+   3rem title steps down on the narrowest phones (320px) */
+header.prose h1 { overflow-wrap: break-word; }
+@media (max-width: 359px) { header.prose h1 { font-size: 2.25rem; } }
 
 .prose pre {
     background: var(--bg-soft);
@@ -239,16 +245,20 @@ html { scroll-behavior: smooth; }
 }
 .menu-btn:hover { background: var(--bg-soft); color: var(--text); }
 
+/* visibility keeps the closed menu's links out of the tab order; its delay lets the close animation play */
 .mobile-menu {
     overflow: hidden;
     max-height: 0;
     opacity: 0;
-    transition: max-height 0.32s ease, opacity 0.32s ease;
+    visibility: hidden;
+    transition: max-height 0.32s ease, opacity 0.32s ease, visibility 0s linear 0.32s;
     border-top: 1px solid transparent;
 }
 .mobile-menu.open {
     max-height: 22rem;
     opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
     border-top-color: var(--border);
 }
 .mobile-menu a {
@@ -359,7 +369,10 @@ html { scroll-behavior: smooth; }
     opacity: 0;
     transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.code-wrap:hover .copy-btn { opacity: 1; }
+.code-wrap:hover .copy-btn,
+.code-wrap:focus-within .copy-btn,
+.copy-btn:focus-visible { opacity: 1; }
+@media (hover: none) { .copy-btn { opacity: 1; } }
 .copy-btn:hover { color: var(--text); border-color: var(--border-hi); }
 .copy-btn.copied { color: var(--sage); border-color: var(--sage); }
 
@@ -425,11 +438,11 @@ html { scroll-behavior: smooth; }
     border: 1px solid var(--border);
     color: var(--muted);
     cursor: pointer;
-    opacity: 0; pointer-events: none;
+    opacity: 0; pointer-events: none; visibility: hidden;
     transform: translateY(8px);
-    transition: opacity 0.25s ease, transform 0.25s ease, color 0.15s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease, color 0.15s ease, visibility 0s linear 0.25s;
 }
-.to-top.show { opacity: 1; pointer-events: auto; transform: none; }
+.to-top.show { opacity: 1; pointer-events: auto; visibility: visible; transform: none; transition-delay: 0s; }
 .to-top:hover { color: var(--text); border-color: var(--border-hi); }
 
 /* ── Hero radial glow ─────────────────────────────────────────── */
