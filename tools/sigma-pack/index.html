@@ -20,7 +20,7 @@
     <meta name="twitter:description" content="Runnable Sigma rules and KQL queries from the research writeups, each mapped to its MITRE ATT&CK technique.">
     <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
     <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../../assets/vendor/tailwindcss-3.4.17.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
     <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
     <link rel="icon" type="image/svg+xml" href="../../assets/favicon-v2.svg">
@@ -88,11 +88,11 @@
             <table class="w-full text-sm min-w-[820px]">
                 <thead>
                     <tr class="text-left">
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Rule / query</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Type</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">MITRE ATT&amp;CK</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Tactic</th>
-                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase">Status</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#959c95] uppercase">Rule / query</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#959c95] uppercase">Type</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#959c95] uppercase">MITRE ATT&amp;CK</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#959c95] uppercase">Tactic</th>
+                        <th class="py-4 px-6 font-mono text-[10px] tracking-[1.5px] text-[#959c95] uppercase">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,147 +102,147 @@
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/kerberoasting-spn-fanout.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">kerberoasting-spn-fanout.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma (correlation)</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/kerberoasting-honeypot-spn.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">kerberoasting-honeypot-spn.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1558/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1558.003</a> Kerberoasting</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="queries/kql/oauth-consent-sensitive-scopes.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">oauth-consent-sensitive-scopes.kql</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">query</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="queries/kql/oauth2-permission-grant-post.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">oauth2-permission-grant-post.kql</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">query</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="queries/kql/app-role-assignment.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">app-role-assignment.kql</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1528/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1528</a> Steal Application Access Token</td>
                         <td class="py-4 px-6 text-[#959c95]">Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">query</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="queries/kql/app-credential-added.kql" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">app-credential-added.kql</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">KQL</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1098/001/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1098.001</a> Additional Cloud Credentials</td>
                         <td class="py-4 px-6 text-[#959c95]">Persistence / Privilege Escalation</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">query</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">query</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/linux/litellm-proxy-spawns-shell.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-proxy-spawns-shell.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App; <a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1059</a> Command &amp; Scripting</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access / Execution</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/web/litellm-mcp-test-endpoint.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-mcp-test-endpoint.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/linux/litellm-stealer-files-linux.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-stealer-files-linux.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1195/002/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1195.002</a> Compromise Software Supply Chain; <a href="https://attack.mitre.org/techniques/T1546/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1546</a> Event Triggered Execution; <a href="https://attack.mitre.org/techniques/T1552/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1552</a> Unsecured Credentials</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access / Persistence / Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/litellm-stealer-files-windows.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-stealer-files-windows.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1195/002/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1195.002</a> Compromise Software Supply Chain; <a href="https://attack.mitre.org/techniques/T1546/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1546</a> Event Triggered Execution; <a href="https://attack.mitre.org/techniques/T1552/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1552</a> Unsecured Credentials</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access / Persistence / Credential Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/web/litellm-stealer-exfil.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">litellm-stealer-exfil.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1041/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1041</a> Exfiltration Over C2 Channel</td>
                         <td class="py-4 px-6 text-[#959c95]">Exfiltration</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/masquerading-svchost-outside-system32.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">masquerading-svchost-outside-system32.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1036/005/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1036.005</a> Match Legitimate Resource Name or Location</td>
                         <td class="py-4 px-6 text-[#959c95]">Stealth</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/cloudflared-tunnel-service-install.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">cloudflared-tunnel-service-install.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1543/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1543.003</a> Windows Service; <a href="https://attack.mitre.org/techniques/T1572/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1572</a> Protocol Tunneling</td>
                         <td class="py-4 px-6 text-[#959c95]">Persistence / Command &amp; Control</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/web/metabase-reset-password-sqli.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">metabase-reset-password-sqli.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/web/php-upload-progress-multipart-probe.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">php-upload-progress-multipart-probe.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1190</a> Exploit Public-Facing App</td>
                         <td class="py-4 px-6 text-[#959c95]">Initial Access</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/ransomware-inhibit-recovery-native-utilities.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">ransomware-inhibit-recovery-native-utilities.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1490/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1490</a> Inhibit System Recovery</td>
                         <td class="py-4 px-6 text-[#959c95]">Impact</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/defender-tamper-systemsettingsadminflows.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">defender-tamper-systemsettingsadminflows.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1685/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1685</a> Disable or Modify Tools</td>
                         <td class="py-4 px-6 text-[#959c95]">Defense Impairment</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/archiver-admin-share-collection.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">archiver-admin-share-collection.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1560/001/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1560.001</a> Archive via Utility; <a href="https://attack.mitre.org/techniques/T1039/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1039</a> Data from Network Shared Drive</td>
                         <td class="py-4 px-6 text-[#959c95]">Collection</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/rclone-transfer-to-remote.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">rclone-transfer-to-remote.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1567/002/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1567.002</a> Exfiltration to Cloud Storage</td>
                         <td class="py-4 px-6 text-[#959c95]">Exfiltration</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <tr class="border-t border-[#525252]">
                         <td class="py-4 px-6"><a href="rules/windows/remote-access-tool-service-install.yml" class="font-mono text-xs text-[#f25623] hover:text-[#f56e0f] break-all">remote-access-tool-service-install.yml</a></td>
                         <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">Sigma</td>
                         <td class="py-4 px-6"><a href="https://attack.mitre.org/techniques/T1219/002/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1219.002</a> Remote Desktop Software; <a href="https://attack.mitre.org/techniques/T1543/003/" target="_blank" rel="noopener" class="text-[#f25623] hover:text-[#f56e0f]">T1543.003</a> Windows Service</td>
                         <td class="py-4 px-6 text-[#959c95]">Command &amp; Control / Persistence</td>
-                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">experimental</td>
+                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">experimental</td>
                     </tr>
                     <!-- AUTO:sigmapack END -->
                 </tbody>

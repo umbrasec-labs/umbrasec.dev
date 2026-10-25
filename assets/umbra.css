@@ -1,6 +1,7 @@
 /* UMBRASEC shared styles - charcoal / orange palette
-   Layout utilities come from Tailwind (CDN); this file holds the
-   custom typography, grid texture, and component styles reused across pages. */
+   Layout utilities come from Tailwind (the Play CDN build, self-hosted in
+   assets/vendor/); this file holds the custom typography, grid texture, and
+   component styles reused across pages. */
 
 :root {
     /* surfaces */
