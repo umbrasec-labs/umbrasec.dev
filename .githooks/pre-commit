@@ -3,8 +3,8 @@
 # UMBRASEC pre-commit hook: keep derived files in sync with research/articles.json
 #
 # There is no CI for this site, by design: this hook is the only gate. It
-# regenerates the derived files, stages them so a drift can never reach a
-# commit, and re-runs build_indexes.py --check, which fails if:
+# regenerates the derived files, stages exactly the ones it rewrote so a drift
+# can never reach a commit, and re-runs build_indexes.py --check, which fails if:
 #   - any generated file drifts from the manifest, or
 #   - a research/*.html page exists that no manifest entry points to (orphan).
 #
@@ -18,6 +18,10 @@
 # assets/umbra.js (command palette), each research/<slug>.html prev/next nav,
 # the tools/sigma-pack/index.html coverage table, and the shared footer on
 # every site page (about, guide/*, tools/index, tools/sigma-pack).
+#
+# Before regenerating, it refuses to run if a file it would rewrite, or one of
+# the generator's inputs, has unstaged edits: staging the regenerated file would
+# otherwise sweep that unrelated work into the commit (and, on master, deploy it).
 #
 # Bypass with: git commit --no-verify
 # Enable (once per clone): git config core.hooksPath .githooks
@@ -60,16 +64,35 @@ if python3 tools/site-build/build_indexes.py --check >/dev/null 2>&1; then
     exit 0
 fi
 
+# The files a regeneration would rewrite. The generator reads the working
+# tree, so these and its inputs must match the index, or unstaged work would
+# end up in the commit.
+drift=()
+while IFS= read -r path; do
+    [ -n "$path" ] && drift+=("$path")
+done < <(python3 tools/site-build/build_indexes.py --list-drift)
+
+inputs=(research/articles.json tools/sigma-pack/README.md tools/site-build/build_indexes.py)
+unstaged="$(git diff --name-only -- "${inputs[@]}" ${drift[@]+"${drift[@]}"})"
+if [ -n "$unstaged" ]; then
+    echo "pre-commit: site-build needs to regenerate, but these files have unstaged changes:" >&2
+    printf '  %s\n' $unstaged >&2
+    echo "pre-commit: stage them (git add) or stash them, then commit again" >&2
+    exit 1
+fi
+
 echo "pre-commit: site-build out of sync, regenerating derived files..."
 if ! python3 tools/site-build/build_indexes.py; then
     echo "pre-commit: build_indexes.py failed; aborting commit" >&2
     exit 1
 fi
 
-# Stage only already-tracked generated files (-u never adds new untracked files,
-# so a brand-new article you have not git-added yet is left for you to add).
-git add -u -- index.html about.html feed.xml sitemap.xml \
-    assets/umbra.js research guide tools/index.html tools/sigma-pack/index.html
+# Stage only the files the generator rewrote, and only tracked ones (-u never
+# adds untracked files, so a brand-new article you have not git-added yet is
+# left for you to add).
+if [ ${#drift[@]} -gt 0 ]; then
+    git add -u -- "${drift[@]}"
+fi
 
 # Gate: regeneration fixes drift but not orphans. If --check still fails, an
 # unregistered research page exists - block so it cannot reach a commit.

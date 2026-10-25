@@ -33,4 +33,5 @@ attribution, but is not placed under the MIT license.
 
 Third-party components loaded by the site (e.g. Tailwind CSS, Font Awesome,
 and the Inter Tight / JetBrains Mono fonts) remain under their own respective
-licenses and are not covered by this file.
+licenses and are not covered by this file. The self-hosted Tailwind build in
+`assets/vendor/` ships with its license next to it.

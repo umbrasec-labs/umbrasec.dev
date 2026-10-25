@@ -7,7 +7,8 @@ What it owns (and nothing else):
   - index.html .............. the homepage "featured" trio (latest 3 articles)
   - research/index.html ..... the article card grid + the "N published so far" count
   - feed.xml ................ <lastBuildDate> + every <item>
-  - sitemap.xml ............. the per-article research <url> entries
+  - sitemap.xml ............. the per-article research <url> entries (lastmod =
+                              "updated" if set, else "date")
   - assets/umbra.js ......... the command-palette "Articles" entries
   - research/<slug>.html .... each article's prev/next footer nav
 
@@ -19,6 +20,7 @@ article (located structurally by its container class).
 Usage:
   python3 tools/site-build/build_indexes.py          # write changes
   python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 if drift
+  python3 tools/site-build/build_indexes.py --list-drift  # files a regen would rewrite
 
 The --check mode writes nothing; it just fails if the committed files don't match
 what the manifest would produce. That's what the pre-commit hook runs.
@@ -81,6 +83,9 @@ def load_articles():
         if a["category"] not in CATEGORIES:
             sys.exit(f"error: article '{a['slug']}' has unknown category '{a['category']}'")
         a["_date"] = parse_date(a["date"])
+        # optional: date of the latest dated "Updated" note, for the sitemap
+        if "updated" in a and parse_date(a["updated"]) < a["_date"]:
+            sys.exit(f"error: article '{a['slug']}' has updated {a['updated']} before its date {a['date']}")
     # newest first; stable sort keeps manifest order among equal dates
     articles.sort(key=lambda a: a["_date"], reverse=True)
     return articles
@@ -221,7 +226,7 @@ def render_sitemap(articles) -> str:
     for a in articles:
         entries.append(f"""  <url>
     <loc>https://umbrasec.dev/research/{a['slug']}</loc>
-    <lastmod>{a['date']}</lastmod>
+    <lastmod>{a.get('updated') or a['date']}</lastmod>
     <priority>0.9</priority>
   </url>""")
     return _wrap(entries, "\n", 2)
@@ -317,7 +322,7 @@ def render_sigma_rows(rows) -> str:
             f'                        <td class="py-4 px-6 text-[#959c95] whitespace-nowrap">{md_cell_to_html(r["kind"])}</td>\n'
             f'                        <td class="py-4 px-6">{md_cell_to_html(r["attack"])}</td>\n'
             f'                        <td class="py-4 px-6 text-[#959c95]">{md_cell_to_html(r["tactic"])}</td>\n'
-            f'                        <td class="py-4 px-6 font-mono text-xs text-[#7d837d] whitespace-nowrap">{md_cell_to_html(r["status"])}</td>\n'
+            f'                        <td class="py-4 px-6 font-mono text-xs text-[#959c95] whitespace-nowrap">{md_cell_to_html(r["status"])}</td>\n'
             '                    </tr>'
         )
     return "\n".join(out)
@@ -458,7 +463,7 @@ def find_orphans(articles):
     return orphans
 
 
-def build(check: bool) -> int:
+def build(check: bool, list_drift: bool = False) -> int:
     articles = load_articles()
     transforms = {}  # rel path -> list of text->text callables, applied in order
 
@@ -508,6 +513,13 @@ def build(check: bool) -> int:
             new = fn(new)
         if new != old:
             changes.append((path, new))
+
+    # Hook helper: name the files a regeneration would rewrite, one per line,
+    # so the pre-commit hook can check and stage exactly those.
+    if list_drift:
+        for path, _ in changes:
+            print(path.relative_to(ROOT).as_posix())
+        return 0
 
     orphans = find_orphans(articles)
     sigma_unlisted, sigma_missing = find_sigma_problems(sigma_rows)
@@ -571,9 +583,11 @@ def build(check: bool) -> int:
 
 def main():
     ap = argparse.ArgumentParser(description="Regenerate UMBRASEC derived lists from research/articles.json")
-    ap.add_argument("--check", action="store_true", help="exit 1 if any file is out of sync (writes nothing)")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="exit 1 if any file is out of sync (writes nothing)")
+    mode.add_argument("--list-drift", action="store_true", help="print the files a regeneration would rewrite (writes nothing)")
     args = ap.parse_args()
-    sys.exit(build(args.check))
+    sys.exit(build(args.check, args.list_drift))
 
 
 if __name__ == "__main__":

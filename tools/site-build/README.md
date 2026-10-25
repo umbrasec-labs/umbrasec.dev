@@ -22,8 +22,10 @@ coverage table in `tools/sigma-pack/README.md` for the sigma pack.
    ```
 
 4. Commit. The `.githooks/pre-commit` hook runs `--check`. On drift it
-   regenerates and stages the derived files into the same commit, so a forgotten
-   step can't ship. It blocks the commit if regeneration fails, or for what it
+   regenerates and stages the files it rewrote into the same commit, so a
+   forgotten step can't ship. It stops first if one of those files, or
+   `articles.json`, the sigma-pack README or the generator, has unstaged edits,
+   so unrelated work never rides along: stage or stash them and commit again. It blocks the commit if regeneration fails, or for what it
    cannot fix: a research page missing from `research/articles.json`, or a
    sigma-pack rule file and the
    ATT&CK table in `tools/sigma-pack/README.md` that disagree (a file missing from
@@ -69,6 +71,13 @@ Per article: `slug`, `title`, `nav_title` (short label for prev/next), `category
 `home_blurb` (homepage row), `card_blurb` (research index card), `feed_desc` (RSS),
 and a `palette` object (`label`, `hint`, `icon`, `keywords`).
 
+Optional: `updated` (`YYYY-MM-DD`), the date of the article's latest dated
+"Updated" note. The sitemap `<lastmod>` uses it instead of `date`, so search
+engines recrawl changed articles. Set it whenever you add such a note; the feed
+and the sort order still use `date`. The hand-written sitemap entries (home,
+guide, research index, tools, about) are bumped by hand when those pages change
+in substance; footer-only regenerations do not count.
+
 Use **raw** text: literal `&` and `"`. The generator escapes per output format
 (HTML/XML entity-escaping for the pages and feed, JS-string escaping for the
 palette). Do not pre-escape.
@@ -78,6 +87,7 @@ palette). Do not pre-escape.
 ```sh
 python3 tools/site-build/build_indexes.py          # regenerate (writes changes)
 python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 on drift, writes nothing
+python3 tools/site-build/build_indexes.py --list-drift  # print the files a regen would rewrite
 ```
 
 `--check` also exits 1, even with no drift, when a `research/*.html` page is
