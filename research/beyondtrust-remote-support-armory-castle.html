@@ -40,7 +40,7 @@
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/research/beyondtrust-remote-support-armory-castle",
       "about": "BeyondTrust Remote Support authentication bypass, an espionage intrusion of a privileged-access appliance, and post-patch threat hunting",
-      "keywords": "BeyondTrust, Remote Support, Bomgar, CVE-2026-102764, authentication bypass, CWE-290, ARMORY CASTLE, UNC5221, Warp Panda, Mandiant, Google Threat Intelligence, SAWFLY, mangoapi.php, BARECLAW, SOCKS5, WebSocket, HAProxy, SUID, sudoers, bt-secrets, credential vault, log deletion, CISA KEV, MSP, third-party risk, Sigma, T1190, T1505.003, T1548.001, T1070"
+      "keywords": "BeyondTrust, Remote Support, Bomgar, CVE-2026-102764, authentication bypass, CWE-290, ARMORY CASTLE, UNC5221, Warp Panda, Mandiant, Google Threat Intelligence, SAWFLY, mangoapi.php, BARECLAW, SOCKS5, WebSocket, HAProxy, SUID, sudoers, bt-secrets, credential vault, log deletion, CISA KEV, MSP, third-party risk, Sigma, T1190, T1505.003, T1548.001, T1685.006"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -315,10 +315,14 @@
                         <tr><td><a href="https://attack.mitre.org/techniques/T1505/003/" target="_blank" rel="noopener">T1505.003</a> Web Shell</td><td>SAWFLY (<code>mangoapi.php</code>)</td></tr>
                         <tr><td><a href="https://attack.mitre.org/techniques/T1548/001/" target="_blank" rel="noopener">T1548.001</a> Abuse Elevation Control: SUID</td><td>Shell copied to a root-owned SUID binary</td></tr>
                         <tr><td><a href="https://attack.mitre.org/techniques/T1572/" target="_blank" rel="noopener">T1572</a> Protocol Tunneling</td><td>BARECLAW SOCKS5 over WebSocket via HAProxy</td></tr>
-                        <tr><td><a href="https://attack.mitre.org/techniques/T1070/" target="_blank" rel="noopener">T1070</a> Indicator Removal</td><td>Deletion of appliance logs</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1685/006/" target="_blank" rel="noopener">T1685.006</a> Clear Linux or Mac System Logs</td><td>Deletion of appliance logs</td></tr>
                     </tbody>
                 </table>
             </div>
+            <p>
+                Updated 2026-10-25: log deletion was mapped to T1070 Indicator Removal. ATT&amp;CK v19 moved clearing
+                Linux system logs to Defense Impairment as <a href="https://attack.mitre.org/techniques/T1685/006/" target="_blank" rel="noopener">T1685.006</a>, so the table now cites it.
+            </p>
 
             <h2>What to do this week</h2>
             <ol>
