@@ -198,6 +198,7 @@
     btn.className = "menu-btn md:hidden";
     btn.setAttribute("aria-label", "Toggle menu");
     btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-controls", "mobile-menu");
     btn.innerHTML = '<i class="fa-solid fa-bars text-lg"></i>';
 
     // place the button at the far right of the nav bar
@@ -208,6 +209,7 @@
     }
 
     const panel = document.createElement("div");
+    panel.id = "mobile-menu";
     panel.className = "mobile-menu md:hidden px-8";
     panel.innerHTML = links
       .map((a) => '<a href="' + a.getAttribute("href") + '">' + a.textContent.trim() + "</a>")
