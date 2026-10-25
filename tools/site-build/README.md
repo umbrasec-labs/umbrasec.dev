@@ -52,6 +52,7 @@ is never touched.
 | `assets/umbra.js` | command-palette "Articles" entries | `/* AUTO:articles ... */` |
 | `tools/sigma-pack/index.html` | ATT&CK coverage table (from the table in `tools/sigma-pack/README.md`) | `<!-- AUTO:sigmapack ... -->` |
 | `research/<slug>.html` | prev/next footer nav | located structurally (no marker) |
+| `research/<slug>.html` | JSON-LD `dateModified` + `article:modified_time` meta, only when `updated` is set | the line after `datePublished` / `article:published_time` |
 | standard site pages (see below) | shared site footer (depth-aware links) | the whole `<footer>` element is replaced (no marker) |
 
 The count is computed, so "Three/Six published so far" can never go stale again.
@@ -73,7 +74,9 @@ and a `palette` object (`label`, `hint`, `icon`, `keywords`).
 
 Optional: `updated` (`YYYY-MM-DD`), the date of the article's latest dated
 "Updated" note. The sitemap `<lastmod>` uses it instead of `date`, so search
-engines recrawl changed articles. Set it whenever you add such a note; the feed
+engines recrawl changed articles, and the article gets a JSON-LD `dateModified` and an
+`article:modified_time` meta with the same date (both are removed again if the field
+goes). Set it whenever you add such a note; the feed
 and the sort order still use `date`. The hand-written sitemap entries (home,
 guide, research index, tools, about) are bumped by hand when those pages change
 in substance; footer-only regenerations do not count.
@@ -92,6 +95,8 @@ python3 tools/site-build/build_indexes.py --list-drift  # print the files a rege
 
 `--check` also exits 1, even with no drift, when a `research/*.html` page is
 missing from `articles.json`, when a site page lacks the "Skip to content" link
-or the `<main id="main">` landmark, when a sigma-pack `rules/**/*.yml` or
+or the `<main id="main">` landmark, when the sha256 of an inline script in
+`404.html` is missing from the Content-Security-Policy lines in `_headers` (it
+prints the new hash), when a sigma-pack `rules/**/*.yml` or
 `queries/**/*.kql` file has no row in the ATT&CK table, or when a table row
 points at a file that doesn't exist.

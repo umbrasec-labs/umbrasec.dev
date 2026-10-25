@@ -13,7 +13,8 @@
  *
  * The response schema is the snapshot's schema plus "mode" and "dateReleased",
  * so assets/umbra.js and anyone curling the old file can read either. The
- * X-KEV-Source header says which path answered: live | cache | snapshot | none.
+ * X-KEV-Source header says which path answered: live | snapshot | none, or
+ * cache-live / cache-snapshot for an edge-cache hit on either of the first two.
  *
  * No secrets, no bindings beyond the built-in ASSETS, no cron: the data stays
  * fresh because the edge cache expires, not because anything runs on a schedule.
@@ -105,7 +106,8 @@ export async function onRequestGet(context) {
   const hit = await cache.match(key);
   if (hit) {
     const out = new Response(hit.body, hit);
-    out.headers.set("X-KEV-Source", "cache");
+    // keep what the cached copy was, so a cached outage fallback is visible
+    out.headers.set("X-KEV-Source", "cache-" + (hit.headers.get("X-KEV-Source") || "unknown"));
     return out;
   }
 
@@ -128,8 +130,10 @@ export async function onRequestGet(context) {
     context.waitUntil(cache.put(key, res.clone()));
     return res;
   } catch (err) {
+    // The reasons go to the Functions log, not the public body.
     const detail = [liveError, err].map((e) => (e && e.message) || String(e)).join("; ");
-    return new Response(JSON.stringify({ error: "KEV data unavailable", detail }) + "\n", {
+    console.error("kev: " + detail);
+    return new Response(JSON.stringify({ error: "KEV data unavailable" }) + "\n", {
       status: 503,
       headers: headers("none", { "Cache-Control": "no-store" }),
     });

@@ -78,11 +78,19 @@ def fetch_kev(timeout: int = 30) -> dict:
 def load_state() -> set[str]:
     if not os.path.exists(STATE_PATH):
         return set()
+    # A state file that exists but cannot be read must not count as empty:
+    # that would report the whole catalog as new. Stop and say how to recover.
     try:
         with open(STATE_PATH, encoding="utf-8") as fh:
-            return set(json.load(fh).get("seen", []))
-    except (OSError, json.JSONDecodeError):
-        return set()
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        sys.exit(f"error: could not read state file {STATE_PATH}: {exc}\n"
+                 "Fix it, or delete it to record a fresh baseline on the next run.")
+    seen = data.get("seen") if isinstance(data, dict) else None
+    if not isinstance(seen, list):
+        sys.exit(f"error: state file {STATE_PATH} has no \"seen\" list.\n"
+                 "Fix it, or delete it to record a fresh baseline on the next run.")
+    return set(seen)
 
 
 def save_state(seen: set[str]) -> None:

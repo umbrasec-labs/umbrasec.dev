@@ -110,9 +110,19 @@ test("cache hit: served from the edge cache without touching upstream", async ()
 
   const res = await onRequestGet(ctx);
   assert.equal(res.status, 200);
-  assert.equal(res.headers.get("x-kev-source"), "cache");
+  assert.equal(res.headers.get("x-kev-source"), "cache-live");
   assert.equal(calls.length, 0);
   assert.deepEqual(await res.json(), { mode: "live", vulnerabilities: [] });
+});
+
+test("cache hit on a snapshot fallback is labelled cache-snapshot", async () => {
+  const cached = new Response(SNAPSHOT_TEXT, { status: 200, headers: { "content-type": "application/json; charset=utf-8", "x-kev-source": "snapshot" } });
+  installCache(cached);
+  installFetch(() => { throw new Error("must not be called"); });
+  const { ctx } = makeContext();
+
+  const res = await onRequestGet(ctx);
+  assert.equal(res.headers.get("x-kev-source"), "cache-snapshot");
 });
 
 test("cache key ignores the query string", async () => {
@@ -150,13 +160,24 @@ test("upstream and snapshot both unavailable: 503 JSON, not cached", async () =>
   const { puts } = installCache(undefined);
   installFetch(() => { throw new Error("boom"); });
   const { ctx, pending } = makeContext({ assets: { fetch: async () => new Response("nope", { status: 404 }) } });
-  const res = await onRequestGet(ctx);
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(" "));
+  let res;
+  try {
+    res = await onRequestGet(ctx);
+  } finally {
+    console.error = origError;
+  }
   await Promise.all(pending);
   assert.equal(res.status, 503);
   assert.equal(res.headers.get("cache-control"), "no-store");
   assert.equal(res.headers.get("x-kev-source"), "none");
   const body = await res.json();
-  assert.equal(body.error, "KEV data unavailable");
+  assert.deepEqual(body, { error: "KEV data unavailable" }, "internal error strings stay out of the public body");
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /boom/);
+  assert.match(logged[0], /snapshot 404/);
   assert.equal(puts.length, 0);
 });
 

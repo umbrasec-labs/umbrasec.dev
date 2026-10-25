@@ -16,6 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-06-10">
+    <meta property="article:modified_time" content="2026-10-25">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="Detection Engineering">
     <meta property="article:tag" content="Kerberoasting">
@@ -33,8 +34,9 @@
       "headline": "Detecting Kerberoasting: A Practical Walkthrough with Sigma",
       "description": "A defender-focused walkthrough of Kerberoasting (MITRE ATT&CK T1558.003): how it works, why RC4 service tickets expose it, and Sigma rules with tuning notes you can run against your own logs.",
       "datePublished": "2026-06-10",
+      "dateModified": "2026-10-25",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
-      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/og.png" } },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/research/detecting-kerberoasting",
       "about": "Kerberoasting (MITRE ATT&CK T1558.003) detection",
@@ -393,7 +395,7 @@ logsource:
 detection:
     selection:
         EventID: 4769
-        ServiceName: 'svc-honeypot-sql'   # <-- your decoy sAMAccountName
+        ServiceName: 'svc-honeypot-sql'   # &lt;-- your decoy sAMAccountName
     condition: selection
 falsepositives:
     - A misconfigured scanner that was pointed at the decoy (investigate anyway)
