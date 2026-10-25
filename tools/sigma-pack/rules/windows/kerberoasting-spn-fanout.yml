@@ -10,7 +10,7 @@ references:
     - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
-modified: 2026-10-23
+modified: 2026-10-25
 tags:
     - attack.credential-access
     - attack.t1558.003

@@ -252,6 +252,7 @@ references:
     - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
+modified: 2026-10-25
 tags:
     - attack.credential-access
     - attack.t1558.003
@@ -262,7 +263,9 @@ detection:
     selection:
         EventID: 4769
         TicketEncryptionType: '0x17'   # RC4-HMAC
-        TicketOptions: '0x40810000'     # see tuning note - remove if too narrow
+        # TicketOptions: '0x40810000'  # OFF by default: roasting tools vary this flag, so
+                                       # ANDing it here misses them. Opt-in tightening filter
+                                       # only - see the writeup tuning note before enabling.
         Status: '0x0'                   # only count successfully issued tickets
     filter_machine:
         ServiceName|endswith: '$'
@@ -276,10 +279,11 @@ falsepositives:
 level: medium</code></pre>
 
             <div class="callout">
-                <p class="text-sm"><strong>Tuning note.</strong> The <code>TicketOptions: '0x40810000'</code> line tightens
-                precision but will miss tools that vary their flags. Start <em>without</em> it to measure your baseline of
-                RC4 requests, identify the legitimate RC4-only accounts, add those to <code>filter_machine</code> as an
-                allowlist, and only then decide whether the TicketOptions constraint earns its keep.</p>
+                <p class="text-sm"><strong>Tuning note.</strong> The rule ships with the
+                <code>TicketOptions: '0x40810000'</code> line commented out. Enabled, it tightens precision but will miss
+                tools that vary their flags. Start <em>without</em> it to measure your baseline of RC4 requests, identify
+                the legitimate RC4-only accounts, add those to <code>filter_machine</code> as an allowlist, and only then
+                decide whether the TicketOptions constraint earns its keep.</p>
             </div>
 
             <h3>2. One account, many service principals (velocity / fan-out)</h3>
@@ -302,7 +306,7 @@ references:
     - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
-modified: 2026-10-23
+modified: 2026-10-25
 tags:
     - attack.credential-access
     - attack.t1558.003
@@ -319,6 +323,7 @@ correlation:
 falsepositives:
     - Vulnerability scanners and monitoring accounts that request tickets for many services in a burst - allowlist them
     - Busy legitimate accounts above the default threshold - run it report-only first and set gte above your noisiest legitimate account
+level: medium
 ---
 title: Kerberoasting 4769 base
 id: 2d0e5c88-3f66-4012-cc4b-7e9f0a1b2c33
@@ -337,6 +342,11 @@ detection:
                 Updated 2026-10-23: the correlation rule now carries a <code>falsepositives</code> list - vulnerability
                 scanners and monitoring accounts, and busy legitimate accounts above the default threshold - taken from
                 the tuning advice below. The sigma-pack holds the canonical copy of this rule.
+            </p>
+            <p>
+                Updated 2026-10-25: the correlation rule now sets <code>level: medium</code>, the RC4 rule above ships
+                with its <code>TicketOptions</code> constraint off, and the honeypot rule below drops
+                <code>attack.deception</code>, which is not an ATT&amp;CK tactic tag.
             </p>
             <p>
                 The <code>gte: 15</code> threshold and <code>5m</code> window are starting points, not gospel. Run it in
@@ -367,12 +377,13 @@ description: >
     evidence of SPN enumeration / Kerberoasting.
 references:
     - https://attack.mitre.org/techniques/T1558/003/
+    - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
+modified: 2026-10-25
 tags:
     - attack.credential-access
     - attack.t1558.003
-    - attack.deception
 logsource:
     product: windows
     service: security

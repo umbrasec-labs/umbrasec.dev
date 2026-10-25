@@ -237,9 +237,10 @@ AuditLogs
 | extend propName = tostring(mods.displayName), newVal = tostring(mods.newValue)
 | summarize props = make_bag(bag_pack(propName, newVal))
         by CorrelationId, TimeGenerated,
-           Actor = tostring(InitiatedBy.user.userPrincipalName)
+           Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName),
+                            tostring(InitiatedBy.app.displayName))
 | extend Permissions   = tostring(props["ConsentAction.Permissions"]),
-         IsAdminConsent = tostring(props["ConsentContext.IsAdminConsent"]),
+         IsAdminConsent = trim('"', tostring(props["ConsentContext.IsAdminConsent"])),
          AppDisplayName = tostring(props["TargetId.ServicePrincipalNames"])
 | where Permissions has_any (
         "Mail.Read", "Mail.ReadWrite", "Mail.Send", "MailboxSettings.ReadWrite",
@@ -250,6 +251,13 @@ AuditLogs
                 <strong>Tuning.</strong> Maintain an allowlist of <code>AppId</code>s for sanctioned applications and
                 exclude them. <code>IsAdminConsent == "True"</code> is the high-severity branch - a tenant-wide grant
                 exposes every user, not just the clicker.
+            </p>
+            <p>
+                Updated 2026-10-25: Entra writes each <code>modifiedProperties</code> <code>newValue</code> JSON-quoted,
+                so the query now strips the quotes from <code>IsAdminConsent</code>; before, the
+                <code>"True"</code> branch never matched. <code>Actor</code> also falls back to the app's display name,
+                so a grant made by a service principal no longer shows a blank actor. Detection 3 below has the same
+                fallback.
             </p>
 
             <h3>2. The grant itself, in Graph activity (high fidelity)</h3>
@@ -290,7 +298,8 @@ AuditLogs
 | extend propName = tostring(mods.displayName), newVal = tostring(mods.newValue)
 | where propName in ("AppRole.Value", "ServicePrincipal.DisplayName")
 | project TimeGenerated, OperationName,
-          Actor = tostring(InitiatedBy.user.userPrincipalName), propName, newVal</code></pre>
+          Actor = coalesce(tostring(InitiatedBy.user.userPrincipalName),
+                          tostring(InitiatedBy.app.displayName)), propName, newVal</code></pre>
             <p>
                 <strong>Tuning.</strong> High-value app roles to flag by name include
                 <code>full_access_as_app</code> (Exchange), <code>Mail.ReadWrite</code>, and any

@@ -15,7 +15,7 @@ references:
     - https://umbrasec.dev/research/detecting-litellm-command-injection.html
 author: UMBRASEC
 date: 2026-06-13
-modified: 2026-10-23
+modified: 2026-10-25
 tags:
     - attack.initial-access
     - attack.t1190
