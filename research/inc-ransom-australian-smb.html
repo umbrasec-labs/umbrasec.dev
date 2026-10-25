@@ -142,8 +142,8 @@
 
             <h2>Why this one is worth your attention in Australia</h2>
             <p>
-                This is not a hypothetical. The Australian Signals Directorate's ACSC, together with CERT NZ and partners
-                across the Pacific, has published a joint advisory on INC Ransom's affiliate network specifically because
+                This is not a hypothetical. The Australian Signals Directorate's ACSC, together with New Zealand's NCSC and
+                CERT Tonga, has published a joint advisory on INC Ransom's affiliate network specifically because
                 it is operating against organisations in Australia, New Zealand and the Pacific island states. That
                 advisory draws on INC Ransom incidents reported to the ACSC, so the behaviour described here is not
                 imported threat-intel from another hemisphere - it is what is landing locally.
@@ -159,7 +159,7 @@
 
             <div class="callout">
                 <p class="text-sm"><strong>A note on sourcing and scope.</strong> Everything below is drawn from public
-                reporting - the ACSC/CERT NZ advisory, and incident write-ups from GuidePoint, Huntress, Secureworks and
+                reporting - the joint ACSC, NCSC NZ and CERT Tonga advisory, and incident write-ups from GuidePoint, Huntress, Secureworks and
                 others. We do <em>not</em> reference or reconstruct any individual Australian victim's breach, and we draw
                 nothing from ransomware leak sites. The trackers tell us a crew is active here; the defensive detail comes
                 from vendors who responded to these intrusions. This is a defensive profile: it explains the playbook only
@@ -219,8 +219,8 @@
             <p>
                 This is where <a href="../guide/foundation.html">application control</a> earns its keep: if unapproved
                 executables cannot run, the AV-killer never launches. It is also where
-                <a href="../guide/detection-and-response.html">EDR and the right alerts</a> matter - a Defender service
-                being disabled (Event ID 5007) or tamper-protection events should be a high-signal alarm, not a line item
+                <a href="../guide/detection-and-response.html">EDR and the right alerts</a> matter - a Defender
+                configuration change (Event ID 5007, Defender Operational log) or tamper-protection events should be a high-signal alarm, not a line item
                 nobody reads. Tamper protection on your endpoint product, switched on and enforced, raises the cost of this
                 whole stage.
             </p>
@@ -245,7 +245,7 @@
             <h3>4. Exfiltration - commodity tools, cloud destinations</h3>
             <p>
                 Before encrypting, affiliates stage and steal data using off-the-shelf utilities: <strong>rclone</strong>
-                with an include-list of interesting file types, <strong>MEGAsync</strong> and other cloud-sync clients,
+                with an <code>--include-from</code> file list, <strong>MEGAsync</strong> and other cloud-sync clients,
                 7-Zip to compress, and in some incidents the open-source backup tool <strong>Restic</strong> repurposed
                 for exfiltration. None of these are malware in the signature sense, which is the point - they are normal
                 admin tools used for an abnormal purpose.
@@ -254,7 +254,7 @@
                 This stage is hard to stop with prevention alone, which is why it is a
                 <a href="../guide/detection-and-response.html">detection-and-response</a> problem. Large outbound
                 transfers to consumer cloud-storage domains, rclone or MEGAsync executing on a server that has no business
-                running them, and 7-Zip spawning across dozens of hosts are all detectable patterns if you are collecting
+                running them, and 7-Zip spawning over and over on one host are all detectable patterns if you are collecting
                 endpoint and network telemetry. <a href="../guide/foundation.html">Application control</a> helps here too:
                 if rclone is not on the approved list, it does not run.
             </p>
@@ -311,6 +311,280 @@
                     business - <a href="../guide/foundation.html">Stage 1, step 4</a>.</li>
             </ul>
 
+            <h2>Detection</h2>
+            <p>
+                Updated 2026-10-25: this section is new. Three Sigma rules for the stages above. They are in
+                <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" target="_blank" rel="noopener">sigma-pack</a>, which holds the canonical copy of each; convert with
+                <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener">sigma-cli</a>. All three are <code>experimental</code>: read each rule's
+                <code>falsepositives</code> before you alert on it, and run it report-only first.
+                MEGAsync and Restic, also named above, are not covered by these rules.
+            </p>
+
+            <h3>1. Defender settings changed via SystemSettingsAdminFlows (medium)</h3>
+            <p>
+                The native utility from stage 2. Huntress documented an INC Ransom intrusion where the operator ran
+                <code>SystemSettingsAdminFlows.exe</code> directly to essentially disable Windows Defender, and MITRE
+                ATT&amp;CK lists the same procedure for INC Ransom (G1032). The rule fires when that binary runs with
+                "defender" in its command line from anything other than the Settings app. It cannot tell an off
+                switch from an on switch, so pair a match with Defender event 5007 on the same host to see which
+                setting changed.
+            </p>
+            <pre><code>title: Defender Settings Changed via SystemSettingsAdminFlows Outside the Settings App
+id: ca911907-3715-40b2-847a-5c3bbab84fcd
+status: experimental
+description: >
+    SystemSettingsAdminFlows.exe, a native Windows binary that applies
+    changes made in the Settings app, was started with "defender" in its
+    command line by something other than the Settings app
+    (C:\Windows\ImmersiveControlPanel\SystemSettings.exe). The binary is
+    matched by image name or by OriginalFileName, so a renamed copy also
+    fires. Huntress
+    documented an INC Ransom intrusion where the operator ran it directly
+    to essentially disable Windows Defender, and MITRE ATT&amp;CK lists the
+    same procedure for INC Ransom (G1032). The DFIR Report saw it used the
+    same way in a LockBit intrusion, so the behaviour is not tied to one
+    crew. A Settings app parent is the usual GUI path and is filtered out;
+    a shell, a remote shell, an RMM agent, or a file named
+    SystemSettings.exe in any other folder is worth a look. Huntress notes
+    these changes appear as event 5007 in the Defender Operational log, so
+    pair a match with 5007 on the same host to see which setting changed.
+    Limitation: Defender switched off any other way (Set-MpPreference,
+    direct registry writes, Group Policy or a third-party EDR killer) never
+    touches this binary, and the rule does not read argument values, so it
+    also matches a setting being turned back on. A change made by clicking
+    in the Settings app, including by an intruder over RDP, is filtered out
+    by design; event 5007 on a host with an RDP logon (4624 logon type 10)
+    around the same time covers that path.
+references:
+    - https://attack.mitre.org/techniques/T1685/
+    - https://attack.mitre.org/groups/G1032/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://thedfirreport.com/2026/02/23/apache-activemq-exploit-leads-to-lockbit-ransomware/
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.defense-impairment
+    - attack.t1685
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\SystemSettingsAdminFlows.exe'
+        - OriginalFileName: 'SystemSettingsAdminFlows.EXE'
+    selection_cli:
+        CommandLine|contains: 'defender'
+    filter_main_settings_app:
+        # Huntress tunes its own rule the same way: the binary is often used
+        # legitimately with SystemSettings.exe as the parent. Anchor on the
+        # folder so a copy named SystemSettings.exe elsewhere still fires;
+        # endswith allows a system drive other than C:.
+        ParentImage|endswith: '\Windows\ImmersiveControlPanel\SystemSettings.exe'
+    condition: all of selection_* and not 1 of filter_main_*
+falsepositives:
+    - An administrator or deployment script that runs
+      SystemSettingsAdminFlows.exe with a Defender argument from cmd or
+      PowerShell to change a setting on purpose. Confirm the change with
+      event 5007 and a change ticket
+    - A script that turns Defender protection back on through the same binary.
+      The cited reports do not publish the argument values in text, so the
+      rule cannot tell an off switch from an on switch; read the full
+      command line before escalating
+    - A Defender change made through the Windows shell. The SigmaHQ rule for
+      this binary (da92713f) names Explorer.exe as well as SystemSettings.exe
+      as expected parents for GUI changes, so check the logged-on session
+      before escalating an Explorer.exe parent
+level: medium</code></pre>
+
+            <h3>2. 7-Zip or WinRAR archiving another host's admin share (medium)</h3>
+            <p>
+                The March 2026 joint ACSC, NCSC NZ and CERT Tonga advisory records INC Ransom compressing data with
+                7-Zip before exfiltration, and Huntress saw an INC intrusion run 28 <code>7zG.exe</code> processes
+                to archive data. The rule fires when 7-Zip, WinRAR or RAR creates or adds to an archive with a C$
+                to F$ admin share on the command line. The admin-share pattern comes from SafePay's WinRAR use, not
+                from INC reporting, and a 7zG.exe run started from the Explorer menu may not carry the source path
+                at all, so treat this as coverage by tool overlap.
+            </p>
+            <pre><code>title: WinRAR or 7-Zip Archive Built From an Administrative Share
+id: 11a8a147-5126-491c-a911-28bcd9ecc2e5
+status: experimental
+description: >
+    WinRAR, RAR or 7-Zip was asked to create or add to an archive (the "a"
+    or "u" command, or the RAR "m" and "mf" move commands) with a C$, D$, E$
+    or F$ drive administrative share, such as \\host\C$, on the command line.
+    Pulling another machine's disk into an archive over its admin share is
+    how SafePay staged data in the intrusion Acronis TRU analysed: WinRAR
+    archived \\[host]\C$\Users\ into a local .rar, skipping media,
+    executables and archives with a long list of -x exclusions, then a
+    FileZilla client sent the files to the attackers' server and both tools
+    were removed. Check Point notes that SafePay's WinRAR commands are
+    uncommon in normal use, and Bitdefender also records WinRAR compression
+    ahead of FileZilla exfiltration. 7-Zip is included because the March
+    2026 joint ACSC, NCSC NZ and CERT Tonga advisory records INC Ransom
+    using it to compress data before exfiltration, and Huntress saw an INC
+    intrusion run 28 7zG.exe processes to archive data.
+    Blind spots: the admin-share pattern is sourced only for WinRAR, so the
+    7-Zip coverage is by tool overlap; archiving a mapped drive letter, a
+    named share (\\fileserver\finance), an admin share for a drive letter
+    other than C to F, or local data is missed; a source path passed in a
+    list file (@list.txt) instead of on the command line, or a command
+    letter written in quotes ("a"), is missed; a renamed WinRAR.exe is
+    missed because WinRAR.exe is matched by image name only (a renamed
+    binary with the FileDescription "Command line RAR", which SigmaHQ's
+    Rar.exe rules use, is matched on that description, and renamed 7z.exe,
+    7za.exe, 7zr.exe and 7zG.exe are matched on OriginalFilename); other
+    archivers such as tar.exe or PowerShell Compress-Archive are out of
+    scope; and 7zG.exe runs started from the Explorer menu may not carry the
+    source path on the command line (Huntress did not publish the command
+    lines of the INC 7zG.exe runs).
+references:
+    - https://attack.mitre.org/techniques/T1560/001/
+    - https://attack.mitre.org/techniques/T1039/
+    - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
+    - https://www.checkpoint.com/cyber-hub/threat-prevention/ransomware/safepay-ransomware/
+    - https://www.bitdefender.com/en-us/blog/businessinsights/safepay-ransomware-attacks-ttps
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.collection
+    - attack.t1560.001
+    - attack.t1039
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    archiver_image:
+        Image|endswith:
+            - '\WinRAR.exe'
+            - '\Rar.exe'
+            - '\7z.exe'
+            - '\7za.exe'
+            - '\7zr.exe'
+            - '\7zG.exe'
+    archiver_original_name:
+        OriginalFileName:
+            - '7z.exe'
+            - '7za.exe'
+            - '7zr.exe'
+            - '7zg.exe'
+    archiver_description:
+        Description: 'Command line RAR'
+    add_command:
+        CommandLine|contains:
+            - ' a '
+            - ' u '
+            - ' m '
+            - ' mf '
+    admin_share:
+        CommandLine|contains:
+            - '\C$'
+            - '\D$'
+            - '\E$'
+            - '\F$'
+    condition: 1 of archiver_* and add_command and admin_share
+falsepositives:
+    - An administrator or backup script archiving files from another host over
+      its C$ or D$ share, such as "7z a logs.7z \\srv01\C$\inetpub\logs" or a
+      user-profile backup before a rebuild. Allowlist the known script host and
+      account
+    - Incident responders archiving triage data from a remote machine's admin
+      share with 7-Zip or Rar
+    - Extracting (7z x) an archive that sits on a C$ share into a folder whose
+      name contains a standalone "a", "u", "m" or "mf", such as "C:\Plan a
+      review", because the command check is a plain substring match
+level: medium</code></pre>
+
+            <h3>3. Rclone copy or sync, including renamed binaries (medium)</h3>
+            <p>
+                The same joint advisory names rclone as software INC Ransom uses to exfiltrate. The rule matches
+                rclone, including a renamed copy, started with a command that writes data to a destination. It
+                misses rclone driven through <code>rclone rcd</code>, files copied onto an <code>rclone mount</code>
+                drive and a path published with <code>rclone serve</code>, and a sanctioned backup job looks the
+                same, so baseline who runs rclone before you alert.
+            </p>
+            <pre><code>title: Rclone Copy or Sync Run, Including Renamed Binaries
+id: 0f64f646-167c-4b27-8620-1195a95aa621
+status: experimental
+description: >
+    Rclone was started with a command that writes data to a destination,
+    normally a remote (copy, copyto, sync, move, moveto, bisync, rcat, or
+    archive create, which only exists from v1.72). Rclone is a legitimate
+    command-line client for cloud and remote storage, and ransomware crews
+    use it to move stolen data out before they encrypt. The March 2026 joint
+    ACSC, NCSC NZ and CERT Tonga advisory names rclone as software INC
+    Ransom uses to exfiltrate, and ThreatLocker lists Rclone among SafePay's
+    exfiltration tools. Huntress also recorded an INC Ransom intrusion
+    running "rclone copy" from the E: drive to a redacted mount point with
+    an --include-from file list, which Huntress mapped to collection.
+    Renamed copies are matched on the PE version resource: official builds
+    carry OriginalFilename rclone.exe and ProductName Rclone, and the
+    FileDescription changed from "Rsync for cloud storage" (up to v1.62) to
+    "Rclone" (v1.63 onward), so a rule that keys only on the old description
+    misses a renamed current build.
+    Blind spots: a renamed v1.52 or older or self-built binary has no version
+    resource; rclone driven through "rclone rcd" or a config-only workflow,
+    files copied onto an "rclone mount" drive, or a local path published
+    with "rclone serve" (http, sftp, ftp, webdav, s3 and others) for the
+    attacker to pull, never shows a transfer verb on the command line; a verb
+    written in quotes ("copy") or separated by tabs instead of spaces is
+    missed, because the verb check needs a space on both sides; and
+    telemetry without PE metadata (such as Security event 4688) leaves only
+    the image-name match.
+references:
+    - https://attack.mitre.org/techniques/T1567/002/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.threatlocker.com/blog/safepay-ransomware-explained-iocs-ttps-and-defense-strategies
+    - https://github.com/rclone/rclone/blob/master/bin/resource_windows.go
+    - https://github.com/rclone/rclone/blob/v1.62.0/bin/cross-compile.go
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.exfiltration
+    - attack.t1567.002
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    rclone_image:
+        Image|endswith: '\rclone.exe'
+    rclone_original_name:
+        OriginalFileName: 'rclone.exe'
+    rclone_product:
+        Product: 'Rclone'
+    rclone_description:
+        Description:
+            - 'Rclone'
+            - 'Rsync for cloud storage'
+    transfer_verb:
+        CommandLine|contains:
+            - ' copy '
+            - ' copyto '
+            - ' sync '
+            - ' move '
+            - ' moveto '
+            - ' bisync '
+            - ' rcat '
+            - ' archive create '
+    condition: 1 of rclone_* and transfer_verb
+falsepositives:
+    - A sanctioned backup or migration job, such as a scheduled task that runs
+      "rclone sync D:\Shares remote:backup" each night, matches. Baseline the
+      hosts, accounts and parent processes that run rclone and alert on the rest
+    - An administrator running "rclone move" or "rclone copy" by hand to shift
+      files to an approved cloud store during a migration
+    - A non-transfer rclone command whose path argument contains a transfer
+      word with spaces around it, such as rclone ls on "D:\Team sync folder",
+      because the verb check is a plain substring match
+level: medium</code></pre>
+
             <h2>Honest limitations</h2>
             <p>
                 The Essential Eight is a strong baseline, not a force field. It does little to recover data already
@@ -331,7 +605,7 @@
 
             <h2>References</h2>
             <ul>
-                <li><a href="https://www.cyber.gov.au/about-us/view-all-content/alerts-and-advisories/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks" target="_blank" rel="noopener">ASD's ACSC / CERT NZ - INC Ransom Affiliate Model Enabling Targeting of Critical Networks</a></li>
+                <li><a href="https://www.cyber.gov.au/about-us/view-all-content/alerts-and-advisories/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks" target="_blank" rel="noopener">ASD's ACSC, NCSC NZ and CERT Tonga - INC Ransom Affiliate Model Enabling Targeting of Critical Networks</a></li>
                 <li><a href="https://www.cyber.gov.au/about-us/view-all-content/news/inc-ransom-and-affiliate-network-operating-in-australia-new-zealand-and-the-pacific-island-states" target="_blank" rel="noopener">ASD's ACSC - INC Ransom and Affiliate Network operating in Australia, New Zealand and the Pacific island states</a></li>
                 <li><a href="https://www.huntress.com/blog/lolbin-to-inc-ransomware" target="_blank" rel="noopener">Huntress - From LOLBin to INC Ransomware</a></li>
                 <li><a href="https://www.guidepointsecurity.com/blog/update-from-the-ransomware-trenches/" target="_blank" rel="noopener">GuidePoint Security - Update from the Ransomware Trenches</a></li>

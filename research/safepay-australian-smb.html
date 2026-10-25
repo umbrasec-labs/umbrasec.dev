@@ -365,6 +365,318 @@
                     your business - <a href="../guide/foundation.html">Stage 1, step 4</a>.</li>
             </ul>
 
+            <h2>Detection</h2>
+            <p>
+                Updated 2026-10-25: this section is new. Three Sigma rules for the stages above. They are in
+                <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" target="_blank" rel="noopener">sigma-pack</a>, which holds the canonical copy of each; convert with
+                <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener">sigma-cli</a>. All three are <code>experimental</code>: read each rule's
+                <code>falsepositives</code> before you alert on it, and run it report-only first.
+                FileZilla and the RDP clipboard, also named above, are not covered by these rules: the reports we
+                used name FileZilla but publish no command line or destination to build a rule on.
+            </p>
+
+            <h3>1. Shadow copies deleted or boot recovery disabled (high)</h3>
+            <p>
+                The "kill the backups" step from stage 2 as process-creation telemetry sees it:
+                <code>vssadmin</code> or <code>wmic</code> deleting Volume Shadow Copies, <code>wbadmin</code>
+                deleting the backup catalog, or <code>bcdedit</code> set to ignore boot failures or to disable
+                automatic recovery. Acronis TRU
+                documents SafePay samples started with the <code>-uac</code> flag running the vssadmin, wmic and
+                bcdedit commands; the wbadmin branch is generic ATT&amp;CK coverage, not a SafePay observation. It
+                reads command lines only, so shadow copies removed through the VSS API or by stopping the service
+                get past it.
+            </p>
+            <pre><code>title: Shadow Copies Deleted or Boot Recovery Disabled via Native Utility
+id: b82fbb2c-3738-47c8-a238-8c63116ccf5a
+status: experimental
+description: >
+    A built-in Windows utility was run with the arguments that remove a
+    host's ability to roll back: vssadmin or wmic deleting Volume Shadow
+    Copies, wbadmin deleting the local backup catalog, or bcdedit telling
+    the boot loader to ignore boot failures or to disable automatic
+    recovery, either of which stops Windows failing over to recovery after
+    a failed boot. Ransomware runs this housekeeping just before or while it
+    encrypts, so a match is a reason to isolate the host, not to wait for
+    the ransom note. Acronis TRU found that SafePay samples started with the
+    -uac flag use CMSTPLUA COM elevation to run the vssadmin, wmic and both
+    bcdedit commands as "/c" command strings via ShellExecuteW, and the
+    joint advisory CISA AA26-293A (October 2026) reports SafePay inhibiting
+    system recovery. The wbadmin selection is generic T1490 coverage from
+    ATT&amp;CK, not a SafePay observation. Each selection needs the utility
+    itself (by Image, or by OriginalFileName so renamed copies are caught),
+    so the parent shell that launches it does not fire a second time.
+    The vssadmin check matches "delete" and "shadows" as substrings, so a
+    vssadmin delete shadowstorage command line also fires.
+    Limitation: this sees command lines only. Deleting shadow copies
+    through the VSS API or by stopping the VSS service creates no matching
+    process, and CISA reports SafePay halting the Volume Shadow Copy
+    Service, so pair this with a service-state rule. Acronis does not
+    document these commands for SafePay runs without -uac. PowerShell
+    Win32_ShadowCopy deletion, diskshadow script mode, vssadmin resize
+    shadowstorage, reagentc /disable, wbadmin delete backup or
+    systemstatebackup, and NAS backup resets are also outside this rule.
+references:
+    - https://attack.mitre.org/techniques/T1490/
+    - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-293a
+    - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/vssadmin-delete-shadows
+    - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wbadmin-delete-catalog
+    - https://learn.microsoft.com/en-us/azure/virtual-machines/windows/prepare-for-upload-vhd-image
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.impact
+    - attack.t1490
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_vssadmin_img:
+        - Image|endswith: '\vssadmin.exe'
+        - OriginalFileName: 'VSSADMIN.EXE'
+    selection_vssadmin_cli:
+        CommandLine|contains|all:
+            - 'delete'
+            - 'shadows'
+    selection_wmic_img:
+        - Image|endswith: '\wmic.exe'
+        - OriginalFileName: 'wmic.exe'
+    selection_wmic_cli:
+        CommandLine|contains|all:
+            - 'shadowcopy'
+            - 'delete'
+    selection_wbadmin_img:
+        - Image|endswith: '\wbadmin.exe'
+        - OriginalFileName: 'WBADMIN.EXE'
+    selection_wbadmin_cli:
+        CommandLine|contains|all:
+            - 'delete'
+            - 'catalog'
+    selection_bcdedit_img:
+        - Image|endswith: '\bcdedit.exe'
+        - OriginalFileName: 'bcdedit.exe'
+    selection_bcdedit_cli:
+        # Match the setting and value as separate tokens: Acronis prints the
+        # SafePay command as "bcdedit / set{default}", so spacing varies.
+        # Microsoft's Azure image steps write the value as Off, and a quoted
+        # value has a quote before it instead of a space.
+        - CommandLine|contains|all:
+              - 'bootstatuspolicy'
+              - 'ignoreallfailures'
+        - CommandLine|contains|all:
+              - 'recoveryenabled'
+          CommandLine|contains:
+              - ' no'
+              - ' off'
+              - '"no'
+              - '"off'
+    condition: all of selection_vssadmin_* or all of selection_wmic_* or all of selection_wbadmin_* or all of selection_bcdedit_*
+falsepositives:
+    - An administrator running vssadmin delete shadows /for=&lt;volume> /oldest
+      (a use Microsoft documents) to remove old snapshots. The SafePay
+      (Acronis) and ATT&amp;CK command lines use /all /quiet with no /for=
+      volume, so they hit every volume, while Microsoft's documented
+      examples, /all /quiet included, name a volume with /for=. Check for
+      /for= and the account that ran it
+    - An administrator running wbadmin delete catalog because the backup
+      catalog is corrupted, the use Microsoft documents for that command
+    - Backup or imaging software whose agent runs vssadmin delete shadows to
+      clean up its own snapshots. Allowlist that agent by ParentImage, not by
+      command line
+    - VM image preparation before an Azure upload or migration, where
+      Microsoft documents running both bcdedit /set "{default}"
+      recoveryenabled Off and bootstatuspolicy IgnoreAllFailures, or a
+      kiosk, VDI or golden-image build script that sets them on purpose.
+      Check whether the host is being built or migrated and who ran it
+level: high</code></pre>
+
+            <h3>2. WinRAR or 7-Zip archiving another host's admin share (medium)</h3>
+            <p>
+                In the intrusion Acronis TRU analysed, WinRAR archived <code>\\[host]\C$\Users\</code> into a
+                local .rar before a FileZilla client sent the files to the attackers' server. The rule fires when
+                WinRAR, RAR or 7-Zip creates or adds to an archive with a C$ to F$ admin share on the command
+                line. Admin and backup scripts do the same thing for good reasons, so allowlist the known script
+                hosts and accounts before you alert.
+            </p>
+            <pre><code>title: WinRAR or 7-Zip Archive Built From an Administrative Share
+id: 11a8a147-5126-491c-a911-28bcd9ecc2e5
+status: experimental
+description: >
+    WinRAR, RAR or 7-Zip was asked to create or add to an archive (the "a"
+    or "u" command, or the RAR "m" and "mf" move commands) with a C$, D$, E$
+    or F$ drive administrative share, such as \\host\C$, on the command line.
+    Pulling another machine's disk into an archive over its admin share is
+    how SafePay staged data in the intrusion Acronis TRU analysed: WinRAR
+    archived \\[host]\C$\Users\ into a local .rar, skipping media,
+    executables and archives with a long list of -x exclusions, then a
+    FileZilla client sent the files to the attackers' server and both tools
+    were removed. Check Point notes that SafePay's WinRAR commands are
+    uncommon in normal use, and Bitdefender also records WinRAR compression
+    ahead of FileZilla exfiltration. 7-Zip is included because the March
+    2026 joint ACSC, NCSC NZ and CERT Tonga advisory records INC Ransom
+    using it to compress data before exfiltration, and Huntress saw an INC
+    intrusion run 28 7zG.exe processes to archive data.
+    Blind spots: the admin-share pattern is sourced only for WinRAR, so the
+    7-Zip coverage is by tool overlap; archiving a mapped drive letter, a
+    named share (\\fileserver\finance), an admin share for a drive letter
+    other than C to F, or local data is missed; a source path passed in a
+    list file (@list.txt) instead of on the command line, or a command
+    letter written in quotes ("a"), is missed; a renamed WinRAR.exe is
+    missed because WinRAR.exe is matched by image name only (a renamed
+    binary with the FileDescription "Command line RAR", which SigmaHQ's
+    Rar.exe rules use, is matched on that description, and renamed 7z.exe,
+    7za.exe, 7zr.exe and 7zG.exe are matched on OriginalFilename); other
+    archivers such as tar.exe or PowerShell Compress-Archive are out of
+    scope; and 7zG.exe runs started from the Explorer menu may not carry the
+    source path on the command line (Huntress did not publish the command
+    lines of the INC 7zG.exe runs).
+references:
+    - https://attack.mitre.org/techniques/T1560/001/
+    - https://attack.mitre.org/techniques/T1039/
+    - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
+    - https://www.checkpoint.com/cyber-hub/threat-prevention/ransomware/safepay-ransomware/
+    - https://www.bitdefender.com/en-us/blog/businessinsights/safepay-ransomware-attacks-ttps
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.collection
+    - attack.t1560.001
+    - attack.t1039
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    archiver_image:
+        Image|endswith:
+            - '\WinRAR.exe'
+            - '\Rar.exe'
+            - '\7z.exe'
+            - '\7za.exe'
+            - '\7zr.exe'
+            - '\7zG.exe'
+    archiver_original_name:
+        OriginalFileName:
+            - '7z.exe'
+            - '7za.exe'
+            - '7zr.exe'
+            - '7zg.exe'
+    archiver_description:
+        Description: 'Command line RAR'
+    add_command:
+        CommandLine|contains:
+            - ' a '
+            - ' u '
+            - ' m '
+            - ' mf '
+    admin_share:
+        CommandLine|contains:
+            - '\C$'
+            - '\D$'
+            - '\E$'
+            - '\F$'
+    condition: 1 of archiver_* and add_command and admin_share
+falsepositives:
+    - An administrator or backup script archiving files from another host over
+      its C$ or D$ share, such as "7z a logs.7z \\srv01\C$\inetpub\logs" or a
+      user-profile backup before a rebuild. Allowlist the known script host and
+      account
+    - Incident responders archiving triage data from a remote machine's admin
+      share with 7-Zip or Rar
+    - Extracting (7z x) an archive that sits on a C$ share into a folder whose
+      name contains a standalone "a", "u", "m" or "mf", such as "C:\Plan a
+      review", because the command check is a plain substring match
+level: medium</code></pre>
+
+            <h3>3. Rclone copy or sync, including renamed binaries (medium)</h3>
+            <p>
+                ThreatLocker lists rclone among SafePay's exfiltration tools. The rule matches rclone, including a
+                renamed copy, started with a command that writes data to a destination (<code>copy</code>,
+                <code>sync</code>, <code>move</code> and the rest). A sanctioned backup or migration job looks the
+                same, so baseline the hosts, accounts and parent processes that run rclone and alert on the rest.
+            </p>
+            <pre><code>title: Rclone Copy or Sync Run, Including Renamed Binaries
+id: 0f64f646-167c-4b27-8620-1195a95aa621
+status: experimental
+description: >
+    Rclone was started with a command that writes data to a destination,
+    normally a remote (copy, copyto, sync, move, moveto, bisync, rcat, or
+    archive create, which only exists from v1.72). Rclone is a legitimate
+    command-line client for cloud and remote storage, and ransomware crews
+    use it to move stolen data out before they encrypt. The March 2026 joint
+    ACSC, NCSC NZ and CERT Tonga advisory names rclone as software INC
+    Ransom uses to exfiltrate, and ThreatLocker lists Rclone among SafePay's
+    exfiltration tools. Huntress also recorded an INC Ransom intrusion
+    running "rclone copy" from the E: drive to a redacted mount point with
+    an --include-from file list, which Huntress mapped to collection.
+    Renamed copies are matched on the PE version resource: official builds
+    carry OriginalFilename rclone.exe and ProductName Rclone, and the
+    FileDescription changed from "Rsync for cloud storage" (up to v1.62) to
+    "Rclone" (v1.63 onward), so a rule that keys only on the old description
+    misses a renamed current build.
+    Blind spots: a renamed v1.52 or older or self-built binary has no version
+    resource; rclone driven through "rclone rcd" or a config-only workflow,
+    files copied onto an "rclone mount" drive, or a local path published
+    with "rclone serve" (http, sftp, ftp, webdav, s3 and others) for the
+    attacker to pull, never shows a transfer verb on the command line; a verb
+    written in quotes ("copy") or separated by tabs instead of spaces is
+    missed, because the verb check needs a space on both sides; and
+    telemetry without PE metadata (such as Security event 4688) leaves only
+    the image-name match.
+references:
+    - https://attack.mitre.org/techniques/T1567/002/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.threatlocker.com/blog/safepay-ransomware-explained-iocs-ttps-and-defense-strategies
+    - https://github.com/rclone/rclone/blob/master/bin/resource_windows.go
+    - https://github.com/rclone/rclone/blob/v1.62.0/bin/cross-compile.go
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.exfiltration
+    - attack.t1567.002
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    rclone_image:
+        Image|endswith: '\rclone.exe'
+    rclone_original_name:
+        OriginalFileName: 'rclone.exe'
+    rclone_product:
+        Product: 'Rclone'
+    rclone_description:
+        Description:
+            - 'Rclone'
+            - 'Rsync for cloud storage'
+    transfer_verb:
+        CommandLine|contains:
+            - ' copy '
+            - ' copyto '
+            - ' sync '
+            - ' move '
+            - ' moveto '
+            - ' bisync '
+            - ' rcat '
+            - ' archive create '
+    condition: 1 of rclone_* and transfer_verb
+falsepositives:
+    - A sanctioned backup or migration job, such as a scheduled task that runs
+      "rclone sync D:\Shares remote:backup" each night, matches. Baseline the
+      hosts, accounts and parent processes that run rclone and alert on the rest
+    - An administrator running "rclone move" or "rclone copy" by hand to shift
+      files to an approved cloud store during a migration
+    - A non-transfer rclone command whose path argument contains a transfer
+      word with spaces around it, such as rclone ls on "D:\Team sync folder",
+      because the verb check is a plain substring match
+level: medium</code></pre>
+
             <h2>Honest limitations</h2>
             <p>
                 The Essential Eight is a strong baseline, not a force field. It does little to recover data already

@@ -92,15 +92,15 @@
       "nav_title": "SafePay & Australian Real Estate",
       "category": "threat",
       "date": "2026-06-20",
-      "read_min": 12,
+      "read_min": 14,
       "home_blurb": "A centralized ransomware crew now claiming Australian victims, profiled from public reporting. Why real-estate agencies fit its target profile - data-rich, cash-handling, thinly defended - and the playbook stage by stage, mapped to the Essential Eight controls that break each link in the chain.",
-      "card_blurb": "SafePay is a centralized ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly - data-rich, cash-handling, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - edge devices, infostealer-harvested logins, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link.",
-      "feed_desc": "SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link. Built entirely from public vendor reporting, naming no individual victim.",
+      "card_blurb": "SafePay is a centralized ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly - data-rich, cash-handling, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - edge devices, infostealer-harvested logins, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link, plus three Sigma rules.",
+      "feed_desc": "SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link, with three Sigma rules for recovery inhibition, admin-share archiving and rclone transfers. Built entirely from public vendor reporting, naming no individual victim.",
       "palette": {
         "label": "SafePay & Australian Real Estate",
         "hint": "ransomware + Essential Eight",
         "icon": "fa-building",
-        "keywords": "safepay ransomware centralized non-raas australian real estate agency trust account essential eight asd acsc rdp vpn infostealer psexec winrm rclone filezilla exfiltration shadow copy backup deletion living off the land edge device fortinet citrix threat profile mitigation franchise"
+        "keywords": "safepay ransomware centralized non-raas australian real estate agency trust account essential eight asd acsc rdp vpn infostealer psexec winrm rclone filezilla exfiltration shadow copy backup deletion living off the land edge device fortinet citrix threat profile mitigation franchise sigma t1490 t1560.001 t1039 t1567.002 vssadmin wmic wbadmin bcdedit winrar 7-zip"
       }
     },
     {
@@ -109,15 +109,15 @@
       "nav_title": "How INC Ransom Hits Australian Organisations",
       "category": "threat",
       "date": "2026-06-15",
-      "read_min": 13,
+      "read_min": 15,
       "home_blurb": "An active RaaS crew claiming Australian victims, profiled from public reporting. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, commodity exfiltration - mapped to the Essential Eight controls that break each link in the chain.",
-      "card_blurb": "INC Ransom is a RaaS crew actively claiming Australian victims, and the firms it lands on look a lot like yours. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link in the chain.",
-      "feed_desc": "INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical smaller organisation. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the ACSC/CERT NZ advisory.",
+      "card_blurb": "INC Ransom is a RaaS crew actively claiming Australian victims, and the firms it lands on look a lot like yours. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration - mapped to the Essential Eight controls that break each link in the chain, plus three Sigma rules.",
+      "feed_desc": "INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical smaller organisation. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the joint ACSC, NCSC NZ and CERT Tonga advisory, with three Sigma rules for Defender tampering, admin-share archiving and rclone transfers.",
       "palette": {
         "label": "How INC Ransom Hits Australian Organisations",
         "hint": "RaaS + Essential Eight",
         "icon": "fa-skull-crossbones",
-        "keywords": "inc ransom ransomware raas affiliate australian essential eight acsc asd cert nz double extortion rclone megasync screenconnect rdp citrix netscaler fortinet phishing initial access broker living off the land net.exe defender lolbin threat profile mitigation"
+        "keywords": "inc ransom ransomware raas affiliate australian essential eight acsc asd ncsc nz cert tonga double extortion rclone megasync screenconnect rdp citrix netscaler fortinet phishing initial access broker living off the land net.exe defender lolbin threat profile mitigation sigma t1685 t1560.001 t1039 t1567.002 systemsettingsadminflows 7-zip"
       }
     },
     {

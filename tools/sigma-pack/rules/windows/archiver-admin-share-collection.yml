@@ -1,0 +1,92 @@
+title: WinRAR or 7-Zip Archive Built From an Administrative Share
+id: 11a8a147-5126-491c-a911-28bcd9ecc2e5
+status: experimental
+description: >
+    WinRAR, RAR or 7-Zip was asked to create or add to an archive (the "a"
+    or "u" command, or the RAR "m" and "mf" move commands) with a C$, D$, E$
+    or F$ drive administrative share, such as \\host\C$, on the command line.
+    Pulling another machine's disk into an archive over its admin share is
+    how SafePay staged data in the intrusion Acronis TRU analysed: WinRAR
+    archived \\[host]\C$\Users\ into a local .rar, skipping media,
+    executables and archives with a long list of -x exclusions, then a
+    FileZilla client sent the files to the attackers' server and both tools
+    were removed. Check Point notes that SafePay's WinRAR commands are
+    uncommon in normal use, and Bitdefender also records WinRAR compression
+    ahead of FileZilla exfiltration. 7-Zip is included because the March
+    2026 joint ACSC, NCSC NZ and CERT Tonga advisory records INC Ransom
+    using it to compress data before exfiltration, and Huntress saw an INC
+    intrusion run 28 7zG.exe processes to archive data.
+    Blind spots: the admin-share pattern is sourced only for WinRAR, so the
+    7-Zip coverage is by tool overlap; archiving a mapped drive letter, a
+    named share (\\fileserver\finance), an admin share for a drive letter
+    other than C to F, or local data is missed; a source path passed in a
+    list file (@list.txt) instead of on the command line, or a command
+    letter written in quotes ("a"), is missed; a renamed WinRAR.exe is
+    missed because WinRAR.exe is matched by image name only (a renamed
+    binary with the FileDescription "Command line RAR", which SigmaHQ's
+    Rar.exe rules use, is matched on that description, and renamed 7z.exe,
+    7za.exe, 7zr.exe and 7zG.exe are matched on OriginalFilename); other
+    archivers such as tar.exe or PowerShell Compress-Archive are out of
+    scope; and 7zG.exe runs started from the Explorer menu may not carry the
+    source path on the command line (Huntress did not publish the command
+    lines of the INC 7zG.exe runs).
+references:
+    - https://attack.mitre.org/techniques/T1560/001/
+    - https://attack.mitre.org/techniques/T1039/
+    - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
+    - https://www.checkpoint.com/cyber-hub/threat-prevention/ransomware/safepay-ransomware/
+    - https://www.bitdefender.com/en-us/blog/businessinsights/safepay-ransomware-attacks-ttps
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.collection
+    - attack.t1560.001
+    - attack.t1039
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    archiver_image:
+        Image|endswith:
+            - '\WinRAR.exe'
+            - '\Rar.exe'
+            - '\7z.exe'
+            - '\7za.exe'
+            - '\7zr.exe'
+            - '\7zG.exe'
+    archiver_original_name:
+        OriginalFileName:
+            - '7z.exe'
+            - '7za.exe'
+            - '7zr.exe'
+            - '7zg.exe'
+    archiver_description:
+        Description: 'Command line RAR'
+    add_command:
+        CommandLine|contains:
+            - ' a '
+            - ' u '
+            - ' m '
+            - ' mf '
+    admin_share:
+        CommandLine|contains:
+            - '\C$'
+            - '\D$'
+            - '\E$'
+            - '\F$'
+    condition: 1 of archiver_* and add_command and admin_share
+falsepositives:
+    - An administrator or backup script archiving files from another host over
+      its C$ or D$ share, such as "7z a logs.7z \\srv01\C$\inetpub\logs" or a
+      user-profile backup before a rebuild. Allowlist the known script host and
+      account
+    - Incident responders archiving triage data from a remote machine's admin
+      share with 7-Zip or Rar
+    - Extracting (7z x) an archive that sits on a C$ share into a folder whose
+      name contains a standalone "a", "u", "m" or "mf", such as "C:\Plan a
+      review", because the command check is a plain substring match
+level: medium

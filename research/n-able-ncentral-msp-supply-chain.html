@@ -304,8 +304,9 @@ references:
     - https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html
 author: UMBRASEC
 date: 2026-08-12
+modified: 2026-10-25
 tags:
-    - attack.defense-evasion
+    - attack.stealth
     - attack.t1036.005
 logsource:
     category: process_creation
@@ -325,6 +326,10 @@ falsepositives:
       the filter paths to match your build before deploying
     - Software test harnesses and imaging tools that copy system binaries
 level: high</code></pre>
+            <p>
+                Updated 2026-10-25: the tactic tag is now <code>attack.stealth</code>, following ATT&amp;CK v20, where
+                the Defense Evasion tactic became Stealth. The technique, T1036.005, is unchanged.
+            </p>
             <div class="callout">
                 <p class="text-sm"><strong>Tuning note.</strong> The filter paths are hard-coded to
                 <code>C:\Windows\</code>, so a host with Windows on another drive alerts on every genuine

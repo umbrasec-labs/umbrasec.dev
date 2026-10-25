@@ -54,7 +54,7 @@
       <guid isPermaLink="false">https://umbrasec.dev/research/safepay-australian-smb.html</guid>
       <pubDate>Sat, 20 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
-      <description>SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link. Built entirely from public vendor reporting, naming no individual victim.</description>
+      <description>SafePay is a centralized (non-RaaS) ransomware crew now claiming Australian victims, and real-estate agencies fit its target profile almost perfectly: data-rich, cash-handling via trust accounts, thinly defended, and spread across franchise offices under one brand. The playbook stage by stage - unpatched edge devices, infostealer-harvested logins reused over RDP/VPN, PsExec/WinRM movement, rclone and FileZilla exfiltration, backup and shadow-copy deletion - mapped to the Essential Eight controls that break each link, with three Sigma rules for recovery inhibition, admin-share archiving and rclone transfers. Built entirely from public vendor reporting, naming no individual victim.</description>
     </item>
     <item>
       <title>How INC Ransom Hits Australian Organisations - and the Essential Eight That Stops It</title>
@@ -62,7 +62,7 @@
       <guid isPermaLink="false">https://umbrasec.dev/research/inc-ransom-australian-smb.html</guid>
       <pubDate>Mon, 15 Jun 2026 12:00:00 +0000</pubDate>
       <category>Threat Analysis</category>
-      <description>INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical smaller organisation. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the ACSC/CERT NZ advisory.</description>
+      <description>INC Ransom is a ransomware-as-a-service crew actively claiming Australian victims, and the firms it lands on look a lot like a typical smaller organisation. The affiliate playbook stage by stage - phishing, unpatched edge devices, bought credentials, living-off-the-land movement, commodity exfiltration with rclone and MEGAsync - mapped to the Essential Eight controls that break each link in the chain. Built entirely from public reporting, including the joint ACSC, NCSC NZ and CERT Tonga advisory, with three Sigma rules for Defender tampering, admin-share archiving and rclone transfers.</description>
     </item>
     <item>
       <title>Securing AI Agents: A Defender's Guide to Tool-Calling LLMs</title>

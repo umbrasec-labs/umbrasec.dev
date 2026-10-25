@@ -1,0 +1,63 @@
+title: PHP Upload-Progress Multipart Probe (php2shell-adjacent)
+id: 6e2c0b4a-2f1d-4c7e-9a3b-1f9d5c84e2a7
+status: experimental
+description: >
+    A multipart/form-data request carrying the PHP_SESSION_UPLOAD_PROGRESS
+    field name, PHP's default session.upload_progress.name. Session upload
+    progress is the early consumer in the confirmed session-lifecycle case of
+    CVE-2026-109619 (GHSA-6wmf-4rv5-p3rp), and Amazon's php2shell guidance is
+    to look for POST requests with this string in form uploads. The same field
+    is also used by the unrelated 2018 session-poisoning plus LFI technique,
+    by benign scanners, and by fake or non-functional proof-of-concept code.
+    A match therefore indicates exposure and attention, NOT compromise. Use it
+    to scope who is probing and which hosts are reachable, and corroborate with
+    the worker-crash hunt in the writeup before treating anything as
+    exploitation. Do not auto-triage matches with an LLM: the field name is
+    widely tied to the 2018 technique and fake PoCs, so a model keying on it
+    can confirm a fake PoC as a real attempt.
+    Blind spots: this field only relates to the session-lifecycle case.
+    CVE-2026-109619's PHP 8.5 fatal-error-backtrace path (the basis of the
+    confirmed mod_php RCE) and its INI-diagnostic path do not use upload
+    progress and are not covered. CVE-2026-109618 (GHSA-w8hw-w9fx-j79w) is an
+    out-of-memory bug, demonstrated via multipart parsing, that does not need
+    this field. A host that renames session.upload_progress.name is not
+    covered. PHP accepts the field after any number of other form fields, so
+    a large leading field can push it past a WAF or proxy body inspection or
+    logging limit (AWS WAF, for example, inspects the first 8 KB on ALB and 16
+    KB by default, at most 64 KB, on CloudFront): confirm your body capture
+    limit and hunt oversized multipart POSTs separately. No match is not
+    evidence of no attempt. The match is on the whole body, not only part
+    headers, so file content containing the string also matches.
+    cs-request-body and cs-content-type are not in the Sigma webserver
+    taxonomy: map them to your WAF or proxy body and Content-Type fields in
+    the conversion pipeline, or the query will never match.
+references:
+    - https://attack.mitre.org/techniques/T1190/
+    - https://www.php.net/archive/2026.php
+    - https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp
+    - https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w
+    - https://aws.amazon.com/blogs/security/amazon-threat-intelligence-identifies-php2shell-exploitation-prior-to-public-disclosure-in-madpot/
+    - https://blog.orange.tw/posts/2018-10-hitcon-ctf-2018-one-line-php-challenge/
+    - https://docs.aws.amazon.com/waf/latest/developerguide/web-request-body-inspection.html
+    - https://umbrasec.dev/research/php2shell-hallucinated-exploits.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.initial-access
+    - attack.t1190
+logsource:
+    category: webserver
+    definition: 'Requirements: a WAF or reverse proxy that logs request bodies and the Content-Type header'
+detection:
+    multipart:
+        cs-content-type|contains: 'multipart/form-data'
+    marker:
+        cs-request-body|contains: 'PHP_SESSION_UPLOAD_PROGRESS'
+    condition: multipart and marker
+falsepositives:
+    - Benign vulnerability scanners probing after public disclosure
+    - The unrelated 2018 session-poisoning technique, which is not this CVE
+    - Fake or non-functional PoC traffic
+    - Any application that legitimately uses session upload progress
+    - Uploaded files whose content contains the string, such as php.ini, PHP source, phpinfo output, security writeups and detection rules
+level: low
