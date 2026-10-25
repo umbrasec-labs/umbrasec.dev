@@ -40,7 +40,7 @@
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/research/roo-code-auto-approve-bypass",
       "about": "AI coding agent command allowlist bypasses, indirect prompt injection, and the risk of unmaintained developer tooling",
-      "keywords": "Roo Code, CVE-2026-110202, CVE-2026-110203, CVE-2026-110204, CVE-2026-110205, CVE-2026-110206, auto-approve, command allowlist, parseCommandLine, getCommandDecision, indirect prompt injection, AI coding agent, excessive agency, confused deputy, VulnCheck, archived repository, unmaintained, MITRE ATLAS, T1059"
+      "keywords": "Roo Code, CVE-2026-110202, CVE-2026-110203, CVE-2026-110204, CVE-2026-110205, CVE-2026-110206, auto-approve, command allowlist, parseCommandLine, getCommandDecision, indirect prompt injection, AI coding agent, excessive agency, confused deputy, VulnCheck, archived repository, unmaintained, MITRE ATLAS, T1698, T1059"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -251,11 +251,16 @@
                     <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
                     <tbody>
                         <tr><td><a href="https://atlas.mitre.org/techniques/AML.T0051" target="_blank" rel="noopener">AML.T0051</a> LLM Prompt Injection (MITRE ATLAS)</td><td>The planted instruction in content the agent reads</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698</a> Indirect Prompt Injection</td><td>The same planted instruction, as ATT&amp;CK v20 names it</td></tr>
                         <tr><td><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">T1059</a> Command and Scripting Interpreter</td><td>The command the shell actually runs</td></tr>
                         <tr><td><a href="https://attack.mitre.org/techniques/T1554/" target="_blank" rel="noopener">T1554</a> Compromise Host Software Binary / trusted tooling</td><td>An unmaintained, trusted editor extension as the execution path</td></tr>
                     </tbody>
                 </table>
             </div>
+            <p>
+                Updated 2026-10-25: added <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698</a> Indirect Prompt Injection, an Enterprise technique since
+                ATT&amp;CK v20 (October 2026), next to the ATLAS entry.
+            </p>
 
             <h2>What to do</h2>
             <ol>
@@ -293,6 +298,7 @@
                 <li><a href="https://github.com/RooCodeInc/Roo-Code" target="_blank" rel="noopener">Roo Code repository (archived 15 May 2026, read-only)</a></li>
                 <li><a href="https://cwe.mitre.org/data/definitions/184.html" target="_blank" rel="noopener">MITRE - CWE-184 (Incomplete List of Disallowed Inputs)</a></li>
                 <li><a href="https://atlas.mitre.org/techniques/AML.T0051" target="_blank" rel="noopener">MITRE ATLAS - AML.T0051 LLM Prompt Injection</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1698 Indirect Prompt Injection</a></li>
                 <li><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1059 Command and Scripting Interpreter</a></li>
                 <li><a href="securing-ai-agents.html">UMBRASEC - Securing AI Agents: A Defender's Guide to Tool-Calling LLMs</a></li>
                 <li><a href="owasp-llm-top-10-for-defenders.html">UMBRASEC - Prompt Injection and the OWASP LLM Top 10</a></li>

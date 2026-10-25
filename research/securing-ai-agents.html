@@ -203,7 +203,7 @@
                     <thead><tr><th>Threat</th><th>What it looks like in an agent</th><th>Maps to</th></tr></thead>
                     <tbody>
                         <tr><td>Excessive agency</td><td>Tool set, permissions, or autonomy exceed the task; one injection reaches a consequential action</td><td><code>LLM06</code></td></tr>
-                        <tr><td>Indirect injection via tool output</td><td>Hostile instructions arrive inside a browsed page, fetched email, DB row, or file and steer the next action</td><td><code>LLM01</code>, ATLAS <code>AML.T0051</code></td></tr>
+                        <tr><td>Indirect injection via tool output</td><td>Hostile instructions arrive inside a browsed page, fetched email, DB row, or file and steer the next action</td><td><code>LLM01</code>, ATLAS <code>AML.T0051</code>, ATT&amp;CK <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener"><code>T1698</code></a></td></tr>
                         <tr><td>Confused deputy / identity</td><td>Agent acts with the user's (or a service's) full privileges, so injected actions inherit that authority</td><td><code>LLM06</code></td></tr>
                         <tr><td>Tool supply chain</td><td>A third-party tool/MCP server is malicious or compromised; its description or output injects the model ("tool poisoning")</td><td><code>LLM03</code></td></tr>
                         <tr><td>Memory &amp; state poisoning</td><td>Attacker plants content in the agent's long-term memory or scratchpad that re-activates in later, unrelated sessions</td><td><code>LLM01</code>/<code>LLM08</code></td></tr>
@@ -217,6 +217,11 @@
                 AI - Threats and Mitigations</a> goes wider still (goal manipulation, tool misuse, identity spoofing,
                 multi-agent collusion). The table above is the subset that earns its place in most
                 threat models today; the rest matters more as your agents gain autonomy.
+            </p>
+            <p>
+                Updated 2026-10-25: ATT&amp;CK v20 (October 2026) added prompt injection as Enterprise techniques, so the
+                table now cites <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698</a> Indirect Prompt Injection for the indirect-injection row. An injected agent sending data out through
+                its own tools, the trifecta below, is <a href="https://attack.mitre.org/techniques/T1700/" target="_blank" rel="noopener">T1700</a> AI-Enabled Exfiltration.
             </p>
 
             <h3>The lethal trifecta, now with hands</h3>
@@ -415,6 +420,8 @@ severity: medium - triage feed; pair with #2 to prioritize</code></pre>
                 <li><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">OWASP - Top 10 for LLM Applications (2025), esp. LLM06 Excessive Agency</a></li>
                 <li><a href="https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/" target="_blank" rel="noopener">OWASP GenAI - Agentic AI: Threats and Mitigations</a></li>
                 <li><a href="https://atlas.mitre.org/" target="_blank" rel="noopener">MITRE ATLAS - Adversarial Threat Landscape for AI Systems</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1698 Indirect Prompt Injection</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1700/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1700 AI-Enabled Exfiltration</a></li>
                 <li><a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">Anthropic - Building Effective Agents</a></li>
                 <li><a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol - specification and documentation</a></li>
                 <li><a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/" target="_blank" rel="noopener">Simon Willison - The lethal trifecta for AI agents (Jun 2025)</a></li>

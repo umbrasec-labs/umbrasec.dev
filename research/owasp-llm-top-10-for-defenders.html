@@ -38,7 +38,7 @@
       "image": "https://umbrasec.dev/assets/og.png",
       "mainEntityOfPage": "https://umbrasec.dev/research/owasp-llm-top-10-for-defenders",
       "about": "OWASP Top 10 for LLM Applications, prompt injection defense",
-      "keywords": "OWASP LLM Top 10, prompt injection, indirect prompt injection, MITRE ATLAS, AML.T0051, EchoLeak, CVE-2025-32711, LLM security, AI security, detection engineering"
+      "keywords": "OWASP LLM Top 10, prompt injection, indirect prompt injection, MITRE ATLAS, AML.T0051, T1698, T1699, T1700, EchoLeak, CVE-2025-32711, LLM security, AI security, detection engineering"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -196,10 +196,10 @@
                 in two flavors that matter very differently for defense:
             </p>
             <ul>
-                <li><strong>Direct injection</strong> - the user attacks the model they're talking to ("ignore your
+                <li><strong>Direct injection</strong> (ATT&amp;CK <a href="https://attack.mitre.org/techniques/T1699/" target="_blank" rel="noopener">T1699</a>) - the user attacks the model they're talking to ("ignore your
                     instructions"). Mostly a content-policy and abuse problem; the attacker only holds their own
                     session.</li>
-                <li><strong>Indirect injection</strong> - instructions hide in content the model <em>processes on
+                <li><strong>Indirect injection</strong> (ATT&amp;CK <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698</a>) - instructions hide in content the model <em>processes on
                     someone else's behalf</em>: an email Copilot summarizes, a webpage an agent browses, a document
                     RAG retrieves, a calendar invite. The victim never sees the payload. This is the one that turns
                     into incidents, because the attacker reaches a session that isn't theirs.</li>
@@ -213,6 +213,11 @@
                 email was the untrusted content, the user's mail and files were the private data, and image/link
                 rendering was the exfiltration channel. <strong>You usually can't remove legs one and two. Defense
                 concentrates on leg three.</strong>
+            </p>
+            <p>
+                Updated 2026-10-25: ATT&amp;CK v20 (October 2026) added both flavors as Enterprise techniques,
+                <a href="https://attack.mitre.org/techniques/T1699/" target="_blank" rel="noopener">T1699</a> Direct Prompt Injection and <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698</a> Indirect Prompt Injection. EchoLeak's
+                outcome, an injected AI assistant carrying data out, maps to <a href="https://attack.mitre.org/techniques/T1700/" target="_blank" rel="noopener">T1700</a> AI-Enabled Exfiltration.
             </p>
 
             <h2>What you need flowing into your SIEM</h2>
@@ -362,6 +367,8 @@ severity: medium - this is a triage feed, not a pager rule</code></pre>
             <ul>
                 <li><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">OWASP - Top 10 for LLM Applications (2025)</a></li>
                 <li><a href="https://atlas.mitre.org/techniques/AML.T0051" target="_blank" rel="noopener">MITRE ATLAS - AML.T0051: LLM Prompt Injection</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1698: Indirect Prompt Injection</a> and <a href="https://attack.mitre.org/techniques/T1699/" target="_blank" rel="noopener">T1699: Direct Prompt Injection</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1700/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1700: AI-Enabled Exfiltration</a></li>
                 <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2025-32711" target="_blank" rel="noopener">NVD - CVE-2025-32711 (M365 Copilot "EchoLeak" information disclosure)</a></li>
                 <li><a href="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-32711" target="_blank" rel="noopener">Microsoft MSRC - CVE-2025-32711 advisory</a></li>
                 <li><a href="https://thehackernews.com/2025/06/zero-click-ai-vulnerability-exposes.html" target="_blank" rel="noopener">The Hacker News - Zero-click "EchoLeak" AI vulnerability in Microsoft 365 Copilot, found by Aim Labs (Jun 2025)</a></li>

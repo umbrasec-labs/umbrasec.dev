@@ -15,7 +15,7 @@
         "label": "The Remote Support Appliance Was Open for Seven Weeks",
         "hint": "BeyondTrust + privileged access",
         "icon": "fa-headset",
-        "keywords": "beyondtrust remote support bomgar cve-2026-102764 authentication bypass spoofing cwe-290 armory castle unc5221 warp panda mandiant google threat intelligence sawfly mangoapi webshell bareclaw socks5 websocket haproxy suid sudoers bt-secrets credential vault log deletion anti-forensics cisa kev msp third party risk privileged access espionage sigma t1190 t1505.003 t1548.001 t1572 t1070"
+        "keywords": "beyondtrust remote support bomgar cve-2026-102764 authentication bypass spoofing cwe-290 armory castle unc5221 warp panda mandiant google threat intelligence sawfly mangoapi webshell bareclaw socks5 websocket haproxy suid sudoers bt-secrets credential vault log deletion anti-forensics cisa kev msp third party risk privileged access espionage sigma t1190 t1505.003 t1548.001 t1572 t1685.006"
       }
     },
     {
@@ -32,7 +32,7 @@
         "label": "When the Allowlist Isn't a Boundary",
         "hint": "Roo Code + AI agent auto-approve",
         "icon": "fa-robot",
-        "keywords": "roo code cve-2026-110202 cve-2026-110203 cve-2026-110204 cve-2026-110205 cve-2026-110206 auto-approve command allowlist parsecommandline getcommanddecision parser differential indirect prompt injection ai coding agent vs code excessive agency confused deputy vulncheck archived unmaintained supply chain mitre atlas aml.t0051 t1059 t1554"
+        "keywords": "roo code cve-2026-110202 cve-2026-110203 cve-2026-110204 cve-2026-110205 cve-2026-110206 auto-approve command allowlist parsecommandline getcommanddecision parser differential indirect prompt injection ai coding agent vs code excessive agency confused deputy vulncheck archived unmaintained supply chain mitre atlas aml.t0051 t1698 t1059 t1554"
       }
     },
     {
@@ -100,7 +100,7 @@
         "label": "SafePay & Australian Real Estate",
         "hint": "ransomware + Essential Eight",
         "icon": "fa-building",
-        "keywords": "safepay ransomware centralized non-raas australian real estate agency trust account essential eight asd acsc rdp vpn infostealer psexec winrm rclone filezilla exfiltration shadow copy backup deletion living off the land edge device fortinet citrix threat profile mitigation franchise sigma t1490 t1560.001 t1039 t1567.002 vssadmin wmic wbadmin bcdedit winrar 7-zip"
+        "keywords": "safepay ransomware centralized non-raas australian real estate agency trust account essential eight asd acsc rdp vpn infostealer psexec winrm rclone filezilla exfiltration shadow copy backup deletion living off the land edge device fortinet citrix threat profile mitigation franchise sigma t1490 t1685 t1560.001 t1039 t1567.002 vssadmin wmic wbadmin bcdedit winrar 7-zip"
       }
     },
     {
@@ -134,7 +134,7 @@
         "label": "Securing AI Agents",
         "hint": "tool-calling LLMs",
         "icon": "fa-robot",
-        "keywords": "ai agents agentic tool calling function calling excessive agency llm06 mcp model context protocol confused deputy indirect prompt injection lethal trifecta atlas autonomy human in the loop guardrails camel dual llm"
+        "keywords": "ai agents agentic tool calling function calling excessive agency llm06 mcp model context protocol confused deputy indirect prompt injection lethal trifecta atlas autonomy human in the loop guardrails camel dual llm t1698 t1700"
       }
     },
     {
@@ -168,7 +168,7 @@
         "label": "OWASP LLM Top 10 for Defenders",
         "hint": "prompt injection",
         "icon": "fa-robot",
-        "keywords": "ai llm owasp prompt injection indirect atlas copilot echoleak agent rag canary"
+        "keywords": "ai llm owasp prompt injection indirect atlas copilot echoleak agent rag canary t1698 t1699 t1700"
       }
     },
     {

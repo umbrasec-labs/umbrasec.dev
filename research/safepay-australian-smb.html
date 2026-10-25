@@ -255,7 +255,7 @@
                 closes the edge-device route. If you fix only two things after reading this, fix these two.
             </p>
 
-            <h3>2. Defence evasion - blind the host, kill the backups</h3>
+            <h3>2. Defence impairment - blind the host, kill the backups</h3>
             <p>
                 Once inside, SafePay moves to disable what is watching and to destroy the victim's ability to recover.
                 Reporting describes it disrupting endpoint security services, stopping and deleting backup software, and
@@ -272,6 +272,11 @@
                 not a line nobody reads. And it is the strongest possible argument for backups that live
                 <strong>offline or otherwise out of reach</strong> of the account that gets compromised: a backup the
                 intruder can reach is a backup the intruder deletes.
+            </p>
+            <p>
+                Updated 2026-10-25: this stage was called Defence evasion. ATT&amp;CK v19 split that tactic into
+                Stealth and Defense Impairment. Switching off security services is Defense Impairment (<a href="https://attack.mitre.org/techniques/T1685/" target="_blank" rel="noopener">T1685</a>
+                Disable or Modify Tools); deleting backups and shadow copies is Impact (<a href="https://attack.mitre.org/techniques/T1490/" target="_blank" rel="noopener">T1490</a> Inhibit System Recovery).
             </p>
 
             <h3>3. Discovery and lateral movement - living off the land</h3>
@@ -315,8 +320,8 @@
                 the data is already gone, so encryption is the part you can most directly survive - <em>if</em> you
                 prepared. <a href="../guide/foundation.html">Regular backups that you have actually tested restoring</a>,
                 kept offline or otherwise beyond the reach of the account that gets compromised, are what turn a ransom
-                demand into a restore job. Backups you have never test-restored are a guess, not a control - and as the
-                evasion stage showed, an online backup the intruder can reach is one they will delete first.
+                demand into a restore job. Backups you have never test-restored are a guess, not a control - and as stage
+                2 showed, an online backup the intruder can reach is one they will delete first.
             </p>
 
             <h2>The chain, mapped to the Essential Eight</h2>
@@ -330,7 +335,7 @@
                     <thead><tr><th>Stage</th><th>What SafePay does</th><th>Essential Eight control that breaks it</th></tr></thead>
                     <tbody>
                         <tr><td>Initial access</td><td>Exploit an unpatched edge device, or reuse valid / infostealer-harvested credentials over RDP/VPN</td><td>MFA; patch applications; patch operating systems; user application hardening</td></tr>
-                        <tr><td>Defence evasion</td><td>Disable security services, delete backups and Volume Shadow Copies</td><td>Application control; restrict admin privileges (+ EDR &amp; tamper protection); offline backups</td></tr>
+                        <tr><td>Defence impairment</td><td>Disable security services, delete backups and Volume Shadow Copies</td><td>Application control; restrict admin privileges (+ EDR &amp; tamper protection); offline backups</td></tr>
                         <tr><td>Discovery &amp; lateral movement</td><td>PsExec, WinRM, RDP, attacker-controlled RMM</td><td>Restrict admin privileges; application control; MFA on internal admin</td></tr>
                         <tr><td>Exfiltration</td><td>rclone, WinRAR, 7-Zip, FileZilla, RDP clipboard to cloud</td><td>Application control (+ egress monitoring &amp; detection)</td></tr>
                         <tr><td>Impact</td><td>Encrypt and threaten to leak stolen records</td><td>Regular, tested, offline backups</td></tr>
