@@ -35,6 +35,7 @@ TRIM=(
   "tools/local-sync"
   "tools/site-build"
   "research/articles.json"
+  "assets/og.svg"          # design source for og.png; nothing links to it
 )
 
 die() { echo "stage: $*" >&2; exit 1; }

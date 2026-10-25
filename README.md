@@ -86,8 +86,9 @@ Function that fetches CISA's catalog on demand, trims it, and caches the result 
 the edge for an hour. If CISA is unreachable it serves the committed snapshot at
 `/assets/kev-latest.json` instead (refreshed now and then with
 [`tools/local-sync/sync-kev.py`](tools/local-sync/sync-kev.py)). The `X-KEV-Source`
-response header says which one answered: `live`, `cache`, `snapshot`, or `none` (a 503
-when both CISA and the snapshot are unavailable).
+response header says which one answered: `live`, `snapshot`, or `none` (a 503
+when both CISA and the snapshot are unavailable). An edge-cache hit is `cache-live` or
+`cache-snapshot`, so a cached outage fallback is not mistaken for live data.
 
 Fields per entry: `cveID`, `vendorProject`, `product`, `vulnerabilityName`,
 `dateAdded`, `knownRansomwareCampaignUse`. Top level carries `source`, `catalogVersion`,

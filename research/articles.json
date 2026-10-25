@@ -15,7 +15,7 @@
         "label": "The Remote Support Appliance Was Open for Seven Weeks",
         "hint": "BeyondTrust + privileged access",
         "icon": "fa-headset",
-        "keywords": "beyondtrust remote support bomgar cve-2026-102764 authentication bypass spoofing cwe-290 armory castle unc5221 warp panda mandiant google threat intelligence sawfly mangoapi webshell bareclaw socks5 websocket haproxy suid sudoers bt-secrets credential vault log deletion anti-forensics cisa kev msp third party risk privileged access espionage sigma t1190 t1505.003 t1548.001 t1572 t1685.006"
+        "keywords": "beyondtrust remote support bomgar cve-2026-102764 authentication bypass spoofing cwe-290 armory castle unc5221 warp panda mandiant google threat intelligence sawfly mangoapi webshell bareclaw socks5 websocket haproxy suid sudoers bt-secrets credential vault log deletion anti-forensics cisa kev msp third party risk privileged access espionage yara t1190 t1505.003 t1548.001 t1572 t1685.006"
       }
     },
     {

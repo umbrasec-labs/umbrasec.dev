@@ -20,6 +20,26 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'sha256-ZQPejEVGAaxv6Ks7Vz7EG2WhGYp+N7AFqmkiLKZeYz8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+
+# The Report-Only policy above is the script-src lockdown on trial: browsers
+# log what it would block to the console and block nothing. Its sha256 is the
+# inline script in 404.html - edit that script and the hash must change too
+# (build_indexes.py --check fails and prints the new one). Two things stop it being
+# enforced yet: the zone's JS-detections bootstrap is an inline script with a
+# per-request ray id, so no hash can cover it and static Pages cannot add a
+# nonce; and Email Address Obfuscation injects /cdn-cgi/ scripts (same origin,
+# already allowed). Turn the bootstrap off in the zone before promoting this to
+# Content-Security-Policy.
+
+# The pages.dev hostname serves the same site; keep it out of search results
+# so only umbrasec.dev is indexed. Preview and branch aliases already get
+# noindex from Pages. No other rule sets X-Robots-Tag, so nothing can merge.
+https://umbrasec-dev.pages.dev/*
+  X-Robots-Tag: noindex
 
 # Published tool sources are meant to be read and curl'd. Without these,
 # .py/.kql/.md are served as application/octet-stream and .yml as text/yaml,

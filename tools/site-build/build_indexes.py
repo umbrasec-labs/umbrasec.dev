@@ -10,7 +10,9 @@ What it owns (and nothing else):
   - sitemap.xml ............. the per-article research <url> entries (lastmod =
                               "updated" if set, else "date")
   - assets/umbra.js ......... the command-palette "Articles" entries
-  - research/<slug>.html .... each article's prev/next footer nav
+  - research/<slug>.html .... each article's prev/next footer nav, and its
+                              JSON-LD dateModified + article:modified_time
+                              (present only when "updated" is set)
 
 Everything else in those files - hand-written prose, article bodies, the channel
 boilerplate, the guide/tooling sitemap entries - is left untouched. The generator
@@ -27,7 +29,9 @@ what the manifest would produce. That's what the pre-commit hook runs.
 """
 
 import argparse
+import base64
 import datetime as dt
+import hashlib
 import html
 import json
 import re
@@ -419,6 +423,31 @@ def rewrite_nav(text, prev_html, next_html, path):
     return NAV_RE.sub(repl, text, count=1)
 
 
+# ---- article modified date -----------------------------------------------------
+
+# The line after the match is left alone; a stale modified line right below the
+# published one is swallowed so the rewrite is idempotent.
+LD_PUBLISHED_RE = re.compile(
+    r'^([ \t]*)("datePublished": "[^"]*",\n)(?:[ \t]*"dateModified": "[^"]*",\n)?', re.M)
+META_PUBLISHED_RE = re.compile(
+    r'^([ \t]*)(<meta property="article:published_time" content="[^"]*">\n)'
+    r'(?:[ \t]*<meta property="article:modified_time" content="[^"]*">\n)?', re.M)
+
+
+def rewrite_modified(text, updated, path):
+    """Write dateModified / article:modified_time from the manifest's "updated"
+    field, or remove them when it is unset."""
+    for rx, label, line in (
+            (LD_PUBLISHED_RE, "JSON-LD datePublished", '"dateModified": "{}",\n'),
+            (META_PUBLISHED_RE, "article:published_time meta",
+             '<meta property="article:modified_time" content="{}">\n')):
+        if len(rx.findall(text)) != 1:
+            sys.exit(f"error: expected exactly one {label} line in {path}")
+        text = rx.sub(lambda m: m.group(1) + m.group(2)
+                      + (m.group(1) + line.format(updated) if updated else ""), text, count=1)
+    return text
+
+
 # ---- shared footer -------------------------------------------------------------
 
 FOOTER_RE = re.compile(r'<footer\b.*?</footer>', re.DOTALL)
@@ -463,6 +492,21 @@ def find_orphans(articles):
     return orphans
 
 
+def csp_hash_problems():
+    """Inline scripts in 404.html whose sha256 is not allowed by the CSP in _headers.
+
+    The CSP (Report-Only for now) allows inline script by hash, so an edit to the
+    404 script that does not update _headers would be blocked once it is enforced."""
+    headers = (ROOT / "_headers").read_text(encoding="utf-8")
+    page = (ROOT / "404.html").read_text(encoding="utf-8")
+    missing = []
+    for body in re.findall(r"<script>(.*?)</script>", page, re.DOTALL):
+        token = "sha256-" + base64.b64encode(hashlib.sha256(body.encode("utf-8")).digest()).decode()
+        if f"'{token}'" not in headers:
+            missing.append(token)
+    return missing
+
+
 def build(check: bool, list_drift: bool = False) -> int:
     articles = load_articles()
     transforms = {}  # rel path -> list of text->text callables, applied in order
@@ -498,6 +542,7 @@ def build(check: bool, list_drift: bool = False) -> int:
         if not (ROOT / rel).exists():
             sys.exit(f"error: manifest references {rel} but the file does not exist")
         add(rel, lambda t, i=i, rel=rel: rewrite_nav(t, nav_prev(articles, i), nav_next(articles, i), ROOT / rel))
+        add(rel, lambda t, a=a, rel=rel: rewrite_modified(t, a.get("updated"), ROOT / rel))
 
     # shared footer on every site page (depth-aware relative links)
     for rel in site_pages():
@@ -528,6 +573,7 @@ def build(check: bool, list_drift: bool = False) -> int:
     no_main = [rel for rel in site_pages() + ["404.html"]
                if not all(s in (ROOT / rel).read_text(encoding="utf-8")
                           for s in ('<a href="#main" class="skip-link">', '<main id="main">'))]
+    bad_hashes = csp_hash_problems()
 
     if check:
         problems = False
@@ -554,6 +600,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in no_main:
                 print(f"  - {rel}")
             print("\nCopy both from an existing page (first child of <body>, and <main> between </nav> and <footer>).")
+            problems = True
+        if bad_hashes:
+            print("site-build: CSP - 404.html inline script hash not in _headers:")
+            for token in bad_hashes:
+                print(f"  - '{token}'")
+            print("\nReplace the old sha256-... in the Content-Security-Policy lines of _headers with this one.")
             problems = True
         if changes:
             print("site-build: DRIFT - these files are out of sync with research/articles.json:")
