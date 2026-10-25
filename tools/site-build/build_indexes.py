@@ -190,10 +190,10 @@ def render_count(articles) -> str:
 def render_filters(articles) -> str:
     # "All" plus one chip per category that actually has at least one article
     present = [k for k in CATEGORY_ORDER if any(a["category"] == k for a in articles)]
-    chips = ['            <button type="button" class="filter-chip active" data-filter="all">All</button>']
+    chips = ['            <button type="button" class="filter-chip active" data-filter="all" aria-pressed="true">All</button>']
     for k in present:
         label = he(CATEGORIES[k][1])
-        chips.append(f'            <button type="button" class="filter-chip" data-filter="{k}">{label}</button>')
+        chips.append(f'            <button type="button" class="filter-chip" data-filter="{k}" aria-pressed="false">{label}</button>')
     return _wrap(chips, "\n", 12)
 
 
@@ -306,7 +306,7 @@ def md_cell_to_html(cell: str) -> str:
         parts.append(he(html.unescape(cell[last:m.start()])))
         text, href = he(html.unescape(m.group(1))), he(html.unescape(m.group(2)))
         parts.append(f'<a href="{href}" target="_blank" rel="noopener" '
-                     f'class="text-[#f25623] hover:text-[#f56e0f]">{text}</a>')
+                     f'class="text-[#f25623] hover:text-[#f56e0f] underline underline-offset-2">{text}</a>')
         last = m.end()
     parts.append(he(html.unescape(cell[last:])))
     return "".join(parts).strip()
@@ -523,6 +523,11 @@ def build(check: bool, list_drift: bool = False) -> int:
 
     orphans = find_orphans(articles)
     sigma_unlisted, sigma_missing = find_sigma_problems(sigma_rows)
+    # every page needs the skip link and the <main> landmark it targets; a new
+    # page copied from an old template would silently drop them
+    no_main = [rel for rel in site_pages() + ["404.html"]
+               if not all(s in (ROOT / rel).read_text(encoding="utf-8")
+                          for s in ('<a href="#main" class="skip-link">', '<main id="main">'))]
 
     if check:
         problems = False
@@ -543,6 +548,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in sigma_missing:
                 print(f"  - {rel}")
             print("\nFix the path in tools/sigma-pack/README.md, or remove the row.")
+            problems = True
+        if no_main:
+            print("site-build: MISSING - pages without the skip link or <main id=\"main\">:")
+            for rel in no_main:
+                print(f"  - {rel}")
+            print("\nCopy both from an existing page (first child of <body>, and <main> between </nav> and <footer>).")
             problems = True
         if changes:
             print("site-build: DRIFT - these files are out of sync with research/articles.json:")
