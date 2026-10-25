@@ -76,14 +76,15 @@
   overlay.className = "cmdk-overlay";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Search the site");
   overlay.innerHTML =
     '<div class="cmdk-panel">' +
       '<div class="cmdk-input-row">' +
         '<i class="fa-solid fa-magnifying-glass"></i>' +
-        '<input class="cmdk-input" type="text" placeholder="Search pages, research, links…" aria-label="Command palette search" autocomplete="off" spellcheck="false">' +
+        '<input class="cmdk-input" type="text" placeholder="Search pages, research, links…" aria-label="Command palette search" role="combobox" aria-expanded="true" aria-controls="cmdk-list" aria-autocomplete="list" autocomplete="off" spellcheck="false">' +
         '<span class="cmdk-hintkey">ESC</span>' +
       '</div>' +
-      '<div class="cmdk-list" role="listbox"></div>' +
+      '<div class="cmdk-list" id="cmdk-list" role="listbox"></div>' +
     '</div>';
   document.body.appendChild(overlay);
 
@@ -91,6 +92,7 @@
   const list = $(".cmdk-list", overlay);
   let activeIndex = 0;
   let filtered = [];
+  let returnFocus = null;   // element to refocus when the palette closes
 
   function renderList(query) {
     const q = query.trim().toLowerCase();
@@ -102,24 +104,34 @@
 
     if (!filtered.length) {
       list.innerHTML = '<div class="cmdk-empty">No matches for “' + escapeHtml(query) + '”</div>';
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
       return;
     }
+    input.setAttribute("aria-expanded", "true");
 
+    // Options sit in role="group" wrappers named by their heading, so the
+    // listbox only holds groups and options.
     let html = "";
     let lastGroup = null;
     filtered.forEach((c, i) => {
       if (c.group !== lastGroup) {
-        html += '<div class="cmdk-group-label">' + escapeHtml(c.group) + "</div>";
+        if (lastGroup !== null) html += "</div>";
+        const gid = "cmdk-group-" + groupRank(c.group);
+        html += '<div role="group" aria-labelledby="' + gid + '">' +
+          '<div class="cmdk-group-label" id="' + gid + '">' + escapeHtml(c.group) + "</div>";
         lastGroup = c.group;
       }
       html +=
-        '<div class="cmdk-item' + (i === 0 ? " active" : "") + '" role="option" data-index="' + i + '">' +
+        '<div class="cmdk-item' + (i === 0 ? " active" : "") + '" role="option" id="cmdk-opt-' + i + '"' +
+          ' aria-selected="' + (i === 0) + '" data-index="' + i + '">' +
           '<span class="ci-icon"><i class="' + (c.brand ? "fa-brands" : "fa-solid") + " " + c.icon + '"></i></span>' +
           '<span class="ci-label">' + escapeHtml(c.label) + "</span>" +
           '<span class="ci-hint">' + (c.external ? "↗ " : "") + escapeHtml(c.hint || "") + "</span>" +
         "</div>";
     });
-    list.innerHTML = html;
+    list.innerHTML = html + "</div>";
+    input.setAttribute("aria-activedescendant", "cmdk-opt-0");
 
     $$(".cmdk-item", list).forEach((el) => {
       el.addEventListener("mouseenter", () => setActive(parseInt(el.dataset.index, 10)));
@@ -129,11 +141,16 @@
 
   function setActive(i) {
     activeIndex = i;
-    $$(".cmdk-item", list).forEach((el) =>
-      el.classList.toggle("active", parseInt(el.dataset.index, 10) === i)
-    );
+    $$(".cmdk-item", list).forEach((el) => {
+      const on = parseInt(el.dataset.index, 10) === i;
+      el.classList.toggle("active", on);
+      el.setAttribute("aria-selected", on);
+    });
     const el = list.querySelector('.cmdk-item[data-index="' + i + '"]');
-    if (el) el.scrollIntoView({ block: "nearest" });
+    if (el) {
+      input.setAttribute("aria-activedescendant", el.id);
+      el.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function go(cmd) {
@@ -147,6 +164,9 @@
   }
 
   function openPalette() {
+    if (overlay.classList.contains("open")) return;
+    const prev = document.activeElement;
+    returnFocus = prev && prev !== document.body ? prev : null;
     overlay.classList.add("open");
     input.value = "";
     renderList("");
@@ -154,6 +174,10 @@
   }
   function closePalette() {
     overlay.classList.remove("open");
+    // hand focus back to whatever opened the palette (button, link, field)
+    const back = returnFocus;
+    returnFocus = null;
+    if (back && back.isConnected) back.focus({ preventScroll: true });
   }
   function togglePalette() {
     overlay.classList.contains("open") ? closePalette() : openPalette();
@@ -161,7 +185,9 @@
 
   input.addEventListener("input", () => renderList(input.value));
   overlay.addEventListener("mousedown", (e) => {
-    if (e.target === overlay) closePalette();
+    // preventDefault keeps the browser from moving focus to <body> after
+    // closePalette() has handed it back
+    if (e.target === overlay) { e.preventDefault(); closePalette(); }
   });
 
   document.addEventListener("keydown", (e) => {
@@ -178,6 +204,9 @@
     }
     if (!open) return;
     if (e.key === "Escape") { e.preventDefault(); closePalette(); }
+    // the input is the dialog's only focusable element, so Tab and
+    // Shift+Tab stay on it instead of leaving the aria-modal dialog
+    else if (e.key === "Tab") { e.preventDefault(); input.focus(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); if (filtered.length) setActive((activeIndex + 1) % filtered.length); }
     else if (e.key === "ArrowUp") { e.preventDefault(); if (filtered.length) setActive((activeIndex - 1 + filtered.length) % filtered.length); }
     else if (e.key === "Enter") { e.preventDefault(); go(filtered[activeIndex]); }
@@ -618,7 +647,9 @@
 
       let half = track.scrollWidth / 2;      // width of one (un-duplicated) row
       let speed = half / 42000;              // px/ms - matches the old 42s / -50% drift
-      let offset = 0, paused = false, dragging = false, moved = false;
+      // The drift stops while any of these holds: pointer over the strip, a
+      // link in it has keyboard focus, or the pause button is on.
+      let offset = 0, hovered = false, focused = false, userPaused = false, dragging = false, moved = false;
       let pointerId = null, startX = 0, startOffset = 0, last = 0;
 
       const wrap = (x) => { let m = half > 0 ? x % half : 0; if (m > 0) m -= half; return m; };
@@ -626,18 +657,56 @@
 
       function frame(now) {
         const dt = last ? now - last : 0; last = now;
-        if (!paused && !dragging && half > 0) { offset = wrap(offset - speed * dt); apply(); }
+        if (!hovered && !focused && !userPaused && !dragging && half > 0) { offset = wrap(offset - speed * dt); apply(); }
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
 
       // Hovering pauses the drift, matching the old CSS behaviour.
-      viewport.addEventListener("mouseenter", () => { paused = true; });
-      viewport.addEventListener("mouseleave", () => { if (!dragging) paused = false; });
+      viewport.addEventListener("mouseenter", () => { hovered = true; });
+      viewport.addEventListener("mouseleave", () => { if (!dragging) hovered = false; });
+
+      // Keyboard focus pauses the drift and slides the focused link fully into
+      // view (inset past the 40px edge fade). Only the first run is focusable,
+      // so the offset is not wrapped here. Mouse clicks don't count, so a drag
+      // that starts on a link doesn't jump.
+      const EDGE = 40;
+      viewport.addEventListener("focusin", (e) => {
+        const a = e.target.closest ? e.target.closest(".kev-item") : null;
+        if (!a || !a.matches(":focus-visible")) return;
+        focused = true;
+        viewport.scrollLeft = 0;              // undo the browser's own scroll-into-view
+        const r = a.getBoundingClientRect(), v = viewport.getBoundingClientRect();
+        const rel = r.left - v.left;
+        // a link wider than the strip (phones) is aligned by its start
+        if (rel < EDGE || r.width > v.width - 2 * EDGE) offset += EDGE - rel;
+        else if (rel + r.width > v.width - EDGE) offset -= rel + r.width - (v.width - EDGE);
+        offset = Math.min(0, offset);
+        apply();
+      });
+      viewport.addEventListener("focusout", (e) => {
+        if (!viewport.contains(e.relatedTarget)) focused = false;
+      });
+      viewport.addEventListener("scroll", () => { viewport.scrollLeft = 0; });
+
+      // Visible pause/play control (WCAG 2.2.2). It sits before the strip so it
+      // is the first tab stop in the ticker.
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "kev-toggle";
+      const setToggle = () => {
+        const label = userPaused ? "Play the KEV ticker" : "Pause the KEV ticker";
+        toggle.setAttribute("aria-label", label);
+        toggle.title = label;
+        toggle.innerHTML = '<i class="fa-solid ' + (userPaused ? "fa-play" : "fa-pause") + '" aria-hidden="true"></i>';
+      };
+      setToggle();
+      toggle.addEventListener("click", () => { userPaused = !userPaused; setToggle(); });
+      viewport.parentNode.insertBefore(toggle, viewport);
 
       viewport.addEventListener("pointerdown", (e) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
-        dragging = true; moved = false; paused = true;
+        dragging = true; moved = false;
         startX = e.clientX; startOffset = offset; pointerId = e.pointerId;
         half = track.scrollWidth / 2;        // re-measure in case fonts shifted widths
         try { viewport.setPointerCapture(pointerId); } catch (_) {}
@@ -657,7 +726,7 @@
         dragging = false;
         viewport.classList.remove("is-grabbing");
         if (pointerId !== null) { try { viewport.releasePointerCapture(pointerId); } catch (_) {} pointerId = null; }
-        paused = viewport.matches(":hover");  // resume once the pointer leaves
+        hovered = viewport.matches(":hover");  // resume once the pointer leaves
       }
       viewport.addEventListener("pointerup", endDrag);
       viewport.addEventListener("pointercancel", endDrag);
@@ -688,13 +757,16 @@
         const items = (data.vulnerabilities || []).slice(0, 10);
         if (!items.length) return; // nothing to show → stay hidden, never fake it
 
-        const row = () => items.map((v) => {
+        // dup: the copy that makes the loop seamless - hidden from screen
+        // readers and the tab order so each entry is announced once
+        const row = (dup) => items.map((v) => {
           const ransom = v.knownRansomwareCampaignUse === "Known"
             ? ' <i class="fa-solid fa-skull-crossbones kev-ransom" title="Known ransomware campaign use"></i>'
             : "";
           const cve = v.cveID || "";
           const href = "https://www.cve.org/CVERecord?id=" + encodeURIComponent(cve);
           return '<a class="kev-item" href="' + href + '" target="_blank" rel="noopener" draggable="false"' +
+              (dup ? ' aria-hidden="true" tabindex="-1"' : "") +
               ' title="View ' + escapeHtml(cve) + ' on CVE.org">' +
               '<span class="kev-cve">' + escapeHtml(cve) + "</span>" +
               '<span class="kev-prod">' + escapeHtml(((v.vendorProject || "") + " " + (v.product || "")).trim()) + "</span>" +
@@ -705,7 +777,7 @@
 
         // duplicate run for a seamless loop - skip when the scroll animation
         // is disabled, so reduced-motion users don't see every item twice
-        track.innerHTML = reduceMotion ? row() : row() + row();
+        track.innerHTML = reduceMotion ? row(false) : row(false) + row(true);
         const tag = $(".kev-tag", strip);
         if (tag) {
           tag.title = "Latest CISA KEV additions · catalog " + (data.catalogVersion || "?") +
