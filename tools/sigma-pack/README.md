@@ -28,6 +28,7 @@ sigma check tools/sigma-pack/rules/
 | [`oauth-consent-sensitive-scopes.kql`](queries/kql/oauth-consent-sensitive-scopes.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
 | [`oauth2-permission-grant-post.kql`](queries/kql/oauth2-permission-grant-post.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
 | [`app-role-assignment.kql`](queries/kql/app-role-assignment.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
+| [`app-credential-added.kql`](queries/kql/app-credential-added.kql) | KQL | [T1098.001](https://attack.mitre.org/techniques/T1098/001/) Additional Cloud Credentials | Persistence / Privilege Escalation | query |
 | [`litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App; [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting | Initial Access / Execution | experimental |
 | [`litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 | [`litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
@@ -41,6 +42,7 @@ sigma check tools/sigma-pack/rules/
 | [`defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | Sigma | [T1685](https://attack.mitre.org/techniques/T1685/) Disable or Modify Tools | Defense Impairment | experimental |
 | [`archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | Sigma | [T1560.001](https://attack.mitre.org/techniques/T1560/001/) Archive via Utility; [T1039](https://attack.mitre.org/techniques/T1039/) Data from Network Shared Drive | Collection | experimental |
 | [`rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | Sigma | [T1567.002](https://attack.mitre.org/techniques/T1567/002/) Exfiltration to Cloud Storage | Exfiltration | experimental |
+| [`remote-access-tool-service-install.yml`](rules/windows/remote-access-tool-service-install.yml) | Sigma | [T1219.002](https://attack.mitre.org/techniques/T1219/002/) Remote Desktop Software; [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service | Command &amp; Control / Persistence | experimental |
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
@@ -61,7 +63,7 @@ Writeup: [Detecting Kerberoasting: A Practical Walkthrough with Sigma](https://u
 Prerequisite: *Audit Kerberos Service Ticket Operations* (Success) enabled on all
 domain controllers, Security log shipped from every DC.
 
-### OAuth consent phishing (MITRE ATT&CK T1528) - KQL, Microsoft Sentinel / Log Analytics
+### OAuth consent phishing (MITRE ATT&CK T1528, follow-on T1098.001) - KQL, Microsoft Sentinel / Log Analytics
 
 Writeup: [Detecting OAuth Consent Phishing in Microsoft 365](https://umbrasec.dev/research/detecting-oauth-consent-phishing.html)
 
@@ -70,6 +72,7 @@ Writeup: [Detecting OAuth Consent Phishing in Microsoft 365](https://umbrasec.de
 | [`queries/kql/oauth-consent-sensitive-scopes.kql`](queries/kql/oauth-consent-sensitive-scopes.kql) | "Consent to application" audit events granting mail/files/directory scopes |
 | [`queries/kql/oauth2-permission-grant-post.kql`](queries/kql/oauth2-permission-grant-post.kql) | The Graph API POST that creates a delegated permission grant (highest fidelity) |
 | [`queries/kql/app-role-assignment.kql`](queries/kql/app-role-assignment.kql) | App-only (application permission) role assignments - standing access |
+| [`queries/kql/app-credential-added.kql`](queries/kql/app-credential-added.kql) | Follow-on persistence (T1098.001): a new client secret or certificate on an application or service principal |
 
 Prerequisite: Entra ID `AuditLogs` and `MicrosoftGraphActivityLogs` flowing into
 your workspace. The shape of `modifiedProperties` shifts between schema versions -
@@ -197,15 +200,15 @@ The hunt stays in the writeup rather than the pack: it looks for a burst of PHP
 worker crashes against each host's normal rate, timed against hits from this
 rule, which a single-event Sigma rule does not express.
 
-### Ransomware staging, recovery inhibition and Defender tampering - SafePay and INC Ransom (T1490, T1685, T1560.001, T1039, T1567.002)
+### Ransomware staging, recovery inhibition, Defender tampering and remote access tools - SafePay and INC Ransom (T1490, T1685, T1560.001, T1039, T1567.002, T1219.002, T1543.003)
 
 Writeups: [SafePay Is Claiming Australian Victims](https://umbrasec.dev/research/safepay-australian-smb.html)
 and [How INC Ransom Hits Australian Organisations](https://umbrasec.dev/research/inc-ransom-australian-smb.html)
 
 The recovery rule comes from the SafePay writeup, the Defender rule from the INC
-writeup, and the archiver and rclone rules from both. None of them is specific to
-one crew: they catch the native-tool and commodity-tool steps many ransomware
-operators share, so a match says "look now", not "this is SafePay".
+writeup, and the archiver, rclone and remote access tool rules from both. None of
+them is specific to one crew: they catch the native-tool and commodity-tool steps
+many ransomware operators share, so a match says "look now", not "this is SafePay".
 
 | Rule | What it catches | Level |
 |---|---|---|
@@ -213,18 +216,22 @@ operators share, so a match says "look now", not "this is SafePay".
 | [`rules/windows/defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | `SystemSettingsAdminFlows.exe` run with a Defender argument by anything other than the Settings app - the INC Ransom Defender switch-off Huntress documented | medium |
 | [`rules/windows/archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | WinRAR, RAR or 7-Zip creating or adding to an archive with a `C$` to `F$` admin share on the command line | medium |
 | [`rules/windows/rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | rclone, renamed or not, started with a command that writes to a destination (`copy`, `sync`, `move`, `rcat`, `archive create` and the rest) | medium |
+| [`rules/windows/remote-access-tool-service-install.yml`](rules/windows/remote-access-tool-service-install.yml) | A Windows service registered for ScreenConnect, AnyDesk, TeamViewer, SimpleHelp, Mesh Agent or RustDesk (System event 7045), matched on a documented default path or name (for ScreenConnect, from Microsoft's analysis of a malicious install). One edit point: put a string unique to your own sanctioned instance in `filter_sanctioned_rmm` - until you do, it fires on every install. Only ScreenConnect and custom AnyDesk clients have such a string in the event | medium |
 
 Prerequisite: Windows process-creation telemetry with command lines (Sysmon
-Event 1, or EDR). Security event 4688 works for the image-name and command-line
-parts, but it carries no PE metadata (`OriginalFileName`, `Product`,
+Event 1, or EDR) for the first four rules, and the Windows System log (Event 7045)
+for the remote access tool rule. Security event 4688 works for the image-name and
+command-line parts, but it carries no PE metadata (`OriginalFileName`, `Product`,
 `Description`), so renamed binaries get through. Pair the Defender rule with
-event 5007 from the Defender Operational log to see which setting changed. These
-see command lines only: shadow copies deleted through the VSS API, rclone driven
-through `rcd` or `serve`, and an archive built from a mapped drive are all blind
-spots the rule files list in full. FileZilla, which the SafePay reports name for
-exfiltration, is not covered because the reports used publish no FileZilla
-command line or destination to build a rule on; INC's MEGAsync and Restic are not
-covered either.
+event 5007 from the Defender Operational log to see which setting changed. The
+four process rules see command lines only: shadow copies deleted through the VSS
+API, rclone driven through `rcd` or `serve`, and an archive built from a mapped
+drive are all blind spots the rule files list in full. FileZilla, which the
+SafePay reports name for exfiltration, is not covered because the reports used
+publish no FileZilla command line or destination to build a rule on; INC's
+MEGAsync and Restic are not covered either. The remote access tool rule cannot see a portable run (no service
+is created), a renamed service in an unrelated folder, a tool it does not list, or
+abuse of your own sanctioned instance.
 
 ## How to use these
 
