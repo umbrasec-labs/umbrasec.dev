@@ -1,0 +1,72 @@
+title: Defender Settings Changed via SystemSettingsAdminFlows Outside the Settings App
+id: ca911907-3715-40b2-847a-5c3bbab84fcd
+status: experimental
+description: >
+    SystemSettingsAdminFlows.exe, a native Windows binary that applies
+    changes made in the Settings app, was started with "defender" in its
+    command line by something other than the Settings app
+    (C:\Windows\ImmersiveControlPanel\SystemSettings.exe). The binary is
+    matched by image name or by OriginalFileName, so a renamed copy also
+    fires. Huntress
+    documented an INC Ransom intrusion where the operator ran it directly
+    to essentially disable Windows Defender, and MITRE ATT&CK lists the
+    same procedure for INC Ransom (G1032). The DFIR Report saw it used the
+    same way in a LockBit intrusion, so the behaviour is not tied to one
+    crew. A Settings app parent is the usual GUI path and is filtered out;
+    a shell, a remote shell, an RMM agent, or a file named
+    SystemSettings.exe in any other folder is worth a look. Huntress notes
+    these changes appear as event 5007 in the Defender Operational log, so
+    pair a match with 5007 on the same host to see which setting changed.
+    Limitation: Defender switched off any other way (Set-MpPreference,
+    direct registry writes, Group Policy or a third-party EDR killer) never
+    touches this binary, and the rule does not read argument values, so it
+    also matches a setting being turned back on. A change made by clicking
+    in the Settings app, including by an intruder over RDP, is filtered out
+    by design; event 5007 on a host with an RDP logon (4624 logon type 10)
+    around the same time covers that path.
+references:
+    - https://attack.mitre.org/techniques/T1685/
+    - https://attack.mitre.org/groups/G1032/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://thedfirreport.com/2026/02/23/apache-activemq-exploit-leads-to-lockbit-ransomware/
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.defense-impairment
+    - attack.t1685
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\SystemSettingsAdminFlows.exe'
+        - OriginalFileName: 'SystemSettingsAdminFlows.EXE'
+    selection_cli:
+        CommandLine|contains: 'defender'
+    filter_main_settings_app:
+        # Huntress tunes its own rule the same way: the binary is often used
+        # legitimately with SystemSettings.exe as the parent. Anchor on the
+        # drive root (the colon) so a copy named SystemSettings.exe in any
+        # other folder, a nested look-alike Windows folder included, still
+        # fires; any drive letter is allowed.
+        ParentImage|endswith: ':\Windows\ImmersiveControlPanel\SystemSettings.exe'
+    condition: all of selection_* and not 1 of filter_main_*
+falsepositives:
+    - An administrator or deployment script that runs
+      SystemSettingsAdminFlows.exe with a Defender argument from cmd or
+      PowerShell to change a setting on purpose. Confirm the change with
+      event 5007 and a change ticket
+    - A script that turns Defender protection back on through the same binary.
+      The cited reports do not publish the argument values in text, so the
+      rule cannot tell an off switch from an on switch; read the full
+      command line before escalating
+    - A Defender change made through the Windows shell. The SigmaHQ rule for
+      this binary (da92713f) names Explorer.exe as well as SystemSettings.exe
+      as expected parents for GUI changes, so check the logged-on session
+      before escalating an Explorer.exe parent
+    - The genuine Settings app on a sensor that logs the parent as an NT
+      device path (\Device\HarddiskVolumeN\Windows\...) instead of a drive
+      letter. The filter is anchored on the drive colon, so add your
+      sensor's form of the system path to the filter
+level: medium

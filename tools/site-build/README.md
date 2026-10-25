@@ -6,6 +6,9 @@ homepage featured rows, `feed.xml`, `sitemap.xml`, the command palette, and the
 prev/next nav on two articles). Every one of those was a chance to desync. This
 removes that whole class of mistake.
 
+It reads two manifests: `research/articles.json` for the articles, and the ATT&CK
+coverage table in `tools/sigma-pack/README.md` for the sigma pack.
+
 ## How publishing works now
 
 1. Write the article HTML in `research/<slug>.html` (copy an existing one; keep
@@ -18,9 +21,15 @@ removes that whole class of mistake.
    python3 tools/site-build/build_indexes.py
    ```
 
-4. Commit. The `.githooks/pre-commit` hook re-runs it in `--check` mode and
-   blocks the commit if anything is out of sync, so a forgotten step can't ship.
-   Enable it once per clone with `git config core.hooksPath .githooks`.
+4. Commit. The `.githooks/pre-commit` hook runs `--check`. On drift it
+   regenerates and stages the derived files into the same commit, so a forgotten
+   step can't ship. It blocks the commit if regeneration fails, or for what it
+   cannot fix: a research page missing from `research/articles.json`, or a
+   sigma-pack rule file and the
+   ATT&CK table in `tools/sigma-pack/README.md` that disagree (a file missing from
+   the table, or a row with no file). It also scans the staged changes with
+   gitleaks and refuses to commit if gitleaks is not installed. Enable it once per
+   clone with `git config core.hooksPath .githooks` (needs python3 and gitleaks).
 
 ## What the generator owns
 
@@ -39,15 +48,17 @@ is never touched.
 | `feed.xml` | `<lastBuildDate>` + every `<item>` | `<!-- AUTO:builddate ... -->`, `<!-- AUTO:items ... -->` |
 | `sitemap.xml` | per-article research `<url>` entries | `<!-- AUTO:research ... -->` |
 | `assets/umbra.js` | command-palette "Articles" entries | `/* AUTO:articles ... */` |
+| `tools/sigma-pack/index.html` | ATT&CK coverage table (from the table in `tools/sigma-pack/README.md`) | `<!-- AUTO:sigmapack ... -->` |
 | `research/<slug>.html` | prev/next footer nav | located structurally (no marker) |
-| every site page | shared site footer (depth-aware links) | the whole `<footer>` element is replaced (no marker) |
+| standard site pages (see below) | shared site footer (depth-aware links) | the whole `<footer>` element is replaced (no marker) |
 
 The count is computed, so "Three/Six published so far" can never go stale again.
 Articles are sorted by date (newest first); equal dates keep manifest order.
 
 The shared footer is defined once in `render_footer()` and written into every
-standard site page (root pages plus `guide/*.html`, `research/*.html`, and
-`tools/index.html`), with relative links adjusted for page depth. New pages just
+standard site page (`index.html`, `about.html`, `tools/index.html`,
+`tools/sigma-pack/index.html`, `guide/*.html` and `research/*.html`; `404.html`
+keeps its own footer), with relative links adjusted for page depth. New pages just
 need any `<footer>...</footer>` placeholder - the generator replaces it wholesale -
 which you get for free by copying an existing page.
 
@@ -68,3 +79,8 @@ palette). Do not pre-escape.
 python3 tools/site-build/build_indexes.py          # regenerate (writes changes)
 python3 tools/site-build/build_indexes.py --check   # hook guard: exit 1 on drift, writes nothing
 ```
+
+`--check` also exits 1, even with no drift, when a `research/*.html` page is
+missing from `articles.json`, when a sigma-pack `rules/**/*.yml` or
+`queries/**/*.kql` file has no row in the ATT&CK table, or when a table row
+points at a file that doesn't exist.

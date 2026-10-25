@@ -33,9 +33,14 @@ sigma check tools/sigma-pack/rules/
 | [`litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
 | [`litellm-stealer-files-windows.yml`](rules/windows/litellm-stealer-files-windows.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
 | [`litellm-stealer-exfil.yml`](rules/web/litellm-stealer-exfil.yml) | Sigma | [T1041](https://attack.mitre.org/techniques/T1041/) Exfiltration Over C2 Channel | Exfiltration | experimental |
-| [`masquerading-svchost-outside-system32.yml`](rules/windows/masquerading-svchost-outside-system32.yml) | Sigma | [T1036.005](https://attack.mitre.org/techniques/T1036/005/) Match Legitimate Resource Name or Location | Defense Evasion | experimental |
+| [`masquerading-svchost-outside-system32.yml`](rules/windows/masquerading-svchost-outside-system32.yml) | Sigma | [T1036.005](https://attack.mitre.org/techniques/T1036/005/) Match Legitimate Resource Name or Location | Stealth | experimental |
 | [`cloudflared-tunnel-service-install.yml`](rules/windows/cloudflared-tunnel-service-install.yml) | Sigma | [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service; [T1572](https://attack.mitre.org/techniques/T1572/) Protocol Tunneling | Persistence / Command &amp; Control | experimental |
 | [`metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
+| [`php-upload-progress-multipart-probe.yml`](rules/web/php-upload-progress-multipart-probe.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
+| [`ransomware-inhibit-recovery-native-utilities.yml`](rules/windows/ransomware-inhibit-recovery-native-utilities.yml) | Sigma | [T1490](https://attack.mitre.org/techniques/T1490/) Inhibit System Recovery | Impact | experimental |
+| [`defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | Sigma | [T1685](https://attack.mitre.org/techniques/T1685/) Disable or Modify Tools | Defense Impairment | experimental |
+| [`archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | Sigma | [T1560.001](https://attack.mitre.org/techniques/T1560/001/) Archive via Utility; [T1039](https://attack.mitre.org/techniques/T1039/) Data from Network Shared Drive | Collection | experimental |
+| [`rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | Sigma | [T1567.002](https://attack.mitre.org/techniques/T1567/002/) Exfiltration to Cloud Storage | Exfiltration | experimental |
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
@@ -111,9 +116,9 @@ named.
 
 Prerequisite: file-creation telemetry (Sysmon Event 11 on either platform, auditd,
 or EDR) from hosts that run Python, and proxy logs that retain the destination
-host (DNS logs work for a manual hunt on `litellm.dev`, not for the rule). Every
-path is a suffix match on purpose: virtualenvs, conda, Debian's `dist-packages` and
-containers all put the files somewhere different, and a sensor on a Docker or
+host (DNS logs work for a manual hunt on `litellm.dev`, not for the rule). No path
+is anchored to the start on purpose (each is a suffix or substring match): virtualenvs,
+conda, Debian's `dist-packages` and containers all put the files somewhere different, and a sensor on a Docker or
 Kubernetes node sees a container's `/tmp` under the overlay or rootfs path.
 
 **Hunt, not a rule - the stolen keys get used.** Treat any host that started Python
@@ -155,6 +160,10 @@ Prerequisite: Windows process-creation telemetry (Sysmon Event 1 or Security
 4688 with command line auditing) for the first rule, and the Windows System log
 (Event 7045) for the second.
 
+Read the [writeup](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html)
+before deploying - the Cloudflare Tunnel rule in particular is a tuning
+exercise, not a drop-in alert.
+
 ### Metabase unauthenticated SQL injection - CVE-2026-72898 (MITRE ATT&CK T1190)
 
 Writeup: [Sixteen Days From KEV to Exfiltration](https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html)
@@ -170,9 +179,52 @@ with the volume hunt in the writeup. Patching (58.24, 59.21, 60.17, 61.11, 62.9,
 63.5) and blocking the endpoint are the real controls; this covers the window
 before you got there.
 
-Read the [writeup](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chain.html)
-before deploying - the Cloudflare Tunnel rule in particular is a tuning
-exercise, not a drop-in alert.
+### php2shell request-side tripwire - CVE-2026-109619 (MITRE ATT&CK T1190)
+
+Writeup: [php2shell and the Hallucinated Exploit](https://umbrasec.dev/research/php2shell-hallucinated-exploits.html)
+
+| Rule | What it catches | Level |
+|---|---|---|
+| [`rules/web/php-upload-progress-multipart-probe.yml`](rules/web/php-upload-progress-multipart-probe.yml) | A multipart/form-data request carrying `PHP_SESSION_UPLOAD_PROGRESS`, the field the CVE-2026-109619 session-lifecycle case uses - and also the 2018 session-poisoning trick, scanners and fake PoCs. Exposure and attention, not compromise | low |
+
+Prerequisite: a WAF or reverse proxy that logs request bodies and the
+Content-Type header. `cs-request-body` and `cs-content-type` are not in the Sigma
+webserver taxonomy, so map them to your fields in the conversion pipeline or the
+query never matches. Confirm how much of a body your WAF inspects and logs: the
+field can sit past the limit. The rule does not cover the CVE's other paths or
+CVE-2026-109618; the worker-crash hunt in the writeup is the stronger signal.
+The hunt stays in the writeup rather than the pack: it looks for a burst of PHP
+worker crashes against each host's normal rate, timed against hits from this
+rule, which a single-event Sigma rule does not express.
+
+### Ransomware staging, recovery inhibition and Defender tampering - SafePay and INC Ransom (T1490, T1685, T1560.001, T1039, T1567.002)
+
+Writeups: [SafePay Is Claiming Australian Victims](https://umbrasec.dev/research/safepay-australian-smb.html)
+and [How INC Ransom Hits Australian Organisations](https://umbrasec.dev/research/inc-ransom-australian-smb.html)
+
+The recovery rule comes from the SafePay writeup, the Defender rule from the INC
+writeup, and the archiver and rclone rules from both. None of them is specific to
+one crew: they catch the native-tool and commodity-tool steps many ransomware
+operators share, so a match says "look now", not "this is SafePay".
+
+| Rule | What it catches | Level |
+|---|---|---|
+| [`rules/windows/ransomware-inhibit-recovery-native-utilities.yml`](rules/windows/ransomware-inhibit-recovery-native-utilities.yml) | `vssadmin` / `wmic` deleting shadow copies, `wbadmin delete catalog`, or `bcdedit` set to ignore boot failures or to disable automatic recovery - including renamed copies of the utilities | high |
+| [`rules/windows/defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | `SystemSettingsAdminFlows.exe` run with a Defender argument by anything other than the Settings app - the INC Ransom Defender switch-off Huntress documented | medium |
+| [`rules/windows/archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | WinRAR, RAR or 7-Zip creating or adding to an archive with a `C$` to `F$` admin share on the command line | medium |
+| [`rules/windows/rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | rclone, renamed or not, started with a command that writes to a destination (`copy`, `sync`, `move`, `rcat`, `archive create` and the rest) | medium |
+
+Prerequisite: Windows process-creation telemetry with command lines (Sysmon
+Event 1, or EDR). Security event 4688 works for the image-name and command-line
+parts, but it carries no PE metadata (`OriginalFileName`, `Product`,
+`Description`), so renamed binaries get through. Pair the Defender rule with
+event 5007 from the Defender Operational log to see which setting changed. These
+see command lines only: shadow copies deleted through the VSS API, rclone driven
+through `rcd` or `serve`, and an archive built from a mapped drive are all blind
+spots the rule files list in full. FileZilla, which the SafePay reports name for
+exfiltration, is not covered because the reports used publish no FileZilla
+command line or destination to build a rule on; INC's MEGAsync and Restic are not
+covered either.
 
 ## How to use these
 

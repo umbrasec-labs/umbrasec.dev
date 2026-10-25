@@ -1,0 +1,77 @@
+title: Rclone Copy or Sync Run, Including Renamed Binaries
+id: 0f64f646-167c-4b27-8620-1195a95aa621
+status: experimental
+description: >
+    Rclone was started with a command that writes data to a destination,
+    normally a remote (copy, copyto, sync, move, moveto, bisync, rcat, or
+    archive create, which only exists from v1.72). Rclone is a legitimate
+    command-line client for cloud and remote storage, and ransomware crews
+    use it to move stolen data out before they encrypt. The March 2026 joint
+    ACSC, NCSC NZ and CERT Tonga advisory names rclone as software INC
+    Ransom uses to exfiltrate, and ThreatLocker lists Rclone among SafePay's
+    exfiltration tools. Huntress also recorded an INC Ransom intrusion
+    running "rclone copy" from the E: drive to a redacted mount point with
+    an --include-from file list, which Huntress mapped to collection.
+    Renamed copies are matched on the PE version resource: official builds
+    carry OriginalFilename rclone.exe and ProductName Rclone, and the
+    FileDescription changed from "Rsync for cloud storage" (up to v1.62) to
+    "Rclone" (v1.63 onward), so a rule that keys only on the old description
+    misses a renamed current build.
+    Blind spots: a renamed v1.52 or older or self-built binary has no version
+    resource; rclone driven through "rclone rcd" or a config-only workflow,
+    files copied onto an "rclone mount" drive, or a local path published
+    with "rclone serve" (http, sftp, ftp, webdav, s3 and others) for the
+    attacker to pull, never shows a transfer verb on the command line; a verb
+    written in quotes ("copy") or separated by tabs instead of spaces is
+    missed, because the verb check needs a space on both sides; and
+    telemetry without PE metadata (such as Security event 4688) leaves only
+    the image-name match.
+references:
+    - https://attack.mitre.org/techniques/T1567/002/
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://www.ncsc.govt.nz/alerts/inc-ransom-affiliate-model-enabling-targeting-of-critical-networks/
+    - https://www.threatlocker.com/blog/safepay-ransomware-explained-iocs-ttps-and-defense-strategies
+    - https://github.com/rclone/rclone/blob/master/bin/resource_windows.go
+    - https://github.com/rclone/rclone/blob/v1.62.0/bin/cross-compile.go
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.exfiltration
+    - attack.t1567.002
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    rclone_image:
+        Image|endswith: '\rclone.exe'
+    rclone_original_name:
+        OriginalFileName: 'rclone.exe'
+    rclone_product:
+        Product: 'Rclone'
+    rclone_description:
+        Description:
+            - 'Rclone'
+            - 'Rsync for cloud storage'
+    transfer_verb:
+        CommandLine|contains:
+            - ' copy '
+            - ' copyto '
+            - ' sync '
+            - ' move '
+            - ' moveto '
+            - ' bisync '
+            - ' rcat '
+            - ' archive create '
+    condition: 1 of rclone_* and transfer_verb
+falsepositives:
+    - A sanctioned backup or migration job, such as a scheduled task that runs
+      "rclone sync D:\Shares remote:backup" each night, matches. Baseline the
+      hosts, accounts and parent processes that run rclone and alert on the rest
+    - An administrator running "rclone move" or "rclone copy" by hand to shift
+      files to an approved cloud store during a migration
+    - A non-transfer rclone command whose path argument contains a transfer
+      word with spaces around it, such as rclone ls on "D:\Team sync folder",
+      because the verb check is a plain substring match
+level: medium

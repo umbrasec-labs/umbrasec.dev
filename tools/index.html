@@ -96,7 +96,7 @@
                     <div class="font-semibold text-xl">sigma-pack</div>
                     <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
                 </div>
-                <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, N-central post-exploitation and the Metabase reset-password SQL injection, plus three OAuth consent-phishing KQL queries, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
+                <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, N-central post-exploitation, the Metabase reset-password SQL injection and php2shell upload-progress probes, and ransomware recovery inhibition, Defender tampering, admin-share archiving and rclone transfers from the SafePay and INC Ransom writeups, plus three OAuth consent-phishing KQL queries, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
                 <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
                     <a href="sigma-pack/index.html" class="text-sm text-[#f25623] hover:text-[#f56e0f]">Browse the pack →</a>
                     <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" target="_blank" rel="noopener" class="text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
@@ -106,7 +106,8 @@
 
             <div class="u-card p-6 border border-[#525252] rounded-3xl bg-[#222222]">
                 <div class="flex items-center gap-x-2 mb-2">
-                    <div class="font-semibold text-xl">detections</div>
+                    <div class="font-semibold text-xl">Claims Ledger</div>
+                    <span class="font-mono text-xs text-[#7d837d]">detections</span>
                     <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
                 </div>
                 <p class="text-sm text-[#959c95]">The Claims Ledger for sigma-pack. Each rule's claims about itself - what it catches, which harmless activity trips it, what it cannot see - are written down and re-proved in CI against the live rule files, using labelled synthetic events. Every run, pass or fail, is signed for the exact rule digests.</p>

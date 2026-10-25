@@ -1,0 +1,104 @@
+title: Shadow Copies Deleted or Boot Recovery Disabled via Native Utility
+id: b82fbb2c-3738-47c8-a238-8c63116ccf5a
+status: experimental
+description: >
+    A built-in Windows utility was run with the arguments that remove a
+    host's ability to roll back: vssadmin or wmic deleting Volume Shadow
+    Copies, wbadmin deleting the local backup catalog, or bcdedit telling
+    the boot loader to ignore boot failures or to disable automatic
+    recovery, either of which stops Windows failing over to recovery after
+    a failed boot. Ransomware runs this housekeeping just before or while it
+    encrypts, so a match is a reason to isolate the host, not to wait for
+    the ransom note. Acronis TRU found that SafePay samples started with the
+    -uac flag use CMSTPLUA COM elevation to run the vssadmin, wmic and both
+    bcdedit commands as "/c" command strings via ShellExecuteW, and the
+    joint advisory CISA AA26-293A (October 2026) reports SafePay inhibiting
+    system recovery. The wbadmin selection is generic T1490 coverage from
+    ATT&CK, not a SafePay observation. Each selection needs the utility
+    itself (by Image, or by OriginalFileName so renamed copies are caught),
+    so the parent shell that launches it does not fire a second time.
+    The vssadmin check matches "delete" and "shadows" as substrings, so a
+    vssadmin delete shadowstorage command line also fires.
+    Limitation: this sees command lines only. Deleting shadow copies
+    through the VSS API or by stopping the VSS service creates no matching
+    process, and CISA reports SafePay halting the Volume Shadow Copy
+    Service, so pair this with a service-state rule. Acronis does not
+    document these commands for SafePay runs without -uac. PowerShell
+    Win32_ShadowCopy deletion, diskshadow script mode, vssadmin resize
+    shadowstorage, reagentc /disable, wbadmin delete backup or
+    systemstatebackup, and NAS backup resets are also outside this rule.
+references:
+    - https://attack.mitre.org/techniques/T1490/
+    - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-293a
+    - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/vssadmin-delete-shadows
+    - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wbadmin-delete-catalog
+    - https://learn.microsoft.com/en-us/azure/virtual-machines/windows/prepare-for-upload-vhd-image
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.impact
+    - attack.t1490
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_vssadmin_img:
+        - Image|endswith: '\vssadmin.exe'
+        - OriginalFileName: 'VSSADMIN.EXE'
+    selection_vssadmin_cli:
+        CommandLine|contains|all:
+            - 'delete'
+            - 'shadows'
+    selection_wmic_img:
+        - Image|endswith: '\wmic.exe'
+        - OriginalFileName: 'wmic.exe'
+    selection_wmic_cli:
+        CommandLine|contains|all:
+            - 'shadowcopy'
+            - 'delete'
+    selection_wbadmin_img:
+        - Image|endswith: '\wbadmin.exe'
+        - OriginalFileName: 'WBADMIN.EXE'
+    selection_wbadmin_cli:
+        CommandLine|contains|all:
+            - 'delete'
+            - 'catalog'
+    selection_bcdedit_img:
+        - Image|endswith: '\bcdedit.exe'
+        - OriginalFileName: 'bcdedit.exe'
+    selection_bcdedit_cli:
+        # Match the setting and value as separate tokens: Acronis prints the
+        # SafePay command as "bcdedit / set{default}", so spacing varies.
+        # Microsoft's Azure image steps write the value as Off, and a quoted
+        # value has a quote before it instead of a space.
+        - CommandLine|contains|all:
+              - 'bootstatuspolicy'
+              - 'ignoreallfailures'
+        - CommandLine|contains|all:
+              - 'recoveryenabled'
+          CommandLine|contains:
+              - ' no'
+              - ' off'
+              - '"no'
+              - '"off'
+    condition: all of selection_vssadmin_* or all of selection_wmic_* or all of selection_wbadmin_* or all of selection_bcdedit_*
+falsepositives:
+    - An administrator running vssadmin delete shadows /for=<volume> /oldest
+      (a use Microsoft documents) to remove old snapshots. The SafePay
+      (Acronis) and ATT&CK command lines use /all /quiet with no /for=
+      volume, so they hit every volume, while Microsoft's documented
+      examples, /all /quiet included, name a volume with /for=. Check for
+      /for= and the account that ran it
+    - An administrator running wbadmin delete catalog because the backup
+      catalog is corrupted, the use Microsoft documents for that command
+    - Backup or imaging software whose agent runs vssadmin delete shadows to
+      clean up its own snapshots. Allowlist that agent by ParentImage, not by
+      command line
+    - VM image preparation before an Azure upload or migration, where
+      Microsoft documents running both bcdedit /set "{default}"
+      recoveryenabled Off and bootstatuspolicy IgnoreAllFailures, or a
+      kiosk, VDI or golden-image build script that sets them on purpose.
+      Check whether the host is being built or migrated and who ran it
+level: high
