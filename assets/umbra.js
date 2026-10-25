@@ -30,7 +30,7 @@
     { group: "Navigate", label: "Home", hint: "overview", icon: "fa-house", href: "index.html" },
     { group: "Navigate", label: "Approach", hint: "how this works", icon: "fa-compass", href: "index.html#approach", keywords: "method principles" },
     { group: "Navigate", label: "Research", hint: "all writeups", icon: "fa-flask", href: "research/index.html", keywords: "articles posts" },
-    { group: "Navigate", label: "Open Source", hint: "tools", icon: "fa-code-branch", href: "tools/index.html", keywords: "tools github kev sigma blue team mapper red team mapper kev-watch umbra-blue skills detections claims ledger" },
+    { group: "Navigate", label: "Open Source", hint: "tools", icon: "fa-code-branch", href: "tools/index.html", keywords: "tools github kev sigma blue team mapper red team mapper kev-watch kev watch umbra-blue skills detections claims ledger" },
     { group: "Navigate", label: "About", hint: "the project", icon: "fa-circle-info", href: "about.html" },
     { group: "Navigate", label: "Contact", hint: "get in touch", icon: "fa-envelope", href: "index.html#contact", keywords: "email" },
     { group: "Guide", label: "Security Guide", hint: "zero to defensible", icon: "fa-route", href: "guide/index.html", keywords: "maturity essential eight iso 27001 nist csf roadmap journey foundation identity detection governance" },
@@ -38,6 +38,7 @@
     { group: "Guide", label: "Stage 2: Identity & Access", hint: "the login is the perimeter", icon: "fa-id-badge", href: "guide/identity-and-access.html", keywords: "identity access sso single sign on conditional access mfa passkeys fido2 admin privileged joiner mover leaver password manager service accounts oauth consent least privilege" },
     { group: "Guide", label: "Stage 3: Detection & Response", hint: "someone has to watch the logs", icon: "fa-tower-observation", href: "guide/detection-and-response.html", keywords: "detection response edr mdr mssp soc logging audit log alerts incident response plan tabletop exercise breach notification notifiable data breach gdpr nis2 ransomware reporting build vs buy monitoring" },
     { group: "Guide", label: "Stage 4: Governance & Maturity", hint: "make the program provable", icon: "fa-landmark", href: "guide/governance-and-maturity.html", keywords: "governance maturity risk register policies supplier third party vendor risk board reporting metrics iso 27001 certification soc 2 smb1001 essential eight ml2 application control govern" },
+    { group: "Tools", label: "sigma-pack", hint: "rules from the writeups", icon: "fa-filter", href: "tools/sigma-pack/index.html", keywords: "sigma pack sigma-pack rules kql queries detections att&ck coverage" },
     { group: "Tools", label: "Blue Team Mapper", hint: "defender reference", icon: "fa-shield-halved", href: "https://umbrasec-labs.github.io/BlueTeamMapper/", external: true, keywords: "blue team mapper detection siem incident response threat hunting hardening soc defender reference soar" },
     { group: "Tools", label: "Red Team Mapper", hint: "attacker workflows, for defenders", icon: "fa-route", href: "https://umbrasec-labs.github.io/RedTeamMapper/", external: true, keywords: "red team mapper attacker workflows operation lifecycle flow chains adversary emulation purple team hunt coverage reference" },
     { group: "Tools", label: "umbra-blue", hint: "Claude Code skills", icon: "fa-puzzle-piece", href: "https://github.com/umbrasec-labs/umbra-blue", external: true, keywords: "umbra-blue claude code skills skill.md ai detection engineering incident response threat hunting hardening d3fend att&ck" },
@@ -197,11 +198,6 @@
       togglePalette();
       return;
     }
-    if (e.key === "/" && !open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) {
-      e.preventDefault();
-      openPalette();
-      return;
-    }
     if (!open) return;
     if (e.key === "Escape") { e.preventDefault(); closePalette(); }
     // the input is the dialog's only focusable element, so Tab and
@@ -240,9 +236,12 @@
     const panel = document.createElement("div");
     panel.id = "mobile-menu";
     panel.className = "mobile-menu md:hidden px-8";
-    panel.innerHTML = links
-      .map((a) => '<a href="' + a.getAttribute("href") + '">' + a.textContent.trim() + "</a>")
-      .join("");
+    links.forEach((src) => {
+      const a = document.createElement("a");
+      a.href = src.getAttribute("href");
+      a.textContent = src.textContent.trim();
+      panel.appendChild(a);
+    });
     nav.appendChild(panel);
 
     btn.addEventListener("click", () => {
@@ -320,11 +319,20 @@
   })();
 
   /* ── Code copy buttons ────────────────────────────────────────── */
+  let codeCount = 0;
   $$(".prose pre").forEach((pre) => {
     const wrap = document.createElement("div");
     wrap.className = "code-wrap";
     pre.parentNode.insertBefore(wrap, pre);
     wrap.appendChild(pre);
+
+    // A block that scrolls sideways must be reachable by keyboard (Safari
+    // does not focus scroll containers on its own) and needs a unique name.
+    if (pre.scrollWidth > pre.clientWidth) {
+      pre.tabIndex = 0;
+      pre.setAttribute("role", "region");
+      pre.setAttribute("aria-label", "Code sample " + ++codeCount);
+    }
 
     const btn = document.createElement("button");
     btn.className = "copy-btn";
@@ -403,6 +411,15 @@
     });
   });
 
+  /* ── Wide tables: keyboard-scrollable like code blocks ────────── */
+  $$(".table-wrap").forEach((wrap, i) => {
+    if (wrap.scrollWidth <= wrap.clientWidth) return;
+    const cap = wrap.querySelector("caption");
+    wrap.tabIndex = 0;
+    wrap.setAttribute("role", "region");
+    wrap.setAttribute("aria-label", cap ? cap.textContent.trim() : "Table " + (i + 1));
+  });
+
   /* ── Research category filter (research index only) ───────────── */
   (function researchFilter() {
     const bar = $("[data-research-filter]");
@@ -415,7 +432,10 @@
       const chip = e.target.closest(".filter-chip");
       if (!chip) return;
       const filter = chip.dataset.filter;
-      $$(".filter-chip", bar).forEach((c) => c.classList.toggle("active", c === chip));
+      $$(".filter-chip", bar).forEach((c) => {
+        c.classList.toggle("active", c === chip);
+        c.setAttribute("aria-pressed", String(c === chip));
+      });
 
       let shown = 0;
       cards.forEach((card) => {
@@ -454,7 +474,9 @@
             out += '<span class="scramble-rnd">' + escapeHtml(q.rnd) + "</span>";
           }
         }
-        el.innerHTML = out;
+        // screen readers get the final text, never the random glyphs
+        el.innerHTML = '<span class="visually-hidden">' + escapeHtml(finalText) + "</span>" +
+          '<span aria-hidden="true">' + out + "</span>";
         frame++;
         if (done < queue.length) requestAnimationFrame(tick);
         else el.textContent = finalText;
@@ -570,14 +592,14 @@
       t.toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 60) || "section";
     const used = new Set();
 
-    let html = '<div class="toc"><div class="toc-title">On this page</div><nav>';
+    let html = '<div class="toc"><div class="toc-title">On this page</div><nav aria-label="On this page">';
     const entries = [];
     headings.forEach((h) => {
       let id = h.id || slugify(h.textContent);
       while (used.has(id)) id += "-1";
       used.add(id);
       h.id = id;
-      html += '<a href="#' + id + '">' + escapeHtml(h.textContent) + "</a>";
+      html += '<a href="#' + escapeHtml(id) + '">' + escapeHtml(h.textContent) + "</a>";
       entries.push({ el: h });
     });
     html += "</nav></div>";

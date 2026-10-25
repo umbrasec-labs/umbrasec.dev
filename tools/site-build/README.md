@@ -91,6 +91,7 @@ python3 tools/site-build/build_indexes.py --list-drift  # print the files a rege
 ```
 
 `--check` also exits 1, even with no drift, when a `research/*.html` page is
-missing from `articles.json`, when a sigma-pack `rules/**/*.yml` or
+missing from `articles.json`, when a site page lacks the "Skip to content" link
+or the `<main id="main">` landmark, when a sigma-pack `rules/**/*.yml` or
 `queries/**/*.kql` file has no row in the ATT&CK table, or when a table row
 points at a file that doesn't exist.

@@ -30,8 +30,9 @@
     <link rel="stylesheet" href="../assets/umbra.css">
 </head>
 <body class="bg-[#171717] text-[#ccd0cf]" data-base="../">
+    <a href="#main" class="skip-link">Skip to content</a>
 
-    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
+    <nav aria-label="Site" class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
         <div class="max-w-[1280px] mx-auto px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="../index.html" class="brand flex items-center gap-x-2.5">
@@ -66,6 +67,8 @@
         </div>
     </nav>
 
+    <main id="main">
+
     <section class="max-w-[1280px] mx-auto px-8 pt-16 pb-10 umbra-grid">
         <div class="section-label mb-4">RESEARCH</div>
         <h1 class="hero-headline hero-headline--sm font-semibold tracking-[-0.045em] mb-6">Research.</h1>
@@ -78,12 +81,12 @@
     <section class="max-w-[1280px] mx-auto px-8 pb-24">
 
         <!-- Category filter -->
-        <div data-research-filter class="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Filter research by category">
+        <div data-research-filter class="flex flex-wrap gap-2 mb-8" role="group" aria-label="Filter research by category">
             <!-- AUTO:filters START -->
-            <button type="button" class="filter-chip active" data-filter="all">All</button>
-            <button type="button" class="filter-chip" data-filter="detection">Detection Engineering</button>
-            <button type="button" class="filter-chip" data-filter="threat">Threat Analysis</button>
-            <button type="button" class="filter-chip" data-filter="ai">AI &amp; LLM Security</button>
+            <button type="button" class="filter-chip active" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="filter-chip" data-filter="detection" aria-pressed="false">Detection Engineering</button>
+            <button type="button" class="filter-chip" data-filter="threat" aria-pressed="false">Threat Analysis</button>
+            <button type="button" class="filter-chip" data-filter="ai" aria-pressed="false">AI &amp; LLM Security</button>
             <!-- AUTO:filters END -->
         </div>
 
@@ -317,10 +320,12 @@
             <div class="font-mono text-xs text-[#f56e0f] mb-2">SUGGEST A TOPIC</div>
             <p class="text-[#959c95] text-sm">
                 New writeups ship as the threats worth covering surface. Want to suggest a topic, request a detection,
-                or flag an error in what's published? <a href="https://github.com/umbrasec-labs/umbrasec.dev" class="text-[#f25623] hover:text-[#f56e0f]" target="_blank" rel="noopener">Open an issue →</a>
+                or flag an error in what's published? <a href="https://github.com/umbrasec-labs/umbrasec.dev" class="text-[#f25623] hover:text-[#f56e0f] underline underline-offset-2" target="_blank" rel="noopener">Open an issue →</a>
             </p>
         </div>
     </section>
+
+    </main>
 
     <footer class="border-t border-[#525252] mt-8">
         <div class="max-w-[1280px] mx-auto px-8 py-14">

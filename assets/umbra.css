@@ -19,7 +19,25 @@
     --ember:     #f56e0f;   /* Ember - hover, warning */
     --sage:      #88a57d;   /* Sage - success, live */
     --khaki:     #aeab94;   /* Khaki - second accent */
+    color-scheme: dark;     /* native scrollbars and controls match the dark page */
 }
+
+/* Hidden from view, still read by screen readers */
+.visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* "Skip to content": first Tab stop on every page, shown only on focus */
+.skip-link {
+    position: absolute; left: 1rem; top: -4rem; z-index: 200;
+    padding: 0.55rem 0.9rem;
+    background: var(--accent); color: var(--bg);
+    font-weight: 600; font-size: 0.9rem;
+    border-radius: 8px;
+    transition: top 0.15s ease;
+}
+.skip-link:focus { top: 0.75rem; }
 
 body {
     font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
