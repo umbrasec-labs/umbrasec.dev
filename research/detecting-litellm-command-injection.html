@@ -209,6 +209,12 @@ POST /mcp-rest/test/tools/list</code></pre>
                 affects far more than LiteLLM.
             </p>
             <p>
+                Updated 2026-10-25: CISA added CVE-2026-48710 to the
+                <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">KEV
+                catalog</a> on 2 September 2026, with a federal remediation deadline of 16 September. The Starlette
+                upgrade is no longer the second clock; treat it as urgent as the LiteLLM patch.
+            </p>
+            <p>
                 Public reporting (Horizon3.ai, The Hacker News, Help Net Security) confirms active exploitation of
                 CVE-2026-42271 and documents the chain, but does not publish indicators from the in-the-wild attacks.
                 So rather than chase IOCs that aren't public, detect the <em>behavior</em> - which is durable anyway.
