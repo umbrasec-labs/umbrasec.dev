@@ -1,0 +1,124 @@
+title: Remote Access Tool Installed as a Service
+id: 659eec79-30e7-4619-8659-745be2f9cdf9
+status: experimental
+description: >
+    A Windows service was created for a remote access tool: ScreenConnect,
+    AnyDesk, TeamViewer, SimpleHelp, MeshCentral's Mesh Agent or RustDesk.
+    An installed agent gives whoever runs its server a way back in that looks
+    like normal IT support. CISA AA26-293A (October 2026) reports SafePay
+    using ScreenConnect for persistence and access, and installing AnyDesk or
+    TeamViewer to transfer ransomware and other software. Huntress documented
+    an INC Ransom intrusion with a rogue ScreenConnect installation on a
+    network whose infrastructure used an entirely different RMM tool. CISA
+    AA25-071A reports Medusa actors using SimpleHelp among other tools and
+    says they may choose tools already present in the victim environment,
+    CISA AA24-109A names AnyDesk and RustDesk for Akira, and Microsoft saw
+    ScreenConnect, Tactical RMM and Mesh Agent deployed for persistence in
+    campaigns it identified in February 2026.
+    Each tool except ScreenConnect is matched on a default its vendor
+    documents. ScreenConnect is matched on the
+    ScreenConnect.ClientService.exe binary or a service name starting
+    "ScreenConnect Client", taken from Microsoft's analysis of a malicious
+    install, whose service key was "ScreenConnect Client" followed by a
+    16-digit hexadecimal client identifier, not from ConnectWise
+    documentation. AnyDesk is matched on "\AnyDesk" in the ImagePath, which
+    covers the install folder, custom clients installed as AnyDesk-<prefix>,
+    and the AnyDesk.exe binary in any folder. TeamViewer is matched on its
+    install folder, SimpleHelp on the JWrapper-Remote Access folder of its
+    Remote Access Service, Mesh Agent on meshagent.exe, and RustDesk on its
+    install folder, the rustdesk.exe binary or the Rustdesk service name
+    from RustDesk's deployment script.
+    Tuning: put a string unique to your own sanctioned remote access tool in
+    filter_sanctioned_rmm, copied from its service ImagePath. Exclude your
+    instance, not the product: excluding a whole product hides an attacker
+    who installs a second copy pointed at their own server. Only two tools
+    leave a per-instance string in this event: the identifier in your
+    ScreenConnect Client folder name, and the AnyDesk-<prefix> folder of
+    your custom AnyDesk client (AnyDesk says the prefix is unique to your
+    account). Copy the whole folder name with a backslash on each side,
+    because the filter matches anywhere in the ImagePath, arguments
+    included. The default paths of Mesh Agent (which Tactical RMM
+    installs), TeamViewer, SimpleHelp, RustDesk and the standard AnyDesk
+    client hold no instance identifier, so if you sanction one of those you
+    either accept an alert on every new host or exclude the product and
+    accept the blind spot. While the placeholder stays, the filter matches
+    nothing and the rule fires on every install.
+    Blind spots: a portable run creates no service, and CISA AA23-025A
+    describes actors running AnyDesk and ScreenConnect as portable
+    executables to avoid installation; a service registered under an
+    innocuous name with its binary renamed and copied to an unrelated folder
+    is missed; TeamViewer and SimpleHelp are matched on their folder only,
+    so a copy installed to any other folder is missed even under its own
+    service name; tools not listed here, such as Atera, Splashtop, N-able or
+    BeyondTrust, are missed; abuse of your own sanctioned instance, such as
+    a stolen console account, passes the filter by design, and so does an
+    attacker who copies your filter string into their own service's
+    ImagePath; and hosts that do not forward the System log are not seen.
+references:
+    - https://attack.mitre.org/techniques/T1219/002/
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-293a
+    - https://www.huntress.com/blog/lolbin-to-inc-ransomware
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-071a
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-109a
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
+    - https://www.microsoft.com/en-us/security/blog/2026/03/03/signed-malware-impersonating-workplace-apps-deploys-rmm-backdoors/
+    - https://support.anydesk.com/docs/command-line-interface-for-windows
+    - https://support.anydesk.com/knowledge/portable-vs-installed
+    - https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-classic/deployment/apply-your-customization-to-an-installed-module/
+    - https://guides.simple-help.com/kb---locating-the-remote-access-service-installation-folder
+    - https://docs.meshcentral.com/meshcentral/agents/
+    - https://rustdesk.com/docs/en/self-host/client-deployment/
+    - https://umbrasec.dev/research/inc-ransom-australian-smb.html
+    - https://umbrasec.dev/research/safepay-australian-smb.html
+author: UMBRASEC
+date: 2026-10-25
+tags:
+    - attack.command-and-control
+    - attack.t1219.002
+    - attack.persistence
+    - attack.t1543.003
+logsource:
+    product: windows
+    service: system
+detection:
+    selection_event:
+        EventID: 7045
+    tool_screenconnect_binary:
+        ImagePath|contains: '\ScreenConnect.ClientService.exe'
+    tool_screenconnect_name:
+        ServiceName|startswith: 'ScreenConnect Client'
+    tool_anydesk:
+        ImagePath|contains: '\AnyDesk'
+    tool_teamviewer:
+        ImagePath|contains: '\TeamViewer\'
+    tool_simplehelp:
+        ImagePath|contains: '\JWrapper-Remote Access\'
+    tool_meshagent:
+        ImagePath|contains: '\meshagent.exe'
+    tool_rustdesk:
+        ImagePath|contains:
+            - '\RustDesk\'
+            - '\rustdesk.exe'
+    tool_rustdesk_name:
+        ServiceName: 'Rustdesk'
+    filter_sanctioned_rmm:
+        # <-- EDIT: a string unique to your sanctioned remote access tool,
+        # copied from its own service ImagePath. Until you replace the
+        # placeholder it matches nothing and the rule fires on every install.
+        ImagePath|contains: 'EDIT-ME-your-sanctioned-rmm-id'
+    condition: selection_event and 1 of tool_* and not 1 of filter_*
+falsepositives:
+    - Your own sanctioned remote access tool, on every new or rebuilt host,
+      until you put a string unique to it in filter_sanctioned_rmm
+    - A software vendor or MSP installing its own remote support agent, such
+      as a line-of-business vendor's ScreenConnect or TeamViewer. Confirm the
+      vendor and the change before you add it to the filter
+    - A user or helpdesk technician installing AnyDesk, TeamViewer or RustDesk
+      for one-off support. This is the unsanctioned use the rule exists for,
+      so treat it as a policy finding even when it is benign
+    - A sanctioned Tactical RMM deployment, which installs Mesh Agent
+      (Microsoft saw a Tactical RMM install add MeshAgent). Mesh Agent's
+      default path holds no instance identifier, so either accept the alert
+      on new hosts or exclude the product and accept the blind spot
+level: medium

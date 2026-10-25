@@ -216,7 +216,8 @@
 
             <h2>Detection strategy</h2>
             <p>
-                Three layers, cheapest signal first. Treat the KQL as a starting point: the exact property paths inside
+                Three layers, cheapest signal first, plus a persistence follow-on (detection 4). Treat the KQL as a
+                starting point: the exact property paths inside
                 <code>modifiedProperties</code> shift between schema versions, so validate field names against your own
                 tenant before you alert on them.
             </p>
@@ -306,6 +307,100 @@ AuditLogs
                 <code>*.ReadWrite.All</code>. These should be rare and deliberate.
             </p>
 
+            <h3>4. Follow-on: new credentials on an app (persistence)</h3>
+            <p>
+                Updated 2026-10-25: this section adds a fourth query, for the step after the token theft. Consent
+                phishing (T1528) gets an attacker a token. Adding a client secret or certificate to an application or
+                service principal gets them a credential of their own, which keeps working after the user's tokens are
+                revoked. MITRE tracks that as
+                <a href="https://attack.mitre.org/techniques/T1098/001/" target="_blank" rel="noopener">T1098.001
+                Additional Cloud Credentials</a> (Persistence, Privilege Escalation), and lists APT29 adding
+                credentials to OAuth applications and service principals during the SolarWinds compromise. The same
+                page gives the escalation case: an Application Administrator adds credentials to an app's service
+                principal and gains that service principal's roles and permissions.
+            </p>
+            <p>
+                Entra writes these changes to <code>AuditLogs</code> under the ApplicationManagement category, among
+                others as <code>Update application - Certificates and secrets management</code> for the application
+                object and <code>Add service principal credentials</code> for the service principal. Both carry a
+                <code>KeyDescription</code> property whose old and new values list the object's keys, so the query
+                keeps only the keys that are new after the change, one row per key. Microsoft's
+                <a href="https://learn.microsoft.com/en-us/entra/architecture/security-operations-applications" target="_blank" rel="noopener">security
+                operations guide for applications</a> also lists <code>Update Service principal</code> and
+                <code>Update Application</code> for added credentials, so the query takes those names too; a row that
+                adds no key drops out. Microsoft's own hunting query for an uncommon credential type reads
+                <code>KeyType=Password</code> for a client secret and <code>AsymmetricX509Cert</code> for a
+                certificate from the modified properties of these same activities, and the query returns that value
+                as <code>KeyType</code>.
+            </p>
+            <pre><code>// New client secret or certificate on an application or service principal
+AuditLogs
+// The app-object activity is "Update application", a dash, then "Certificates and
+// secrets management". Microsoft writes a hyphen in its audit reference and an en
+// dash in its IR playbook, so the query matches the words after the dash.
+// Microsoft's security-operations guide also lists "Update service principal" and
+// "Update application" for added credentials; rows that add no key drop out below.
+| where OperationName has "Certificates and secrets management"
+     or OperationName has "Add service principal"   // also "Add service principal credentials"
+     or OperationName in~ ("Update service principal", "Update application")
+| where Result == "success"
+| mv-expand Target = TargetResources
+| mv-expand Mod = Target.modifiedProperties
+| where tostring(Mod.displayName) == "KeyDescription"
+// newValue and oldValue are strings that hold a JSON array of key descriptions
+| extend NewKeys = todynamic(tostring(Mod.newValue)),
+         OldKeys = todynamic(iff(isempty(tostring(Mod.oldValue)), "[]", tostring(Mod.oldValue)))
+| extend AddedKeys = set_difference(NewKeys, OldKeys)
+| where array_length(AddedKeys) &gt; 0
+| mv-expand AddedKey = AddedKeys to typeof(string)
+// Microsoft's Defender hunting query for an uncommon credential type reads
+// KeyType=Password (a client secret) and AsymmetricX509Cert (a certificate) from the
+// modified properties of these same activities.
+| parse AddedKey with * "KeyIdentifier=" KeyId:string ",KeyType=" KeyType:string
+        ",KeyUsage=" KeyUsage:string ",DisplayName=" KeyName:string "]" *
+| extend TargetType = tostring(Target.type), TargetName = tostring(Target.displayName),
+         TargetId = tostring(Target.id),
+         ActorUser = tostring(InitiatedBy.user.userPrincipalName),
+         ActorApp = tostring(InitiatedBy.app.displayName),
+         ActorSpId = tostring(InitiatedBy.app.servicePrincipalId)
+// ByApp leaves out a service principal adding a key to itself. On an Application
+// target the ids never match (application object vs service principal), so a
+// self-rotating app still shows ByApp there: allowlist it by name.
+| extend OnServicePrincipal = TargetType == "ServicePrincipal",
+         ByApp = isempty(ActorUser) and isnotempty(ActorSpId) and ActorSpId != TargetId,
+         FirstCredential = array_length(OldKeys) == 0
+// One row per new key, and one change can log two entries (application and service
+// principal): group by CorrelationId.
+| project TimeGenerated, OperationName, TargetType, TargetName, TargetId,
+          Actor = coalesce(ActorUser, ActorApp), ByApp, OnServicePrincipal,
+          FirstCredential, KeyType, KeyUsage, KeyName, KeyId, CorrelationId</code></pre>
+            <p>
+                <strong>Tuning.</strong> Certificate rotation, CI/CD pipelines and apps that roll their own keys add
+                credentials on a schedule; Microsoft's Graph docs note that an application needs no permission to roll
+                its own keys. A SAML app's token signing certificate adds two keys to its service principal, one with
+                <code>KeyUsage</code> Sign and one with Verify, plus a password for the certificate. Microsoft's guide
+                asks for an alert when credentials go on a service principal that is not a SAML one, so allowlist
+                SAML apps too. Microsoft's Sentinel rules
+                keep only Verify keys; this query keeps every usage. Allowlist those actors and targets, then triage
+                in this order:
+            </p>
+            <ul>
+                <li><code>OnServicePrincipal</code> - the credential went on the service principal, the MITRE
+                    escalation case. Since June 2026 the app instance property lock, which blocks this, is on by
+                    default for new applications, so a hit here deserves a look.</li>
+                <li><code>ByApp</code> - an app or service principal added the credential to a different object.</li>
+                <li><code>FirstCredential</code> - the object had no key before. Microsoft's own Sentinel rule for
+                    this case runs at High severity, against Medium when a key already existed.</li>
+            </ul>
+            <p>
+                Microsoft's two Sentinel template rules for new credentials ("First access credential added" and "New
+                access credential added") keep only <code>Application</code> targets and actors whose name contains
+                <code>@</code>, so they drop the service-principal and app-actor cases this query flags. For a
+                stronger signal, join a hit to a <code>Consent to application</code> event for the same service
+                principal in the days before it, as Microsoft's "Credential added after admin consented to
+                Application" rule does.
+            </p>
+
             <h2>Mitigation: shrink the consent surface</h2>
             <p>
                 Detection tells you it happened; configuration stops most of it from happening at all. In order of
@@ -344,6 +439,25 @@ AuditLogs
                     phishing one.</li>
                 <li><strong>This is Microsoft-shaped.</strong> The same consent-phishing pattern exists against Google
                     Workspace and other OAuth providers; the artifacts and queries here are specific to Entra ID.</li>
+                <li><strong>Persistence is not only keys.</strong> Detection #4 reads the <code>KeyDescription</code>
+                    property and nothing else. A federated identity credential, which lets tokens from an outside
+                    identity provider stand in for a secret, is a separate Graph resource, so it may not show up
+                    here.</li>
+                <li><strong>The phishing app's own keys are out of sight.</strong> An application object, with its
+                    secrets and certificates, lives in the tenant where the app was registered, so the keys of a
+                    consent-phishing app registered in another tenant never reach your audit log. Detection #4
+                    catches keys added to apps registered in your tenant and to any service principal in it.</li>
+                <li><strong>The key format is undocumented.</strong> Microsoft Learn does not document the
+                    <code>KeyDescription</code> value; detection #4 parses it the way Microsoft's own Sentinel rules
+                    do but keeps every key usage. Microsoft's security operations guide lists
+                    <code>Update Service principal</code> and <code>Update Application</code> for added credentials
+                    as well, and the query matches both names. UMBRASEC has not verified that those activities carry
+                    <code>KeyDescription</code>, or which activity name Entra writes when keys arrive with a new app,
+                    so test these paths in your tenant.</li>
+                <li><strong>Rotation is noisy.</strong> Scheduled key rotation adds credentials too, and Microsoft
+                    notes that application and service principal updates are logged as two audit entries. A system
+                    action also shows its initiator as an app, so <code>ByApp</code> needs an allowlist of
+                    Microsoft's own services.</li>
             </ul>
 
             <h2>References</h2>
@@ -356,6 +470,20 @@ AuditLogs
                 <li><a href="https://www.microsoft.com/en-us/security/blog/2024/01/25/midnight-blizzard-guidance-for-responders-on-nation-state-attack/" target="_blank" rel="noopener">Microsoft Security Blog - Midnight Blizzard: Guidance for responders (Jan 2024)</a></li>
                 <li><a href="https://www.cloud-architekt.net/detection-and-mitigation-consent-grant-attacks-azuread/" target="_blank" rel="noopener">Thomas Naunheim - Detection and mitigation of illicit consent grant attacks in Azure AD</a></li>
                 <li><a href="https://practical365.com/investigating-oauth-app-abuse-with-the-graph-activity-log/" target="_blank" rel="noopener">Practical 365 - Investigating OAuth app abuse with the Graph Activity Log</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1098/001/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1098.001: Additional Cloud Credentials</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities" target="_blank" rel="noopener">Microsoft Entra - Audit log activities reference</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/entra/architecture/security-operations-applications" target="_blank" rel="noopener">Microsoft Entra - Security operations for applications</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/security/operations/incident-response-playbook-compromised-malicious-app" target="_blank" rel="noopener">Microsoft - Compromised and malicious applications investigation playbook</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals" target="_blank" rel="noopener">Microsoft Entra - Application and service principal objects</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/howto-configure-app-instance-property-locks" target="_blank" rel="noopener">Microsoft Entra - Configure an app instance property lock</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/graph/api/application-addkey?view=graph-rest-1.0" target="_blank" rel="noopener">Microsoft Graph - application: addKey</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/graph/api/application-post-federatedidentitycredentials?view=graph-rest-1.0" target="_blank" rel="noopener">Microsoft Graph - Create federatedIdentityCredential</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/graph/api/resources/auditactivityinitiator?view=graph-rest-1.0" target="_blank" rel="noopener">Microsoft Graph - auditActivityInitiator resource type</a></li>
+                <li><a href="https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Microsoft%20Entra%20ID/Analytic%20Rules/FirstAppOrServicePrincipalCredential.yaml" target="_blank" rel="noopener">Microsoft Sentinel - First access credential added to Application or Service Principal</a></li>
+                <li><a href="https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Microsoft%20Entra%20ID/Analytic%20Rules/NewAppOrServicePrincipalCredential.yaml" target="_blank" rel="noopener">Microsoft Sentinel - New access credential added to Application or Service Principal</a></li>
+                <li><a href="https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Microsoft%20Entra%20ID/Analytic%20Rules/CredentialAddedAfterAdminConsent.yaml" target="_blank" rel="noopener">Microsoft Sentinel - Credential added after admin consented to Application</a></li>
+                <li><a href="https://github.com/Azure/Azure-Sentinel/blob/master/Hunting%20Queries/Microsoft%20365%20Defender/Privilege%20escalation/Add%20uncommon%20credential%20type%20to%20application%20%5BNobelium%5D.yaml" target="_blank" rel="noopener">Microsoft Defender hunting query - Add uncommon credential type to application</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/graph/application-saml-sso-configure-api" target="_blank" rel="noopener">Microsoft Graph - Configure SAML-based single sign-on using Microsoft Graph</a></li>
             </ul>
 
             <div class="callout mt-10">
