@@ -1,0 +1,60 @@
+// UMBRASEC sigma-pack - Metabase bulk extraction: egress inversion on a BI host (T1567)
+// A day's outbound bytes from one host measured against that host's own daily median
+// Source writeup: https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html
+// A BI host takes large query results in from its databases and sends modest
+// responses to internal clients. Bulk extraction inverts that: outbound volume jumps.
+// The writeup's advice is to alert on a multiple of the host's daily norm rather than
+// an absolute threshold, and that is all this query does. Run it once a day over the
+// day that just closed, or set TestDay to hunt a past day.
+// Tuning: list the Metabase host's addresses as the firewall logs them, plus any
+// reverse proxy or load balancer in front of it, because a download through the proxy
+// leaves from the proxy, not the host. Scheduled exports, backups and large legitimate
+// reports raise a day; set Multiple and MinEgressBytes from report-only runs. If the
+// firewall logs both the start and the end of a session, keep only one of them.
+// Limitation: an extraction paced so that no single day reaches the multiple, or split
+// across many days (T1030 Data Transfer Size Limits), stays under it, and so does data
+// that leaves by a path this firewall does not log. PublicEgress counts IPv4 peers only.
+let MetabaseHosts = dynamic(["10.0.20.15"]);  // example address: replace with yours
+let TestDay = startofday(ago(1d));            // datetime(2026-08-27) hunts that day
+let BaselineSpan = 14d;
+let MinBaselineDays = 7;
+let Multiple = 3.0;
+// A 100 MB floor: a quiet host tripling a small day is not an alert
+let MinEgressBytes = 100000000;
+// Microsoft documents SentBytes as "bytes transferred outbound" and ReceivedBytes as
+// "inbound", without saying outbound from which end of the session, and devices
+// differ. With true, SentBytes is read as the bytes the session's source sent. Check
+// it once: download a large file from the host and see which column grows.
+let SentBytesFromSource = true;
+let Daily = CommonSecurityLog
+    | where TimeGenerated >= TestDay - BaselineSpan and TimeGenerated < TestDay + 1d
+    | where SourceIP in (MetabaseHosts) or DestinationIP in (MetabaseHosts)
+    | extend HostIsSource = SourceIP in (MetabaseHosts)
+    | extend Host = iff(HostIsSource, SourceIP, DestinationIP),
+             Peer = iff(HostIsSource, DestinationIP, SourceIP),
+             FromSource = iff(SentBytesFromSource, SentBytes, ReceivedBytes),
+             ToSource = iff(SentBytesFromSource, ReceivedBytes, SentBytes)
+    | extend EgressBytes = iff(HostIsSource, FromSource, ToSource),
+             IngressBytes = iff(HostIsSource, ToSource, FromSource)
+    | summarize Egress = sum(EgressBytes), Ingress = sum(IngressBytes),
+                PublicEgress = sumif(EgressBytes, not(ipv4_is_private(Peer))),
+                Peers = dcount(Peer)
+             by Host, Day = startofday(TimeGenerated);
+let Baseline = Daily
+    | where Day < TestDay
+    | summarize BaselineEgress = percentile(Egress, 50),
+                BaselineIngress = percentile(Ingress, 50),
+                BaselineDays = count()
+             by Host;
+Daily
+| where Day == TestDay
+| join kind=inner Baseline on Host
+// Too little history to call anything a multiple of the norm
+| where BaselineDays >= MinBaselineDays
+| extend EgressMultiple = round(todouble(Egress) / max_of(BaselineEgress, 1), 1),
+         EgressToIngress = round(todouble(Egress) / max_of(Ingress, 1), 2),
+         BaselineEgressToIngress = round(todouble(BaselineEgress)
+                                         / max_of(BaselineIngress, 1), 2)
+| where Egress >= MinEgressBytes and EgressMultiple >= Multiple
+| project Day, Host, Egress, BaselineEgress, EgressMultiple, PublicEgress,
+          EgressToIngress, BaselineEgressToIngress, Ingress, Peers, BaselineDays

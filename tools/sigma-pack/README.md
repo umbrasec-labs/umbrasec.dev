@@ -29,6 +29,7 @@ sigma check tools/sigma-pack/rules/
 | [`oauth2-permission-grant-post.kql`](queries/kql/oauth2-permission-grant-post.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
 | [`app-role-assignment.kql`](queries/kql/app-role-assignment.kql) | KQL | [T1528](https://attack.mitre.org/techniques/T1528/) Steal Application Access Token | Credential Access | query |
 | [`app-credential-added.kql`](queries/kql/app-credential-added.kql) | KQL | [T1098.001](https://attack.mitre.org/techniques/T1098/001/) Additional Cloud Credentials | Persistence / Privilege Escalation | query |
+| [`metabase-egress-inversion.kql`](queries/kql/metabase-egress-inversion.kql) | KQL | [T1567](https://attack.mitre.org/techniques/T1567/) Exfiltration Over Web Service | Exfiltration | query |
 | [`litellm-proxy-spawns-shell.yml`](rules/linux/litellm-proxy-spawns-shell.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App; [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting | Initial Access / Execution | experimental |
 | [`litellm-mcp-test-endpoint.yml`](rules/web/litellm-mcp-test-endpoint.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 | [`litellm-stealer-files-linux.yml`](rules/linux/litellm-stealer-files-linux.yml) | Sigma | [T1195.002](https://attack.mitre.org/techniques/T1195/002/) Compromise Software Supply Chain; [T1546](https://attack.mitre.org/techniques/T1546/) Event Triggered Execution; [T1552](https://attack.mitre.org/techniques/T1552/) Unsecured Credentials | Initial Access / Persistence / Credential Access | experimental |
@@ -37,6 +38,7 @@ sigma check tools/sigma-pack/rules/
 | [`masquerading-svchost-outside-system32.yml`](rules/windows/masquerading-svchost-outside-system32.yml) | Sigma | [T1036.005](https://attack.mitre.org/techniques/T1036/005/) Match Legitimate Resource Name or Location | Stealth | experimental |
 | [`cloudflared-tunnel-service-install.yml`](rules/windows/cloudflared-tunnel-service-install.yml) | Sigma | [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service; [T1572](https://attack.mitre.org/techniques/T1572/) Protocol Tunneling | Persistence / Command &amp; Control | experimental |
 | [`metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
+| [`metabase-reset-password-burst.yml`](rules/web/metabase-reset-password-burst.yml) | Sigma (correlation) | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 | [`php-upload-progress-multipart-probe.yml`](rules/web/php-upload-progress-multipart-probe.yml) | Sigma | [T1190](https://attack.mitre.org/techniques/T1190/) Exploit Public-Facing App | Initial Access | experimental |
 | [`ransomware-inhibit-recovery-native-utilities.yml`](rules/windows/ransomware-inhibit-recovery-native-utilities.yml) | Sigma | [T1490](https://attack.mitre.org/techniques/T1490/) Inhibit System Recovery | Impact | experimental |
 | [`defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | Sigma | [T1685](https://attack.mitre.org/techniques/T1685/) Disable or Modify Tools | Defense Impairment | experimental |
@@ -167,18 +169,26 @@ Read the [writeup](https://umbrasec.dev/research/n-able-ncentral-msp-supply-chai
 before deploying - the Cloudflare Tunnel rule in particular is a tuning
 exercise, not a drop-in alert.
 
-### Metabase unauthenticated SQL injection - CVE-2026-72898 (MITRE ATT&CK T1190)
+### Metabase unauthenticated SQL injection - CVE-2026-72898 (MITRE ATT&CK T1190, T1567)
 
 Writeup: [Sixteen Days From KEV to Exfiltration](https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html)
 
 | Rule | What it catches | Level |
 |---|---|---|
 | [`rules/web/metabase-reset-password-sqli.yml`](rules/web/metabase-reset-password-sqli.yml) | SQL metacharacters, literal or percent-encoded, in a request to Metabase's unauthenticated `/api/session/reset_password` endpoint - the front-door signal | high |
+| [`rules/web/metabase-reset-password-burst.yml`](rules/web/metabase-reset-password-burst.yml) | Ten or more requests to the same endpoint from one client address in ten minutes (Sigma correlation rule). Payload-blind, so it also counts an exploit carried in the POST body | medium |
+| [`queries/kql/metabase-egress-inversion.kql`](queries/kql/metabase-egress-inversion.kql) | KQL over firewall logs (`CommonSecurityLog`): a day's outbound bytes from the Metabase host at a multiple of its own 14-day median - the bulk-extraction signal | query |
 
 Prerequisite: web server, reverse proxy or WAF logs for the Metabase host, with
 the request line retained. A payload carried in the POST body is invisible to
-webserver-category logs, so pair this with body capture where you have it, and
-with the volume hunt in the writeup. Patching (58.24, 59.21, 60.17, 61.11, 62.9,
+webserver-category logs, so pair the markers rule with body capture where you
+have it, and with the burst rule, which counts requests and reads no payload. The
+burst rule groups by `c-ip`: if a proxy logs its own address there, log the
+forwarded client address first. The egress query needs firewall logs that carry
+the Metabase host's (and its reverse proxy's) address and byte counts; check once
+which end of a session `SentBytes` counts from on your firewall, because
+Microsoft does not document it. An extraction split across days so no single day
+reaches the multiple (T1030) stays under it. Patching (58.24, 59.21, 60.17, 61.11, 62.9,
 63.5) and blocking the endpoint are the real controls; this covers the window
 before you got there.
 
