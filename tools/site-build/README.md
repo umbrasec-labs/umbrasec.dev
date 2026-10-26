@@ -107,7 +107,10 @@ python3 tools/site-build/build_indexes.py --list-drift  # print the files a rege
 `--check` also exits 1, even with no drift, when a `research/*.html` page is
 missing from `articles.json`, when a site page lacks the "Skip to content" link
 or the `<main id="main">` landmark, when a page has an internal link written as
-`.html` (outside `<pre>` blocks), when the sha256 of an inline script in
+`.html` (outside `<pre>` blocks), when a page does not have exactly one
+`<meta name="description">` or its decoded text is over 160 characters (search
+engines cut the snippet there; aim for about 155, and `og:description` and
+`twitter:description` are not checked), when the sha256 of an inline script in
 `404.html` is missing from the Content-Security-Policy lines in `_headers` (it
 prints the new hash), when a sigma-pack `rules/**/*.yml` or
 `queries/**/*.kql` file has no row in the ATT&CK table, or when a table row

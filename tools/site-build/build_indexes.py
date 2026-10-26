@@ -25,7 +25,9 @@ Usage:
   python3 tools/site-build/build_indexes.py --list-drift  # files a regen would rewrite
 
 The --check mode writes nothing; it just fails if the committed files don't match
-what the manifest would produce. That's what the pre-commit hook runs.
+what the manifest would produce. That's what the pre-commit hook runs. It also
+fails when a site page's meta description is missing or longer than 160
+characters (decoded text).
 """
 
 import argparse
@@ -526,6 +528,29 @@ def html_link_problems():
     return found
 
 
+# Search engines cut the snippet at about 155-160 characters. Only the plain
+# meta description is checked; og:description and twitter:description are
+# separate, often longer texts.
+DESC_MAX = 160
+META_DESC_RE = re.compile(r'<meta\s+name="description"\s+content="([^"]*)"')
+
+
+def description_problems():
+    """(page, decoded length) for each page whose meta description is missing,
+    repeated, or longer than DESC_MAX. Length counts the decoded text, so
+    &amp; is one character."""
+    found = []
+    for rel in site_pages() + ["404.html"]:
+        descs = META_DESC_RE.findall((ROOT / rel).read_text(encoding="utf-8"))
+        if len(descs) != 1:
+            found.append((rel, f"{len(descs)} meta descriptions, expected 1"))
+            continue
+        n = len(html.unescape(descs[0]))
+        if n > DESC_MAX:
+            found.append((rel, f"{n} characters"))
+    return found
+
+
 def build(check: bool, list_drift: bool = False) -> int:
     articles = load_articles()
     transforms = {}  # rel path -> list of text->text callables, applied in order
@@ -594,6 +619,7 @@ def build(check: bool, list_drift: bool = False) -> int:
                           for s in ('<a href="#main" class="skip-link">', '<main id="main">'))]
     bad_hashes = csp_hash_problems()
     html_links = html_link_problems()
+    long_descs = description_problems()
 
     if check:
         problems = False
@@ -626,6 +652,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel, h in html_links:
                 print(f"  - {rel}: {h}")
             print("\nUse the served URL: x.html -> x, dir/index.html -> dir/, index.html -> ./ (see tools/site-build/README.md).")
+            problems = True
+        if long_descs:
+            print(f"site-build: DESCRIPTION - meta description missing, repeated or over {DESC_MAX} characters:")
+            for rel, why in long_descs:
+                print(f"  - {rel}: {why}")
+            print(f"\nGive each page one <meta name=\"description\"> of at most {DESC_MAX} characters (about 155 is the target).")
             problems = True
         if bad_hashes:
             print("site-build: CSP - 404.html inline script hash not in _headers:")
