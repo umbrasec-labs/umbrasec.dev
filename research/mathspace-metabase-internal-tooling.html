@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-09-17">
-    <meta property="article:modified_time" content="2026-10-23">
+    <meta property="article:modified_time" content="2026-10-26">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="Threat Analysis">
     <meta property="article:tag" content="Metabase">
@@ -36,7 +36,7 @@
       "headline": "Sixteen Days From KEV to Exfiltration - What the Mathspace Breach Says About Internal Tooling",
       "description": "CVE-2026-72898 is an unauthenticated SQL injection in Metabase's password reset endpoint. The patch shipped 6 August 2026 with active exploitation already confirmed, CISA listed it on 11 August, and 1,079,819 records left an Australian edtech platform on 27 August.",
       "datePublished": "2026-09-17",
-      "dateModified": "2026-10-23",
+      "dateModified": "2026-10-26",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -259,9 +259,9 @@
 
             <h2>Detection</h2>
             <p>
-                One Sigma rule and one hunt. The rule is in
+                Two Sigma rules and a KQL query. All three are in
                 <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" target="_blank" rel="noopener">sigma-pack</a>;
-                convert with
+                convert the Sigma rules with
                 <a href="https://github.com/SigmaHQ/sigma-cli" target="_blank" rel="noopener">sigma-cli</a>.
             </p>
 
@@ -350,7 +350,7 @@ level: high</code></pre>
                 detection lives.
             </p>
 
-            <h3>2. Hunt: the shape of the endpoint's traffic</h3>
+            <h3>2. The shape of the endpoint's traffic</h3>
             <p>
                 Password reset is a rare, human-paced action. Exploitation of a blind or error-based injection is
                 neither. Over your proxy or web logs for the Metabase host, group requests to
@@ -359,10 +359,132 @@ level: high</code></pre>
                 in ten minutes is not a forgetful employee.
             </p>
             <p>
+                The rule below turns that figure into an alert. It counts requests and reads no payload, so an exploit
+                that carries its payload in the POST body still counts, which is the gap rule 1 cannot close.
+            </p>
+            <pre><code>title: Metabase Password Reset Request Burst From One Source
+id: d3d4483d-c16d-4515-8453-17a65391aa2a
+status: experimental
+description: >
+    Ten or more requests to Metabase's unauthenticated password-reset
+    endpoint from one client address within ten minutes. Password reset is a
+    rare, human-paced action; exploiting a blind or error-based SQL injection
+    such as CVE-2026-72898 is not. The rule counts requests and reads no
+    payload, so it also sees an exploit that carries its payload in the POST
+    body, which the request-line rule metabase-reset-password-sqli cannot.
+    The threshold is the writeup's own figure: ten resets from one address in
+    ten minutes is not a forgetful employee.
+    Limitation: an exploit that succeeds in fewer than ten requests, one paced
+    so that no ten-minute window holds ten, or one spread across many source
+    addresses stays under the threshold.
+references:
+    - https://github.com/metabase/metabase/security/advisories/GHSA-vwf4-m7j8-wcjf
+    - https://www.cve.org/CVERecord?id=CVE-2026-72898
+    - https://attack.mitre.org/techniques/T1190/
+    - https://umbrasec.dev/research/mathspace-metabase-internal-tooling.html
+author: UMBRASEC
+date: 2026-10-26
+tags:
+    - attack.initial-access
+    - attack.t1190
+correlation:
+    type: event_count
+    rules:
+        - metabase_reset_password_request
+    group-by:
+        - c-ip
+    timespan: 10m
+    condition:
+        gte: 10
+falsepositives:
+    - Vulnerability scanners and authorised testing that hit the endpoint repeatedly
+    - A reverse proxy or load balancer that logs its own address as c-ip, so every
+      user's resets share one address - log the forwarded client address instead
+    - Many users behind one NAT or office egress address resetting at the same
+      time, for example after a forced password change
+level: medium
+---
+title: Metabase reset_password request
+id: a2fd64ff-e92f-4b01-8dff-a77c3c550040
+name: metabase_reset_password_request
+logsource:
+    category: webserver
+detection:
+    selection:
+        cs-uri-stem|contains: '/api/session/reset_password'
+    condition: selection</code></pre>
+            <p>
+                It has blind spots of its own: an exploit that succeeds in a handful of requests, one paced so that no
+                ten-minute window holds ten, or one rotated across many source addresses stays under the threshold.
+                If a reverse proxy in front of Metabase logs its own address as the client, every user's reset shares
+                one address; log the forwarded client address before you turn this on.
+            </p>
+            <p>
                 Pair that with the egress side, which is the signal that mattered on 27 August. A BI host has a
                 characteristic traffic profile: substantial inbound queries, modest outbound responses to internal
                 clients. Bulk extraction inverts it. If you baseline one thing on that host, baseline outbound volume,
                 and alert on a multiple of the daily norm rather than an absolute threshold.
+            </p>
+            <p>
+                The query below does exactly that over firewall logs in Microsoft Sentinel (<code>CommonSecurityLog</code>):
+                one day's outbound bytes from the Metabase host against the median of the fourteen days before it.
+                List the host's addresses as the firewall logs them, plus any reverse proxy in front of it, because a
+                download through the proxy leaves from the proxy. Set <code>TestDay</code> to
+                <code>datetime(2026-08-27)</code> and it hunts a past day instead of yesterday.
+            </p>
+            <pre><code>// A day's outbound bytes from one host measured against that host's own daily median
+let MetabaseHosts = dynamic(["10.0.20.15"]);  // example address: replace with yours
+let TestDay = startofday(ago(1d));            // datetime(2026-08-27) hunts that day
+let BaselineSpan = 14d;
+let MinBaselineDays = 7;
+let Multiple = 3.0;
+// A 100 MB floor: a quiet host tripling a small day is not an alert
+let MinEgressBytes = 100000000;
+// Microsoft documents SentBytes as "bytes transferred outbound" and ReceivedBytes as
+// "inbound", without saying outbound from which end of the session, and devices
+// differ. With true, SentBytes is read as the bytes the session's source sent. Check
+// it once: download a large file from the host and see which column grows.
+let SentBytesFromSource = true;
+let Daily = CommonSecurityLog
+    | where TimeGenerated >= TestDay - BaselineSpan and TimeGenerated &lt; TestDay + 1d
+    | where SourceIP in (MetabaseHosts) or DestinationIP in (MetabaseHosts)
+    | extend HostIsSource = SourceIP in (MetabaseHosts)
+    | extend Host = iff(HostIsSource, SourceIP, DestinationIP),
+             Peer = iff(HostIsSource, DestinationIP, SourceIP),
+             FromSource = iff(SentBytesFromSource, SentBytes, ReceivedBytes),
+             ToSource = iff(SentBytesFromSource, ReceivedBytes, SentBytes)
+    | extend EgressBytes = iff(HostIsSource, FromSource, ToSource),
+             IngressBytes = iff(HostIsSource, ToSource, FromSource)
+    | summarize Egress = sum(EgressBytes), Ingress = sum(IngressBytes),
+                PublicEgress = sumif(EgressBytes, not(ipv4_is_private(Peer))),
+                Peers = dcount(Peer)
+             by Host, Day = startofday(TimeGenerated);
+let Baseline = Daily
+    | where Day &lt; TestDay
+    | summarize BaselineEgress = percentile(Egress, 50),
+                BaselineIngress = percentile(Ingress, 50),
+                BaselineDays = count()
+             by Host;
+Daily
+| where Day == TestDay
+| join kind=inner Baseline on Host
+// Too little history to call anything a multiple of the norm
+| where BaselineDays >= MinBaselineDays
+| extend EgressMultiple = round(todouble(Egress) / max_of(BaselineEgress, 1), 1),
+         EgressToIngress = round(todouble(Egress) / max_of(Ingress, 1), 2),
+         BaselineEgressToIngress = round(todouble(BaselineEgress)
+                                         / max_of(BaselineIngress, 1), 2)
+| where Egress >= MinEgressBytes and EgressMultiple >= Multiple
+| project Day, Host, Egress, BaselineEgress, EgressMultiple, PublicEgress,
+          EgressToIngress, BaselineEgressToIngress, Ingress, Peers, BaselineDays</code></pre>
+            <p>
+                Updated 2026-10-26: this section now ships the burst rule and the egress query; before, it was prose
+                only. Two limits to know. Microsoft documents <code>SentBytes</code> and <code>ReceivedBytes</code>
+                only as outbound and inbound, not from which end of a session, so check the direction once with a
+                known download before you trust the numbers. And an extraction split across many days so that no
+                single day reaches the multiple
+                (<a href="https://attack.mitre.org/techniques/T1030/" target="_blank" rel="noopener">T1030</a> Data
+                Transfer Size Limits) stays under it. The sigma-pack holds the canonical copies, with tuning notes.
             </p>
 
             <h3>ATT&amp;CK</h3>
@@ -431,9 +553,9 @@ level: high</code></pre>
                 speculate about it. The initial access vector is stated by the affected organisation; the sequence
                 between 10 and 27 August is not public, and we have not invented one. We have not tested the exploit,
                 and no exploit details appear here beyond the endpoint the vendor itself published in its workaround.
-                The Sigma rule is <code>experimental</code> and has not been validated against a real exploitation
-                attempt - treat it as a starting point, tune it against your own logs, and read the false-positive
-                notes in the file before alerting on it.
+                The Sigma rules are <code>experimental</code> and have not been validated against a real exploitation
+                attempt - treat them as a starting point, tune them against your own logs, and read the false-positive
+                notes in each file before alerting on them.
             </p>
             <p>
                 On the Essential Eight timeframes, check the current maturity model rather than any number quoted
