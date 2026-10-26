@@ -1,0 +1,111 @@
+// UMBRASEC sigma-pack - AI coding agent in the editor terminal: credential read, or download then interpreter (T1059 / T1552.001 / T1105)
+// A command in a VS Code terminal named a credential source, or one terminal shell ran a download and then an interpreter
+// Source writeup: https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+// GitHub Copilot agent mode, Cline's default mode and Roo Code's terminal mode type
+// their commands into the editor's integrated terminal. Only the programs that shell
+// starts become processes, under a shell that looks the same as one a person opened.
+// This is a hunt, not an alert: it cannot separate an agent from the human at the
+// keyboard.
+// What it does: it reads DeviceProcessEvents and keeps the children of a terminal
+// shell whose parent is the editor (Editors, matched on the bare name, because Defender
+// gives a child's grandparent as a file name only) and whose own command line loads
+// VS Code's shell-integration script (ShellIntegrationMarkers, matched as whole terms:
+// shellIntegration.ps1 for PowerShell, shellIntegration-bash.sh after --init-file for
+// bash). Then one of two branches, named in the Branch column.
+// Credential: a child whose command line contains a CredentialMarkers string, or /proc/
+// together with /environ followed by a space, a quote, ;, ) or the end of the line.
+// These are the strings of the pack's Sigma rule ai-agent-shell-risky-command, matched
+// the same way: as substrings, in any case.
+// Pairing: in one shell (same DeviceId, InitiatingProcessId and
+// InitiatingProcessCreationTime), a child whose command line contains a DownloadTools
+// string, then a different child whose process name is in Interpreters, starting 0 to
+// PairWindow (60 seconds) later. It does not check that the interpreter runs what was
+// downloaded, and one interpreter after several downloads in the window gives one row
+// per download.
+// Coverage: Editors holds Code.exe, so as shipped this covers VS Code on Windows with
+// PowerShell terminals (pwsh and Windows PowerShell). A cmd.exe terminal gets no
+// shell-integration injection and is not seen. Git Bash's bash.exe gets the same
+// --init-file marker, but its process tree is not confirmed: Git for Windows' bash.exe
+// may start a second bash.exe, and MSYS2 may put a bash.exe between the shell and each
+// command, so its commands may carry bash.exe rather than Code.exe as their
+// grandparent and not be seen. The Linux and macOS editor process names are not
+// confirmed, so they are not in Editors; add the name your sensor records as
+// InitiatingProcessParentFileName for a command run in a VS Code terminal, and bash and
+// PowerShell terminals there are covered too. zsh, the macOS default, loads shell
+// integration through ZDOTDIR and has no command-line marker, so a zsh terminal is not
+// seen at all.
+// Limitation: PowerShell cmdlets such as Invoke-WebRequest (iwr), Invoke-Expression
+// (iex) and Get-Content run inside the shell and start no process (an inference in the
+// research, not a capture), so neither branch sees them. PowerShell records a native
+// program's command line as its quoted full path, so gh auth token typed there is
+// matched as gh.exe" auth token. Git Bash quotes the path only when it holds a space, so
+// gh on a path without one is matched as gh.exe auth token. Both forms are inferred, not
+// captured. A download and an interpreter inside one child, such as
+// bash -c "curl ... | sh", are one child and do not pair. In a pipe such as curl ... | sh both children start together and either can
+// be recorded first; it pairs only when the download tool is recorded first or at the
+// same moment.
+// Tuning: widen PairWindow for slow downloads or narrow it to cut pairs, and add the
+// interpreter names your fleet records (a versioned python3.12, or dash for sh) to
+// Interpreters. Allowlist an exact command per repository or device group rather than
+// dropping a branch.
+// False positive: a download followed by an unrelated interpreter run in the same
+//   terminal shell within PairWindow, such as curl fetching a file and then python -m
+//   pytest
+// False positive: a child that only names a download tool, such as a git commit message
+//   that mentions curl, because DownloadTools is matched as a substring
+// False positive: a command that names a credential file without reading it, such as
+//   ssh-keygen writing a new key under .ssh or grep searching for .npmrc
+let Lookback = 1d;
+let PairWindow = 60s;
+// Bare names: InitiatingProcessParentFileName holds no path
+let Editors = dynamic(["Code.exe"]);
+let ShellIntegrationMarkers = dynamic(["shellIntegration.ps1", "shellIntegration-bash.sh"]);
+// The credential and download strings of ai-agent-shell-risky-command, plus
+// gh.exe" auth token and gh.exe auth token: the forms inferred for gh started from
+// PowerShell and from Git Bash on a path with no space (neither captured)
+let CredentialMarkers = dynamic([".aws/credentials", @".aws\credentials", ".ssh/id_",
+    @".ssh\id_", ".npmrc", ".git-credentials", "gh auth token", ".kube/config",
+    @".kube\config", "/Login Data", @"\Login Data", @"/Login\ Data", ".codex/auth.json",
+    @".codex\auth.json", "CODEX_HOME/auth.json", 'gh.exe" auth token',
+    "gh.exe auth token"]);
+// /environ, then a space, ', ", ;, ) or the end of the line
+let ProcEnvironEnd = @"(?i)/environ([ '"";)]|$)";
+let DownloadTools = dynamic(["curl", "wget", "Invoke-WebRequest", "iwr",
+    "Invoke-RestMethod", " irm ", "(irm ", '"irm ', "'irm ", "DownloadString"]);
+// py and py.exe are the Windows Python launcher
+let Interpreters = dynamic(["sh", "sh.exe", "bash", "bash.exe", "python", "python.exe",
+    "python3", "python3.exe", "py", "py.exe", "node", "node.exe", "pwsh", "pwsh.exe",
+    "powershell", "powershell.exe"]);
+let TerminalChildren = DeviceProcessEvents
+    | where Timestamp > ago(Lookback)
+    | where InitiatingProcessParentFileName in~ (Editors)
+    | where InitiatingProcessCommandLine has_any (ShellIntegrationMarkers);
+let CredentialReads = TerminalChildren
+    | mv-apply Marker = CredentialMarkers to typeof(string) on (
+        where ProcessCommandLine contains Marker
+        | summarize CredentialHits = make_list(Marker))
+    | where array_length(CredentialHits) > 0
+        or (ProcessCommandLine contains "/proc/"
+            and ProcessCommandLine matches regex ProcEnvironEnd)
+    | extend Branch = "credential";
+let Downloads = TerminalChildren
+    | mv-apply Tool = DownloadTools to typeof(string) on (
+        where ProcessCommandLine contains Tool
+        | summarize DownloadHits = make_list(Tool))
+    | where array_length(DownloadHits) > 0
+    | project DeviceId, InitiatingProcessId, InitiatingProcessCreationTime,
+              DownloadTime = Timestamp, DownloadProcessId = ProcessId,
+              DownloadCommandLine = ProcessCommandLine;
+// The few download children on the left, the many interpreter children on the right
+let Pairs = Downloads
+    | join kind=inner (TerminalChildren | where FileName in~ (Interpreters))
+        on DeviceId, InitiatingProcessId, InitiatingProcessCreationTime
+    // A different child, starting 0 to PairWindow after the download
+    | where not(ProcessId == DownloadProcessId and Timestamp == DownloadTime)
+    | where Timestamp between (DownloadTime .. DownloadTime + PairWindow)
+    | extend Branch = "pairing";
+union CredentialReads, Pairs
+| project Timestamp, Branch, DeviceName, AccountName, InitiatingProcessParentFileName,
+          InitiatingProcessCommandLine, FileName, ProcessCommandLine, CredentialHits,
+          DownloadTime, DownloadCommandLine
+| sort by Timestamp desc

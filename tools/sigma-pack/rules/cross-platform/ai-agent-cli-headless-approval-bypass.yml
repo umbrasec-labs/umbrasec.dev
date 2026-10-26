@@ -1,0 +1,169 @@
+title: AI Coding Agent CLI Started Headless With Approvals Off
+id: efead37d-b263-4f88-843c-39fc390ff510
+status: experimental
+description: >
+    An AI coding agent CLI (Claude Code, Gemini CLI, Codex CLI, GitHub Copilot
+    CLI or Amazon Q Developer CLI) was started headless, with its permission
+    prompts switched off, so it runs whatever the prompt asks with no human in
+    the loop. That is how malware hijacks an installed agent. The Nx
+    "s1ngularity" packages (August 2025) started claude, gemini and q this way
+    from a node postinstall script. Amazon Q for VS Code 1.84.0 (CVE-2025-8217)
+    carried an injected q --trust-all-tools --no-interactive launch through a
+    shell, with no chat subcommand; it never ran, because of a syntax error.
+    Matched per CLI: claude with --dangerously-skip-permissions or
+    --permission-mode bypassPermissions, and -p or --print; gemini with
+    --yolo, -y or --approval-mode yolo, and -p or --prompt; codex exec or e
+    with --dangerously-bypass-approvals-and-sandbox or its --yolo alias;
+    copilot with --allow-all or --yolo, and -p or --prompt; q or qchat with
+    --trust-all-tools or -a, and --no-interactive or --non-interactive. Gemini
+    CLI runs under node, Claude Code ran under node as an npm package before
+    its native binary, and the Copilot CLI process image is not confirmed, so
+    for those three the rule also matches node with the CLI name on its
+    command line. Under node, Gemini's -y is not matched, because npx takes -y
+    for itself; a node-run Gemini needs --yolo or --approval-mode yolo.
+    Claude Code's --allow-dangerously-skip-permissions only adds bypass mode
+    to the Shift+Tab cycle without starting in it, and does not match: it is
+    not a superstring of the bypass flag, and the rule matches the flag only
+    after a space, never a shorter part of it. A Copilot run that passes only
+    --allow-all-tools is not covered, nor one that spells --allow-all out as
+    its three separate flags: Copilot needs --allow-all-tools for any
+    programmatic run, so the rule matches only --allow-all and --yolo. Codex's
+    --not-so-yolo does not match: it is an alias of --approve-for-me, which
+    sends approval requests to automatic review instead of switching them off.
+    A Gemini positional prompt without -p is not matched: in a terminal it
+    opens interactive mode, and without one the behaviour is not confirmed.
+references:
+    - https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c
+    - https://labs.zenity.io/p/reconstructing-a-timeline-for-amazon-q-prompt-infection-81e5
+    - https://aws.amazon.com/security/security-bulletins/AWS-2025-015/
+    - https://code.claude.com/docs/en/cli-reference
+    - https://registry.npmjs.org/@anthropic-ai/claude-code/1.0.93
+    - https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/docs/cli/cli-reference.md
+    - https://learn.chatgpt.com/docs/developer-commands?surface=cli
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/utils/cli/src/shared_options.rs#L43-L59
+    - https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/mod.rs
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-26
+modified: 2026-10-26
+tags:
+    - attack.execution
+    - attack.t1059
+logsource:
+    category: process_creation
+detection:
+    sel_claude_image:
+        - Image|endswith:
+              - '/claude'
+              - '\claude.exe'
+        - Image|contains: '/.local/share/claude/versions/'
+        - Image|endswith:
+              - '/node'
+              - '\node.exe'
+          CommandLine|contains: 'claude'
+    sel_claude_bypass:
+        - CommandLine|contains: ' --dangerously-skip-permissions'
+        - CommandLine|contains|all:
+              - ' --permission-mode'
+              - 'bypassPermissions'
+    sel_claude_headless:
+        - CommandLine|contains:
+              - ' -p '
+              - ' --print'
+        - CommandLine|endswith: ' -p'
+    sel_gemini_image:
+        Image|endswith:
+            - '/gemini'
+            - '\gemini.exe'
+    sel_gemini_bypass:
+        - CommandLine|contains:
+              - ' --yolo'
+              - ' -y '
+        - CommandLine|endswith: ' -y'
+        - CommandLine|contains|all:
+              - ' --approval-mode'
+              - 'yolo'
+    sel_gemini_node:
+        Image|endswith:
+            - '/node'
+            - '\node.exe'
+        CommandLine|contains: 'gemini'
+    sel_gemini_node_bypass:
+        - CommandLine|contains: ' --yolo'
+        - CommandLine|contains|all:
+              - ' --approval-mode'
+              - 'yolo'
+    sel_gemini_headless:
+        CommandLine|contains:
+            - ' -p '
+            - ' --prompt '
+            - ' --prompt='
+    sel_codex_image:
+        Image|endswith:
+            - '/codex'
+            - '\codex.exe'
+    sel_codex_bypass:
+        CommandLine|contains:
+            - ' --dangerously-bypass-approvals-and-sandbox'
+            - ' --yolo'
+    sel_codex_headless:
+        - CommandLine|contains:
+              - ' exec '
+              - ' e '
+        - CommandLine|endswith:
+              - ' exec'
+              - ' e'
+    sel_copilot_image:
+        - Image|endswith:
+              - '/copilot'
+              - '\copilot.exe'
+        - Image|endswith:
+              - '/node'
+              - '\node.exe'
+          CommandLine|contains: 'copilot'
+    sel_copilot_bypass:
+        - CommandLine|contains:
+              - ' --allow-all '
+              - ' --yolo'
+        - CommandLine|endswith: ' --allow-all'
+    sel_copilot_headless:
+        CommandLine|contains:
+            - ' -p '
+            - ' --prompt '
+            - ' --prompt='
+    sel_q_image:
+        Image|endswith:
+            - '/q'
+            - '\q.exe'
+            - '/qchat'
+            - '\qchat.exe'
+    sel_q_bypass:
+        - CommandLine|contains:
+              - ' --trust-all-tools'
+              - ' -a '
+        - CommandLine|endswith: ' -a'
+    sel_q_headless:
+        CommandLine|contains:
+            - ' --no-interactive'
+            - ' --non-interactive'
+    condition: >-
+        (sel_claude_image and sel_claude_bypass and sel_claude_headless) or
+        (sel_gemini_image and sel_gemini_bypass and sel_gemini_headless) or
+        (sel_gemini_node and sel_gemini_node_bypass and sel_gemini_headless) or
+        (sel_codex_image and sel_codex_bypass and sel_codex_headless) or
+        (sel_copilot_image and sel_copilot_bypass and sel_copilot_headless) or
+        (sel_q_image and sel_q_bypass and sel_q_headless)
+falsepositives:
+    - CI runners and disposable containers that run agents headless with
+      approvals off by design
+    - A developer scripting an agent on their own workstation with the same
+      flags, or an application built on an agent SDK that starts the CLI with
+      bypass on
+    - An interactive bypass run whose prompt text happens to contain a headless
+      flag such as -p (for example mkdir -p), or a short flag such as e, -a or
+      -y; the match is case-insensitive
+    - Scope the rule by host group (exclude CI runners and agent sandboxes)
+      rather than by dropping a flag; an agent started by a package install
+      script or an editor extension is the case to chase
+level: high
