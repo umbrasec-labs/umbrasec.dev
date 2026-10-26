@@ -1,0 +1,272 @@
+title: AI Coding Agent Shell Runs a Risky Command
+id: 018f37c7-4f08-4bd4-8b4f-495a60116ff6
+status: experimental
+description: >
+    A shell or tool started by an AI coding agent ran something a developer
+    almost never asks an agent to run: it named a credential file or token
+    source, piped a download into an interpreter, ran a download through
+    command substitution, or built a DNS lookup from a command substitution.
+    That is what an agent does with the shell it already has once indirect
+    prompt injection or malware steers it. The agent is recognised in three
+    ways. By its parent process: Claude Code's native binary (\claude.exe on
+    Windows, the .local/share/claude/versions/ folder on macOS and Linux),
+    codex, Kilo Code's bundled kilo server, and qchat from the Amazon Q
+    Developer CLI. A sandboxed Codex or Kilo Code run can put a hop such as
+    bwrap, sandbox-exec or codex-linux-sandbox between the agent and the shell,
+    so the parent branch can miss it; the Claude Code wrapper branch does not
+    depend on the parent. By a wrapper the agent writes onto its own shell
+    command line: Gemini CLI's shopt -u promptvars nullglob extglob nocaseglob
+    dotglob prefix, Kilo Code's PowerShell UTF-8 prologue, and Claude Code's
+    shell-snapshots/snapshot- file, matched with / or \ separators. The Claude
+    Code wrapper is a local observation of Claude Code 2.1.310 on Linux, not a
+    documented interface, and can change in any release. By a VS Code
+    extension host as the direct parent: Code.exe on Windows or Code Helper
+    (Plugin) on macOS, with --inspect-port=0 on the parent command line. That
+    branch matches any VS Code extension that spawns a shell directly, not one
+    agent; it is how Roo Code's default mode, which runs each command through a
+    shell from the extension host, is seen. Cursor, VS Code Insiders builds and
+    the Linux editor process are left out, because their process names are not
+    confirmed. Credential sources matched: .aws/credentials, SSH private keys
+    under .ssh/id_, .kube/config, .codex/auth.json and a browser's Login Data
+    file, each with / or \ separators; .npmrc, .git-credentials and gh auth
+    token; CODEX_HOME/auth.json with / only; and /proc/PID/environ. Download
+    and execute: curl, wget, Invoke-WebRequest, iwr, Invoke-RestMethod, irm or
+    DownloadString on the same command line as a pipe into sh, bash, zsh, sudo
+    sh, sudo bash, pwsh, powershell or iex, or as iex( or Invoke-Expression.
+    Command substitution that runs a download: -c "$(curl, -c "`curl, eval
+    $(curl, eval "$(curl, or process substitution read by bash, sh, zsh or
+    source as a whole word (bash <(curl), each also with wget; and nslookup
+    followed directly by $(. Not matched: a read of a .env file, which agents
+    do all the time in project work; a pipe into python, because agents pipe
+    API output into python -m json.tool; a download saved to a file and run by
+    a later command; a download captured into a variable, or a command
+    substitution inside a curl argument; process substitution read by any
+    other command or by the . builtin; a pipe into a shell followed directly
+    by a line break, or closed by ) inside a subshell; a pipe into sudo with
+    options, or into node, perl or ruby; a shell reading process substitution
+    straight after (, ; or && with no space; and agents that type into the
+    editor's integrated terminal (GitHub Copilot agent mode, Cline's default,
+    Roo Code's terminal mode), whose shells look the same as a user's.
+references:
+    - https://code.claude.com/docs/en/tools-reference#bash-tool-behavior
+    - https://code.claude.com/docs/en/setup#auto-updates
+    - https://code.claude.com/docs/en/setup#install-on-network-storage
+    - https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-cli/bin/codex.js#L80-L95
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50
+    - https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160
+    - https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/core/src/kilocode/powershell.ts#L1-L16
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/util/consts.rs#L3
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48
+    - https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54
+    - https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.ts#L261-L284
+    - https://github.com/microsoft/vscode/issues/228661
+    - https://github.com/microsoft/vscode/issues/219075
+    - https://www.stepsecurity.io/blog/supply-chain-security-alert-popular-nx-build-system-package-compromised-with-data-stealing-malware
+    - https://snyk.io/blog/tanstack-npm-packages-compromised/
+    - https://socket.dev/blog/tensorlake-compromise
+    - https://corgea.com/research/codexui-android-openai-token-stealer
+    - https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages
+    - https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests/
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-26
+modified: 2026-10-26
+tags:
+    - attack.execution
+    - attack.t1059
+    - attack.t1698
+    - attack.credential-access
+    - attack.t1552.001
+    - attack.command-and-control
+    - attack.t1105
+logsource:
+    category: process_creation
+detection:
+    agent_parent:
+        - ParentImage|endswith:
+              - '\claude.exe'
+              - '/codex'
+              - '\codex.exe'
+              - '/bin/kilo'
+              - '\bin\kilo.exe'
+              - '/qchat'
+              - '\qchat.exe'
+        - ParentImage|contains: '/.local/share/claude/versions/'
+    agent_wrapper:
+        CommandLine|contains:
+            - 'shell-snapshots/snapshot-'
+            - 'shell-snapshots\snapshot-'
+            - 'shopt -u promptvars nullglob extglob nocaseglob dotglob'
+            - '[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);'
+    agent_exthost:
+        ParentImage|endswith:
+            - '\Code.exe'
+            - '/Code Helper (Plugin)'
+        ParentCommandLine|contains: '--inspect-port=0'
+    risk_credential:
+        - CommandLine|contains:
+              - '.aws/credentials'
+              - '.aws\credentials'
+              - '.ssh/id_'
+              - '.ssh\id_'
+              - '.npmrc'
+              - '.git-credentials'
+              - 'gh auth token'
+              - '.kube/config'
+              - '.kube\config'
+              - '/Login Data'
+              - '\Login Data'
+              - '/Login\ Data'
+              - '.codex/auth.json'
+              - '.codex\auth.json'
+              - 'CODEX_HOME/auth.json'
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ "
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ'"
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ\""
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ;"
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ)"
+        - CommandLine|contains: '/proc/'
+          CommandLine|endswith: '/environ'
+    risk_substitution:
+        CommandLine|contains:
+            - '-c "$(curl'
+            - '-c "$(wget'
+            - '-c "`curl'
+            - '-c "`wget'
+            - 'eval $(curl'
+            - 'eval $(wget'
+            - 'eval "$(curl'
+            - 'eval "$(wget'
+            - ' bash <(curl'
+            - '''bash <(curl'
+            - '"bash <(curl'
+            - '/bash <(curl'
+            - ' sh <(curl'
+            - '''sh <(curl'
+            - '"sh <(curl'
+            - '/sh <(curl'
+            - ' zsh <(curl'
+            - '''zsh <(curl'
+            - '"zsh <(curl'
+            - '/zsh <(curl'
+            - ' source <(curl'
+            - '''source <(curl'
+            - '"source <(curl'
+            - ' bash <(wget'
+            - '''bash <(wget'
+            - '"bash <(wget'
+            - '/bash <(wget'
+            - ' sh <(wget'
+            - '''sh <(wget'
+            - '"sh <(wget'
+            - '/sh <(wget'
+            - ' zsh <(wget'
+            - '''zsh <(wget'
+            - '"zsh <(wget'
+            - '/zsh <(wget'
+            - ' source <(wget'
+            - '''source <(wget'
+            - '"source <(wget'
+            - 'nslookup $('
+            - 'nslookup "$('
+    dl_tool:
+        CommandLine|contains:
+            - 'curl'
+            - 'wget'
+            - 'Invoke-WebRequest'
+            - 'iwr'
+            - 'Invoke-RestMethod'
+            - ' irm '
+            - '(irm '
+            - '"irm '
+            - "'irm "
+            - 'DownloadString'
+    dl_exec:
+        - CommandLine|contains:
+              - "| sh "
+              - "| sh'"
+              - "| sh\""
+              - "| sh;"
+              - "|sh "
+              - "|sh'"
+              - "|sh\""
+              - "|sh;"
+              - "| bash "
+              - "| bash'"
+              - "| bash\""
+              - "| bash;"
+              - "|bash "
+              - "|bash'"
+              - "|bash\""
+              - "|bash;"
+              - "| zsh "
+              - "| zsh'"
+              - "| zsh\""
+              - "| zsh;"
+              - "|zsh "
+              - "|zsh'"
+              - "|zsh\""
+              - "|zsh;"
+              - "| sudo sh "
+              - "| sudo sh'"
+              - "| sudo sh\""
+              - "| sudo sh;"
+              - "| sudo bash "
+              - "| sudo bash'"
+              - "| sudo bash\""
+              - "| sudo bash;"
+              - "| /bin/sh"
+              - "| /bin/bash"
+              - "| pwsh"
+              - "|pwsh"
+              - "| powershell"
+              - "|powershell"
+              - "| iex"
+              - "|iex"
+              - "iex("
+              - "iex ("
+              - "Invoke-Expression"
+        - CommandLine|endswith:
+              - "| sh"
+              - "|sh"
+              - "| bash"
+              - "|bash"
+              - "| zsh"
+              - "|zsh"
+              - "| sudo sh"
+              - "| sudo bash"
+    condition: 1 of agent_* and (1 of risk_* or (dl_tool and dl_exec))
+falsepositives:
+    - Commands that create, use or print an SSH key under .ssh, such as
+      ssh-keygen -f ~/.ssh/id_ed25519, ssh -i with a key file, or reading a
+      .pub public key
+    - An agent asked to install a tool with its vendor's curl | sh, bash -c
+      "$(curl ...)" or irm | iex installer
+    - Reading a project's own .npmrc file, which has the same name as the
+      user's
+    - A search (grep, rg or the agent's own search tool) or a git command that
+      names a listed file
+    - A VS Code extension that runs gh auth token or another listed command
+      directly from the extension host for its own use
+    - A token handed to another command through the agent's shell, such as
+      GH_TOKEN=$(gh auth token) gh ... for a multi-account gh user, or a hook,
+      status-line or MCP server command from the agent's own configuration
+      that names a listed string; these repeat on every run, so allowlist the
+      exact command
+    - A commit message, heredoc or echo whose text contains the matched words;
+      the match is case-insensitive
+    - Tune by allowlisting an exact command per repository or host group rather
+      than by dropping a branch; an agent reading a credential it was not asked
+      about is the case to chase
+level: high

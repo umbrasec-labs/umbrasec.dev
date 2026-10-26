@@ -45,6 +45,9 @@ sigma check tools/sigma-pack/rules/
 | [`archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | Sigma | [T1560.001](https://attack.mitre.org/techniques/T1560/001/) Archive via Utility; [T1039](https://attack.mitre.org/techniques/T1039/) Data from Network Shared Drive | Collection | experimental |
 | [`rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | Sigma | [T1567.002](https://attack.mitre.org/techniques/T1567/002/) Exfiltration to Cloud Storage | Exfiltration | experimental |
 | [`remote-access-tool-service-install.yml`](rules/windows/remote-access-tool-service-install.yml) | Sigma | [T1219.002](https://attack.mitre.org/techniques/T1219/002/) Remote Desktop Software; [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service | Command &amp; Control / Persistence | experimental |
+| [`ai-agent-cli-headless-approval-bypass.yml`](rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml) | Sigma | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting | Execution | experimental |
+| [`ai-agent-shell-risky-command.yml`](rules/cross-platform/ai-agent-shell-risky-command.yml) | Sigma | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting; [T1698](https://attack.mitre.org/techniques/T1698/) Indirect Prompt Injection; [T1552.001](https://attack.mitre.org/techniques/T1552/001/) Credentials In Files; [T1105](https://attack.mitre.org/techniques/T1105/) Ingress Tool Transfer | Execution / Credential Access / Command &amp; Control | experimental |
+| [`editor-terminal-risky-command.kql`](queries/kql/editor-terminal-risky-command.kql) | KQL | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting; [T1552.001](https://attack.mitre.org/techniques/T1552/001/) Credentials In Files; [T1105](https://attack.mitre.org/techniques/T1105/) Ingress Tool Transfer | Execution / Credential Access / Command &amp; Control | query |
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
@@ -242,6 +245,35 @@ publish no FileZilla command line or destination to build a rule on; INC's
 MEGAsync and Restic are not covered either. The remote access tool rule cannot see a portable run (no service
 is created), a renamed service in an unrelated folder, a tool it does not list, or
 abuse of your own sanctioned instance.
+
+### Hijacked AI coding agents (MITRE ATT&CK T1059 / T1698 / T1552.001 / T1105) - Sigma, process creation on Windows, macOS and Linux; KQL, Microsoft Defender XDR
+
+Writeup: [What a Hijacked AI Coding Agent Leaves in Your Logs](https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html)
+
+| Rule | What it catches | Level |
+|---|---|---|
+| [`rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml`](rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml) | Claude Code, Gemini CLI, Codex CLI, GitHub Copilot CLI or Amazon Q Developer CLI started headless with its permission prompts switched off - the shape of the Nx "s1ngularity" packages and Amazon Q for VS Code 1.84.0 (CVE-2025-8217). Codex is matched on `--dangerously-bypass-approvals-and-sandbox` and its `--yolo` alias. A Copilot run with only `--allow-all-tools`, Gemini's `-y` under node and a Gemini positional prompt are not covered | high |
+| [`rules/cross-platform/ai-agent-shell-risky-command.yml`](rules/cross-platform/ai-agent-shell-risky-command.yml) | A shell started by a coding agent (Claude Code, Codex, Kilo Code or Amazon Q Developer CLI as parent; Claude Code, Gemini CLI or Kilo Code wrapper on the command line; or any VS Code extension spawning a shell directly from the extension host) that names a credential file or token source, pipes a download into an interpreter, runs a download through command substitution, or builds a DNS lookup from a command substitution. A `.env` read, a download saved and run later or captured into a variable, a Codex or Kilo Code shell behind a sandbox hop, Cursor, VS Code Insiders and agents that type into the integrated terminal are not covered | high |
+| [`queries/kql/editor-terminal-risky-command.kql`](queries/kql/editor-terminal-risky-command.kql) | KQL over Defender XDR `DeviceProcessEvents`: a hunt over commands run in a VS Code terminal (where GitHub Copilot agent mode, Cline's default and Roo Code's terminal mode type) that name a credential source, or a download tool followed within 60 seconds by an interpreter in the same shell. It cannot tell an agent from a person. As shipped it covers PowerShell terminals in VS Code on Windows; cmd.exe terminals get no marker, the Git Bash process tree and the Linux and macOS editor names are not confirmed, zsh terminals carry no marker, and in-process PowerShell cmdlets start no process | query |
+
+Prerequisite: process-creation telemetry with full command lines (Sysmon Event 1,
+Sysmon for Linux, auditd execve or EDR) from developer machines. The CLI-launch rule
+has no parent condition: s1ngularity started the agent from node, the Amazon Q injection
+(which never ran) would have used a shell, and CI does both. Scope it by host group: CI runners and agent sandboxes run
+agents this way by design, so exclude them by host rather than by dropping a flag.
+
+The shell rule keys on agent lineage, so it sees only agents that start their own
+shells: the Claude Code wrapper string is a local observation of Claude Code 2.1.310
+on Linux, and the extension-host branch matches any extension, not one agent. Tune
+it by allowlisting exact commands per repository or host group, not by dropping a
+branch.
+
+The terminal hunt is for the agents the two rules cannot see. It keeps the children
+of a VS Code terminal shell (grandparent `Code.exe`, shell-integration script on the
+shell's command line) and pairs a download with an interpreter only inside one
+shell. An unrelated interpreter run in the same terminal within the window pairs
+too; that is its main false positive. Add your Linux or macOS editor process name to
+`Editors` once you have checked what your sensor records.
 
 ## How to use these
 

@@ -16,6 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-10-25">
+    <meta property="article:modified_time" content="2026-10-26">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="AI &amp; LLM Security">
     <meta property="article:tag" content="Roo Code">
@@ -35,6 +36,7 @@
       "headline": "When the Allowlist Isn't a Boundary - Auto-Approve Bypasses in an Abandoned AI Coding Agent",
       "description": "Five command auto-approve bypasses in Roo Code (CVE-2026-110202 through CVE-2026-110206) let indirect prompt injection run shell commands past the allowlist. All affect versions through 3.54.0, the repository was archived in May 2026, and there is no fix. Why a command allowlist is not a security boundary, and the defender response to an unmaintained AI agent.",
       "datePublished": "2026-10-25",
+      "dateModified": "2026-10-26",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -245,8 +247,15 @@
                     only shrinks if you go looking.</li>
                 <li><strong>The generalised rule.</strong> Any agent with command auto-approval is a candidate for the
                     same parser-differential gap. Treat the presence of auto-approve on an internet-reading agent as a
-                    finding in its own right, not just Roo Code.</li>
+                    finding in its own right, not just Roo Code. <a href="detecting-hijacked-ai-coding-agents">What a
+                    Hijacked AI Coding Agent Leaves in Your Logs</a> covers this across agents and ships detections for it.</li>
             </ul>
+
+            <p>
+                Updated 2026-10-26: the behavioural detections this section points at now exist. See
+                <a href="detecting-hijacked-ai-coding-agents">What a Hijacked AI Coding Agent Leaves in Your Logs</a>
+                for two Sigma rules and a Defender XDR hunt, and for what they cannot see.
+            </p>
 
             <h3>ATT&amp;CK and ATLAS</h3>
             <div class="table-wrap">

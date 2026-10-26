@@ -120,7 +120,7 @@
 
                     <div class="flex flex-col sm:flex-row flex-wrap gap-3 mt-10">
                         <!-- AUTO:hero START -->
-                        <a href="research/beyondtrust-remote-support-armory-castle"
+                        <a href="research/detecting-hijacked-ai-coding-agents"
                            class="btn-primary w-full sm:w-auto sm:whitespace-nowrap inline-flex items-center justify-center px-8 py-3.5 rounded-2xl bg-[#f25623] text-[#171717] font-semibold hover:bg-[#f56e0f] transition-all">
                             Read the latest research <span class="arrow ml-1.5">→</span>
                         </a>
@@ -205,6 +205,26 @@
                 </p>
 
                 <!-- AUTO:featured START -->
+                <a href="research/detecting-hijacked-ai-coding-agents" class="block">
+                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
+                        <div class="md:col-span-5">
+                            <div class="font-mono text-xs text-[#88a57d] mb-2">AI &amp; LLM SECURITY</div>
+                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
+                                What a Hijacked AI Coding Agent Leaves in Your Logs
+                            </div>
+                        </div>
+                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
+                            An AI coding agent runs commands with a developer's access, so whoever steers it borrows that access. Malware has launched agent CLIs with their permission prompts off, and planted text has turned auto-approve into a hole. This article ships three detections for it and says plainly which agents they see and which they cannot.
+                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
+                                <span class="text-[#f25623]">Oct 2026</span>
+                                <span class="text-[#7d837d]">·</span>
+                                <span class="text-[#7d837d]">~15 min read</span>
+                                <span class="row-chev ml-auto">Read →</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
                 <a href="research/beyondtrust-remote-support-armory-castle" class="block">
                     <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
                         <div class="md:col-span-5">
@@ -239,26 +259,6 @@
                                 <span class="text-[#f25623]">Oct 2026</span>
                                 <span class="text-[#7d837d]">·</span>
                                 <span class="text-[#7d837d]">~11 min read</span>
-                                <span class="row-chev ml-auto">Read →</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="research/php2shell-hallucinated-exploits" class="block">
-                    <div class="research-row grid grid-cols-1 md:grid-cols-12 gap-x-8 py-8 group">
-                        <div class="md:col-span-5">
-                            <div class="font-mono text-xs text-[#88a57d] mb-2">AI &amp; LLM SECURITY</div>
-                            <div class="font-semibold text-xl group-hover:text-[#f25623] transition-colors">
-                                php2shell and the Hallucinated Exploit - What Defenders Should Actually Do About CVE-2026-109618/109619
-                            </div>
-                        </div>
-                        <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
-                            There is a real unauthenticated RCE in PHP, patched on 21 October 2026. There is also a flood of "php2shell" PoCs on GitHub and in honeypot traffic, and most are not that bug at all - they are a 2018 session-poisoning trick an LLM mistook for the CVE because both touch PHP_SESSION_UPLOAD_PROGRESS. Telling the two apart is the job.
-                            <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
-                                <span class="text-[#f25623]">Oct 2026</span>
-                                <span class="text-[#7d837d]">·</span>
-                                <span class="text-[#7d837d]">~12 min read</span>
                                 <span class="row-chev ml-auto">Read →</span>
                             </div>
                         </div>
@@ -344,7 +344,7 @@
                             <div class="font-semibold text-xl">sigma-pack</div>
                             <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
                         </div>
-                        <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, the LiteLLM 1.107.0 release-compromise stealer (ahead of its writeup), N-central post-exploitation, the Metabase reset-password SQL injection and request bursts, php2shell upload-progress probes, and ransomware recovery inhibition, Defender tampering, admin-share archiving, rclone transfers and remote access tools installed as a service from the SafePay and INC Ransom writeups, plus five KQL queries for OAuth consent phishing, the app-credential persistence that can follow it and Metabase bulk extraction, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
+                        <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, the LiteLLM 1.107.0 release-compromise stealer (ahead of its writeup), N-central post-exploitation, the Metabase reset-password SQL injection and request bursts, php2shell upload-progress probes, hijacked AI coding agents, and ransomware recovery inhibition, Defender tampering, admin-share archiving, rclone transfers and remote access tools installed as a service from the SafePay and INC Ransom writeups, plus six KQL queries for OAuth consent phishing, the app-credential persistence that can follow it, Metabase bulk extraction and risky commands in a VS Code terminal, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
                         <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" class="mt-6 inline-block text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
                     </div>
 

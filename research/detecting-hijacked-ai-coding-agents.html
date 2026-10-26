@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC</title>
+    <meta name="description" content="Three detections for an AI coding agent that has been hijacked: an agent CLI started headless with approvals off, an agent's shell doing something risky, and a hunt in the VS Code terminal on Windows. What the logs can and cannot show.">
+    <link rel="canonical" href="https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="UMBRASEC">
+    <meta property="og:url" content="https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents">
+    <meta property="og:title" content="What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC">
+    <meta property="og:description" content="How malware and planted prompts turn an AI coding agent into a confused deputy, what each kind of agent leaves in endpoint logs, and three detections that ship with this article, with their limits stated.">
+    <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
+    <meta property="article:published_time" content="2026-10-26">
+    <meta property="article:author" content="UMBRASEC">
+    <meta property="article:section" content="AI &amp; LLM Security">
+    <meta property="article:tag" content="AI coding agents">
+    <meta property="article:tag" content="Confused deputy">
+    <meta property="article:tag" content="Detection engineering">
+    <meta property="article:tag" content="Sigma">
+    <meta property="article:tag" content="KQL">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC">
+    <meta name="twitter:description" content="Malware and planted prompts can steer an AI coding agent. What each kind of agent leaves in your logs, and three detections that say plainly what they miss.">
+    <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
+    <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
+      "description": "Three detections for an AI coding agent that has been hijacked: an agent CLI started headless with approvals off, an agent's shell doing something risky, and a hunt in the VS Code terminal on Windows. What the logs can and cannot show.",
+      "datePublished": "2026-10-26",
+      "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
+      "image": "https://umbrasec.dev/assets/og.png",
+      "mainEntityOfPage": "https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents",
+      "about": "Detecting a hijacked AI coding agent from endpoint telemetry, and the limits of that telemetry",
+      "keywords": "AI coding agent, hijacked agent, confused deputy, indirect prompt injection, Nx s1ngularity, Amazon Q Developer, CVE-2025-8217, Roo Code, CVE-2026-110202, Sigma, KQL, Defender XDR, detection engineering"
+    }
+    </script>
+    <script src="../assets/vendor/tailwindcss-3.4.17.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon-v2.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-icon-v2.png">
+    <link rel="apple-touch-icon" href="../assets/umbra-icon-v2.png">
+    <meta name="theme-color" content="#171717">
+    <link rel="stylesheet" href="../assets/umbra.css">
+</head>
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../" data-reading>
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Navbar -->
+    <nav aria-label="Site" class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
+        <div class="max-w-[1280px] mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="../" class="brand flex items-center gap-x-2.5">
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                    </div>
+                    <div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                    <a href="../guide/" class="nav-link">Guide</a>
+                    <a href="./" class="nav-link">Research</a>
+                    <a href="../tools/" class="nav-link">Open Source</a>
+                    <a href="../about" class="nav-link">About</a>
+                    <a href="../#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button data-cmdk type="button"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
+                            title="Open command palette">
+                        <span data-kbd>Ctrl K</span>
+                        <span class="text-[#959c95]">Search</span>
+                    </button>
+                    <a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener"
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="GitHub">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main">
+
+    <!-- Article -->
+    <article class="max-w-[1280px] mx-auto px-8 py-16">
+        <!-- breadcrumb -->
+        <div class="font-mono text-xs text-[#7d837d] mb-8">
+            <a href="../" class="hover:text-[#f25623]">home</a> /
+            <a href="./" class="hover:text-[#f25623]">research</a> /
+            <span class="text-[#959c95]">detecting-hijacked-ai-coding-agents</span>
+        </div>
+
+        <header class="prose mx-auto">
+            <div class="flex items-center gap-x-3 mb-6 text-xs font-mono">
+                <span class="text-[#88a57d]">AI &amp; LLM SECURITY</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">Oct 26, 2026</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">~15 min</span>
+            </div>
+            <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
+                What a Hijacked AI Coding Agent Leaves in Your Logs
+            </h1>
+            <p class="text-xl text-[#959c95] leading-snug">
+                An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships three detections for it, with their limits stated.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">AI Coding Agents</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Confused Deputy</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Sigma</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">KQL</span>
+            </div>
+        </header>
+
+        <div class="prose mx-auto mt-10 article-body">
+            <aside class="toc-rail" data-toc aria-label="On this page"></aside>
+
+            <p>
+                A coding agent is a confused deputy by design. It holds the developer's shell, files and cloud
+                sessions, and it acts on text it reads. If that text comes from someone else, the agent does their
+                work with the developer's access. Three real cases show the range. In the Nx "s1ngularity" compromise
+                (August 2025), malicious package versions started whichever agent CLI was installed, headless and with
+                its permission prompts switched off, and told it to inventory secrets and wallet files. Amazon Q
+                Developer for VS Code 1.84.0 (CVE-2025-8217) shipped with an injected instruction to run the Q CLI
+                with every tool trusted and no interaction; it did not run because of a syntax error. Roo Code
+                (CVE-2026-110202 to 110206) is the third shape: planted text in content the agent reads, and an
+                auto-approve allowlist that the shell reads differently. It has no fix because the project is
+                archived; see <a href="roo-code-auto-approve-bypass">When the Allowlist Isn't a Boundary</a>.
+            </p>
+            <p>
+                This article ships three detections for that surface: a Sigma rule for an agent CLI started headless
+                with approvals off, a Sigma rule for an agent's shell doing something risky, and a Defender XDR KQL
+                hunt for the VS Code terminal, which as shipped covers Windows only. Before this article the
+                <a href="../tools/sigma-pack/">sigma-pack</a> had no detection for coding agents. Different agents
+                launch commands in different ways, so each detection sees some agents and not others, and the article
+                says which. Both rules are tagged ATT&amp;CK T1059 (Command and Scripting Interpreter), and the
+                shell rule adds T1698 (Indirect Prompt Injection), T1552.001 (Credentials In Files) and T1105
+                (Ingress Tool Transfer).
+            </p>
+
+            <h2>Two kinds of agent, two kinds of visibility</h2>
+            <p>
+                How an agent starts a command decides what the logs can show. The table sorts the agents the
+                research read by that.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Agent</th><th>How it runs a command</th><th>Visible to process logs</th><th>Covered here</th><th>Source</th></tr></thead>
+                    <tbody>
+                        <tr><td>Claude Code CLI</td><td>A fresh shell per command, as a child of the <code>claude</code> binary, with the command inside a wrapper on the shell's command line</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://code.claude.com/docs/en/tools-reference#bash-tool-behavior">Claude Code tools reference</a></td></tr>
+                        <tr><td>Gemini CLI</td><td>node starts a shell per command; on macOS and Linux the command carries a fixed <code>shopt</code> prefix</td><td>Yes</td><td>Detection 1; Detection 2 on macOS and Linux</td><td><a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699">gemini-cli shell-utils.ts</a></td></tr>
+                        <tr><td>OpenAI Codex CLI</td><td>The Rust binary starts the shell directly; a sandbox can add a hop in between</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50">codex shell.rs</a></td></tr>
+                        <tr><td>Amazon Q Developer CLI</td><td><code>qchat</code> starts <code>bash -c</code> or <code>cmd /C</code> with the command</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48">amazon-q-developer-cli unix.rs</a></td></tr>
+                        <tr><td>Kilo Code 7.8.17</td><td>A bundled <code>kilo</code> server starts a fresh shell per command, PowerShell included</td><td>Yes</td><td>Detection 2</td><td><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160">kilocode server-manager.ts</a></td></tr>
+                        <tr><td>Roo Code 3.54.0, default mode</td><td>The VS Code extension host starts <code>/bin/sh -c</code> or <code>cmd.exe /d /s /c</code> with the full command</td><td>Partly: the command is visible, but only as the work of some VS Code extension</td><td>Detection 2 on Windows and macOS</td><td><a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54">Roo Code ExecaTerminalProcess.ts</a></td></tr>
+                        <tr><td>GitHub Copilot agent mode, Cline's default mode, Roo Code's terminal mode</td><td>Types the command into a VS Code integrated terminal</td><td>No: the shell looks like a person's</td><td>Detection 3 (a hunt), VS Code PowerShell terminals on Windows</td><td><a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts#L2726-L2768">VS Code runInTerminalTool.ts</a>, <a href="https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/hosts/vscode/terminal/VscodeTerminalProcess.ts#L96-L110">Cline VscodeTerminalProcess.ts</a>, <a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/Terminal.ts#L153-L160">Roo Code Terminal.ts</a></td></tr>
+                        <tr><td>GitHub Copilot CLI</td><td>Closed source: its own shell tool's spawn method is not confirmed</td><td>Partly: the launch is visible, its shells are not confirmed</td><td>Detection 1 (the launch only)</td><td><a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">Copilot CLI command reference</a></td></tr>
+                        <tr><td>Copilot harness in VS Code (agent host)</td><td>VS Code drives the Copilot CLI runtime from an agent-host process; the spawn chain is not confirmed</td><td>Not confirmed</td><td>No</td><td><a href="https://code.visualstudio.com/docs/agents/run/agent-harnesses">VS Code agent harnesses</a></td></tr>
+                        <tr><td>Cursor IDE agent</td><td>The docs say it runs commands in your terminal; the launch chain and parent process are not confirmed</td><td>Not confirmed</td><td>No</td><td><a href="https://cursor.com/docs/agent/terminal">Cursor docs: terminal</a></td></tr>
+                        <tr><td>Windsurf, now Devin Desktop</td><td>A dedicated agent terminal; the launch chain is not confirmed</td><td>Not confirmed</td><td>No</td><td><a href="https://docs.devin.ai/desktop/terminal">Devin Desktop docs: terminal</a></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                "Visible" here means the command text sits on a process command line and that process can be tied to
+                the agent. Each row describes the agent's default mode in the version the research read, and settings
+                change it: a sandbox can put <code>bwrap</code> or <code>sandbox-exec</code> between an agent and its
+                shell, and Roo Code and Cline can each switch between their own shell and the editor terminal. The
+                detection sections below say which branch sees which row.
+            </p>
+
+            <h2>Detection 1: an agent CLI started headless with approvals off</h2>
+            <p>
+                The s1ngularity packages started an agent CLI with a prompt on the command line, no interactive
+                session and the permission prompts switched off, and the Amazon Q injection would have done the same
+                had it run. That launch is a single process with every part of it in <code>CommandLine</code>, so
+                one Sigma <code>process_creation</code> rule sees it on Windows, macOS and Linux. For each of five CLIs the rule needs three things at once: the agent's
+                image, its bypass flag and its headless flag. A bypass flag alone is how people run an agent by hand
+                in a throwaway container, and a headless run with prompts left on is ordinary scripting, so neither
+                fires on its own. There is no parent condition: s1ngularity started the agent from node, Amazon Q's
+                injected line would have gone through a shell, and CI uses both. In August 2025 Claude Code was an npm
+                package run by node, so the rule also matches node with <code>claude</code> on its command line.
+            </p>
+            <p>
+                Three gaps are deliberate and stated in the rule. Copilot needs <code>--allow-all-tools</code> for any
+                programmatic run, so the rule matches only <code>--allow-all</code> and <code>--yolo</code>, and a run
+                with <code>--allow-all-tools</code> alone gets through. A Gemini positional prompt without
+                <code>-p</code> is left out because in a terminal it opens an interactive session. Under node,
+                Gemini's <code>-y</code> is not matched either, because <code>npx -y</code> uses the same letter for
+                itself. Codex is matched on its long bypass flag and on <code>--yolo</code>, which
+                <a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/utils/cli/src/shared_options.rs#L43-L59">Codex's
+                source</a> defines as an alias of it; <code>--not-so-yolo</code> is an alias of
+                <code>--approve-for-me</code>, which sends approval requests to automatic review, so it stays quiet. CI runners and agent sandboxes run agents exactly
+                like this by design: scope the rule by host group rather than dropping a flag. The
+                <a href="../tools/sigma-pack/">sigma-pack</a> holds the canonical copy.
+            </p>
+            <pre><code>title: AI Coding Agent CLI Started Headless With Approvals Off
+id: efead37d-b263-4f88-843c-39fc390ff510
+status: experimental
+description: &gt;
+    An AI coding agent CLI (Claude Code, Gemini CLI, Codex CLI, GitHub Copilot
+    CLI or Amazon Q Developer CLI) was started headless, with its permission
+    prompts switched off, so it runs whatever the prompt asks with no human in
+    the loop. That is how malware hijacks an installed agent. The Nx
+    "s1ngularity" packages (August 2025) started claude, gemini and q this way
+    from a node postinstall script. Amazon Q for VS Code 1.84.0 (CVE-2025-8217)
+    carried an injected q --trust-all-tools --no-interactive launch through a
+    shell, with no chat subcommand; it never ran, because of a syntax error.
+    Matched per CLI: claude with --dangerously-skip-permissions or
+    --permission-mode bypassPermissions, and -p or --print; gemini with
+    --yolo, -y or --approval-mode yolo, and -p or --prompt; codex exec or e
+    with --dangerously-bypass-approvals-and-sandbox or its --yolo alias;
+    copilot with --allow-all or --yolo, and -p or --prompt; q or qchat with
+    --trust-all-tools or -a, and --no-interactive or --non-interactive. Gemini
+    CLI runs under node, Claude Code ran under node as an npm package before
+    its native binary, and the Copilot CLI process image is not confirmed, so
+    for those three the rule also matches node with the CLI name on its
+    command line. Under node, Gemini's -y is not matched, because npx takes -y
+    for itself; a node-run Gemini needs --yolo or --approval-mode yolo.
+    Claude Code's --allow-dangerously-skip-permissions only adds bypass mode
+    to the Shift+Tab cycle without starting in it, and does not match: it is
+    not a superstring of the bypass flag, and the rule matches the flag only
+    after a space, never a shorter part of it. A Copilot run that passes only
+    --allow-all-tools is not covered, nor one that spells --allow-all out as
+    its three separate flags: Copilot needs --allow-all-tools for any
+    programmatic run, so the rule matches only --allow-all and --yolo. Codex's
+    --not-so-yolo does not match: it is an alias of --approve-for-me, which
+    sends approval requests to automatic review instead of switching them off.
+    A Gemini positional prompt without -p is not matched: in a terminal it
+    opens interactive mode, and without one the behaviour is not confirmed.
+references:
+    - https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c
+    - https://labs.zenity.io/p/reconstructing-a-timeline-for-amazon-q-prompt-infection-81e5
+    - https://aws.amazon.com/security/security-bulletins/AWS-2025-015/
+    - https://code.claude.com/docs/en/cli-reference
+    - https://registry.npmjs.org/@anthropic-ai/claude-code/1.0.93
+    - https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/docs/cli/cli-reference.md
+    - https://learn.chatgpt.com/docs/developer-commands?surface=cli
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/utils/cli/src/shared_options.rs#L43-L59
+    - https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/mod.rs
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-26
+modified: 2026-10-26
+tags:
+    - attack.execution
+    - attack.t1059
+logsource:
+    category: process_creation
+detection:
+    sel_claude_image:
+        - Image|endswith:
+              - '/claude'
+              - '\claude.exe'
+        - Image|contains: '/.local/share/claude/versions/'
+        - Image|endswith:
+              - '/node'
+              - '\node.exe'
+          CommandLine|contains: 'claude'
+    sel_claude_bypass:
+        - CommandLine|contains: ' --dangerously-skip-permissions'
+        - CommandLine|contains|all:
+              - ' --permission-mode'
+              - 'bypassPermissions'
+    sel_claude_headless:
+        - CommandLine|contains:
+              - ' -p '
+              - ' --print'
+        - CommandLine|endswith: ' -p'
+    sel_gemini_image:
+        Image|endswith:
+            - '/gemini'
+            - '\gemini.exe'
+    sel_gemini_bypass:
+        - CommandLine|contains:
+              - ' --yolo'
+              - ' -y '
+        - CommandLine|endswith: ' -y'
+        - CommandLine|contains|all:
+              - ' --approval-mode'
+              - 'yolo'
+    sel_gemini_node:
+        Image|endswith:
+            - '/node'
+            - '\node.exe'
+        CommandLine|contains: 'gemini'
+    sel_gemini_node_bypass:
+        - CommandLine|contains: ' --yolo'
+        - CommandLine|contains|all:
+              - ' --approval-mode'
+              - 'yolo'
+    sel_gemini_headless:
+        CommandLine|contains:
+            - ' -p '
+            - ' --prompt '
+            - ' --prompt='
+    sel_codex_image:
+        Image|endswith:
+            - '/codex'
+            - '\codex.exe'
+    sel_codex_bypass:
+        CommandLine|contains:
+            - ' --dangerously-bypass-approvals-and-sandbox'
+            - ' --yolo'
+    sel_codex_headless:
+        - CommandLine|contains:
+              - ' exec '
+              - ' e '
+        - CommandLine|endswith:
+              - ' exec'
+              - ' e'
+    sel_copilot_image:
+        - Image|endswith:
+              - '/copilot'
+              - '\copilot.exe'
+        - Image|endswith:
+              - '/node'
+              - '\node.exe'
+          CommandLine|contains: 'copilot'
+    sel_copilot_bypass:
+        - CommandLine|contains:
+              - ' --allow-all '
+              - ' --yolo'
+        - CommandLine|endswith: ' --allow-all'
+    sel_copilot_headless:
+        CommandLine|contains:
+            - ' -p '
+            - ' --prompt '
+            - ' --prompt='
+    sel_q_image:
+        Image|endswith:
+            - '/q'
+            - '\q.exe'
+            - '/qchat'
+            - '\qchat.exe'
+    sel_q_bypass:
+        - CommandLine|contains:
+              - ' --trust-all-tools'
+              - ' -a '
+        - CommandLine|endswith: ' -a'
+    sel_q_headless:
+        CommandLine|contains:
+            - ' --no-interactive'
+            - ' --non-interactive'
+    condition: &gt;-
+        (sel_claude_image and sel_claude_bypass and sel_claude_headless) or
+        (sel_gemini_image and sel_gemini_bypass and sel_gemini_headless) or
+        (sel_gemini_node and sel_gemini_node_bypass and sel_gemini_headless) or
+        (sel_codex_image and sel_codex_bypass and sel_codex_headless) or
+        (sel_copilot_image and sel_copilot_bypass and sel_copilot_headless) or
+        (sel_q_image and sel_q_bypass and sel_q_headless)
+falsepositives:
+    - CI runners and disposable containers that run agents headless with
+      approvals off by design
+    - A developer scripting an agent on their own workstation with the same
+      flags, or an application built on an agent SDK that starts the CLI with
+      bypass on
+    - An interactive bypass run whose prompt text happens to contain a headless
+      flag such as -p (for example mkdir -p), or a short flag such as e, -a or
+      -y; the match is case-insensitive
+    - Scope the rule by host group (exclude CI runners and agent sandboxes)
+      rather than by dropping a flag; an agent started by a package install
+      script or an editor extension is the case to chase
+level: high</code></pre>
+
+            <h2>Detection 2: an agent's shell doing something risky</h2>
+            <p>
+                Most hijacks end the same way: the agent runs a command through the shell it already has. Many agents
+                start a fresh shell for every command, with the whole command on that shell's command line, so one
+                Sigma <code>process_creation</code> rule can see two things at once: that the shell belongs to an agent,
+                and that the command is one a developer almost never asks an agent for. The rule recognises the agent
+                by its parent process, by a wrapper string the agent writes onto its own shell command line, or by a
+                VS Code extension host as the direct parent. Then it needs one of four risky shapes: a credential file
+                or token source named on the command line, a download piped into an interpreter, a download run
+                through command substitution, or a DNS lookup built from a command substitution.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Agent</th><th>Marker</th><th>Field</th><th>Source</th></tr></thead>
+                    <tbody>
+                        <tr><td>Claude Code (native binary)</td><td><code>\claude.exe</code> (Windows), <code>.local/share/claude/versions/</code> (macOS and Linux)</td><td>ParentImage</td><td><a href="https://code.claude.com/docs/en/setup#auto-updates">Claude Code setup: auto-updates</a>, <a href="https://code.claude.com/docs/en/setup#install-on-network-storage">install on network storage</a>, <a href="https://code.claude.com/docs/en/setup#uninstall-a-native-installation">uninstall a native installation</a></td></tr>
+                        <tr><td>Claude Code</td><td><code>shell-snapshots/snapshot-</code> in the shell wrapper</td><td>CommandLine</td><td>Local observation of Claude Code 2.1.310 on Linux (no public source)</td></tr>
+                        <tr><td>Codex CLI</td><td><code>codex</code>, <code>codex.exe</code></td><td>ParentImage</td><td><a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-cli/bin/codex.js#L80-L95">codex.js (vendor binary path)</a></td></tr>
+                        <tr><td>Kilo Code</td><td><code>/bin/kilo</code>, <code>\bin\kilo.exe</code></td><td>ParentImage</td><td><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160">kilocode server-manager.ts</a></td></tr>
+                        <tr><td>Kilo Code</td><td>PowerShell UTF-8 prologue <code>[Console]::InputEncoding = ...</code></td><td>CommandLine</td><td><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/core/src/kilocode/powershell.ts#L1-L16">kilocode powershell.ts</a></td></tr>
+                        <tr><td>Amazon Q Developer CLI</td><td><code>qchat</code></td><td>ParentImage</td><td><a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/util/consts.rs#L3">amazon-q-developer-cli consts.rs (binary name)</a></td></tr>
+                        <tr><td>Gemini CLI</td><td><code>shopt -u promptvars nullglob extglob nocaseglob dotglob</code> prefix</td><td>CommandLine</td><td><a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699">gemini-cli shell-utils.ts</a></td></tr>
+                        <tr><td>Any VS Code extension (Roo Code's default mode is one)</td><td><code>Code.exe</code> (Windows) or <code>Code Helper (Plugin)</code> (macOS) with <code>--inspect-port=0</code></td><td>ParentImage and ParentCommandLine</td><td><a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.ts#L261-L284">VS Code extension host</a>, <a href="https://github.com/microsoft/vscode/issues/228661">Windows capture</a>, <a href="https://github.com/microsoft/vscode/issues/219075">macOS process name</a>, <a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54">Roo Code execa</a></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                Two of these markers need a label. The Claude Code wrapper string comes from watching Claude Code
+                2.1.310 on Linux, not from documentation, and can change in any release. The extension-host branch
+                matches any extension that spawns a shell directly: that is how Roo Code's default mode is seen, but
+                nothing in it is specific to Roo. Cursor, VS Code Insiders builds and the Linux editor process are left
+                out because their process names are not confirmed. A sandboxed Codex or Kilo Code run can put a hop
+                such as <code>bwrap</code> or <code>sandbox-exec</code> between the agent and its shell, so the parent
+                branch can miss it; the Claude Code wrapper branch does not depend on the parent.
+            </p>
+            <p>
+                The risky shapes are cut to what ordinary agent work does not do. Reading a <code>.env</code> file and
+                piping into python are not matched, and a substitution only counts when something runs the download
+                (after <code>-c</code>, after <code>eval</code>, or as process substitution read by a shell or
+                <code>source</code>), so a version lookup into a variable, a <code>diff</code> against an API
+                response or a commit message that mentions curl stays quiet. The rule's false positives name what
+                still fires, such as a vendor's <code>curl | sh</code> installer, a search that names a credential
+                file, or <code>ssh-keygen</code> writing a new key. It also fires when the agent itself uses
+                <code>gh auth token</code> for ordinary work, such as <code>GH_TOKEN=$(gh auth token) gh ...</code>
+                for a multi-account user or a hook, status-line or MCP server command in the agent's own
+                configuration; those repeat on every run, so allowlist the exact command rather than drop
+                <code>gh auth token</code>, because a hijacked agent printing the token is the case to catch. Agents
+                that type into the editor's integrated terminal are invisible to this rule. The <a href="../tools/sigma-pack/">sigma-pack</a> holds the
+                canonical copy.
+            </p>
+            <pre><code>title: AI Coding Agent Shell Runs a Risky Command
+id: 018f37c7-4f08-4bd4-8b4f-495a60116ff6
+status: experimental
+description: &gt;
+    A shell or tool started by an AI coding agent ran something a developer
+    almost never asks an agent to run: it named a credential file or token
+    source, piped a download into an interpreter, ran a download through
+    command substitution, or built a DNS lookup from a command substitution.
+    That is what an agent does with the shell it already has once indirect
+    prompt injection or malware steers it. The agent is recognised in three
+    ways. By its parent process: Claude Code's native binary (\claude.exe on
+    Windows, the .local/share/claude/versions/ folder on macOS and Linux),
+    codex, Kilo Code's bundled kilo server, and qchat from the Amazon Q
+    Developer CLI. A sandboxed Codex or Kilo Code run can put a hop such as
+    bwrap, sandbox-exec or codex-linux-sandbox between the agent and the shell,
+    so the parent branch can miss it; the Claude Code wrapper branch does not
+    depend on the parent. By a wrapper the agent writes onto its own shell
+    command line: Gemini CLI's shopt -u promptvars nullglob extglob nocaseglob
+    dotglob prefix, Kilo Code's PowerShell UTF-8 prologue, and Claude Code's
+    shell-snapshots/snapshot- file, matched with / or \ separators. The Claude
+    Code wrapper is a local observation of Claude Code 2.1.310 on Linux, not a
+    documented interface, and can change in any release. By a VS Code
+    extension host as the direct parent: Code.exe on Windows or Code Helper
+    (Plugin) on macOS, with --inspect-port=0 on the parent command line. That
+    branch matches any VS Code extension that spawns a shell directly, not one
+    agent; it is how Roo Code's default mode, which runs each command through a
+    shell from the extension host, is seen. Cursor, VS Code Insiders builds and
+    the Linux editor process are left out, because their process names are not
+    confirmed. Credential sources matched: .aws/credentials, SSH private keys
+    under .ssh/id_, .kube/config, .codex/auth.json and a browser's Login Data
+    file, each with / or \ separators; .npmrc, .git-credentials and gh auth
+    token; CODEX_HOME/auth.json with / only; and /proc/PID/environ. Download
+    and execute: curl, wget, Invoke-WebRequest, iwr, Invoke-RestMethod, irm or
+    DownloadString on the same command line as a pipe into sh, bash, zsh, sudo
+    sh, sudo bash, pwsh, powershell or iex, or as iex( or Invoke-Expression.
+    Command substitution that runs a download: -c "$(curl, -c "`curl, eval
+    $(curl, eval "$(curl, or process substitution read by bash, sh, zsh or
+    source as a whole word (bash &lt;(curl), each also with wget; and nslookup
+    followed directly by $(. Not matched: a read of a .env file, which agents
+    do all the time in project work; a pipe into python, because agents pipe
+    API output into python -m json.tool; a download saved to a file and run by
+    a later command; a download captured into a variable, or a command
+    substitution inside a curl argument; process substitution read by any
+    other command or by the . builtin; a pipe into a shell followed directly
+    by a line break, or closed by ) inside a subshell; a pipe into sudo with
+    options, or into node, perl or ruby; a shell reading process substitution
+    straight after (, ; or &amp;&amp; with no space; and agents that type into the
+    editor's integrated terminal (GitHub Copilot agent mode, Cline's default,
+    Roo Code's terminal mode), whose shells look the same as a user's.
+references:
+    - https://code.claude.com/docs/en/tools-reference#bash-tool-behavior
+    - https://code.claude.com/docs/en/setup#auto-updates
+    - https://code.claude.com/docs/en/setup#install-on-network-storage
+    - https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-cli/bin/codex.js#L80-L95
+    - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50
+    - https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160
+    - https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/core/src/kilocode/powershell.ts#L1-L16
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/util/consts.rs#L3
+    - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48
+    - https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54
+    - https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.ts#L261-L284
+    - https://github.com/microsoft/vscode/issues/228661
+    - https://github.com/microsoft/vscode/issues/219075
+    - https://www.stepsecurity.io/blog/supply-chain-security-alert-popular-nx-build-system-package-compromised-with-data-stealing-malware
+    - https://snyk.io/blog/tanstack-npm-packages-compromised/
+    - https://socket.dev/blog/tensorlake-compromise
+    - https://corgea.com/research/codexui-android-openai-token-stealer
+    - https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages
+    - https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests/
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-26
+modified: 2026-10-26
+tags:
+    - attack.execution
+    - attack.t1059
+    - attack.t1698
+    - attack.credential-access
+    - attack.t1552.001
+    - attack.command-and-control
+    - attack.t1105
+logsource:
+    category: process_creation
+detection:
+    agent_parent:
+        - ParentImage|endswith:
+              - '\claude.exe'
+              - '/codex'
+              - '\codex.exe'
+              - '/bin/kilo'
+              - '\bin\kilo.exe'
+              - '/qchat'
+              - '\qchat.exe'
+        - ParentImage|contains: '/.local/share/claude/versions/'
+    agent_wrapper:
+        CommandLine|contains:
+            - 'shell-snapshots/snapshot-'
+            - 'shell-snapshots\snapshot-'
+            - 'shopt -u promptvars nullglob extglob nocaseglob dotglob'
+            - '[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);'
+    agent_exthost:
+        ParentImage|endswith:
+            - '\Code.exe'
+            - '/Code Helper (Plugin)'
+        ParentCommandLine|contains: '--inspect-port=0'
+    risk_credential:
+        - CommandLine|contains:
+              - '.aws/credentials'
+              - '.aws\credentials'
+              - '.ssh/id_'
+              - '.ssh\id_'
+              - '.npmrc'
+              - '.git-credentials'
+              - 'gh auth token'
+              - '.kube/config'
+              - '.kube\config'
+              - '/Login Data'
+              - '\Login Data'
+              - '/Login\ Data'
+              - '.codex/auth.json'
+              - '.codex\auth.json'
+              - 'CODEX_HOME/auth.json'
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ "
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ'"
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ\""
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ;"
+        - CommandLine|contains|all:
+              - '/proc/'
+              - "/environ)"
+        - CommandLine|contains: '/proc/'
+          CommandLine|endswith: '/environ'
+    risk_substitution:
+        CommandLine|contains:
+            - '-c "$(curl'
+            - '-c "$(wget'
+            - '-c "`curl'
+            - '-c "`wget'
+            - 'eval $(curl'
+            - 'eval $(wget'
+            - 'eval "$(curl'
+            - 'eval "$(wget'
+            - ' bash &lt;(curl'
+            - '''bash &lt;(curl'
+            - '"bash &lt;(curl'
+            - '/bash &lt;(curl'
+            - ' sh &lt;(curl'
+            - '''sh &lt;(curl'
+            - '"sh &lt;(curl'
+            - '/sh &lt;(curl'
+            - ' zsh &lt;(curl'
+            - '''zsh &lt;(curl'
+            - '"zsh &lt;(curl'
+            - '/zsh &lt;(curl'
+            - ' source &lt;(curl'
+            - '''source &lt;(curl'
+            - '"source &lt;(curl'
+            - ' bash &lt;(wget'
+            - '''bash &lt;(wget'
+            - '"bash &lt;(wget'
+            - '/bash &lt;(wget'
+            - ' sh &lt;(wget'
+            - '''sh &lt;(wget'
+            - '"sh &lt;(wget'
+            - '/sh &lt;(wget'
+            - ' zsh &lt;(wget'
+            - '''zsh &lt;(wget'
+            - '"zsh &lt;(wget'
+            - '/zsh &lt;(wget'
+            - ' source &lt;(wget'
+            - '''source &lt;(wget'
+            - '"source &lt;(wget'
+            - 'nslookup $('
+            - 'nslookup "$('
+    dl_tool:
+        CommandLine|contains:
+            - 'curl'
+            - 'wget'
+            - 'Invoke-WebRequest'
+            - 'iwr'
+            - 'Invoke-RestMethod'
+            - ' irm '
+            - '(irm '
+            - '"irm '
+            - "'irm "
+            - 'DownloadString'
+    dl_exec:
+        - CommandLine|contains:
+              - "| sh "
+              - "| sh'"
+              - "| sh\""
+              - "| sh;"
+              - "|sh "
+              - "|sh'"
+              - "|sh\""
+              - "|sh;"
+              - "| bash "
+              - "| bash'"
+              - "| bash\""
+              - "| bash;"
+              - "|bash "
+              - "|bash'"
+              - "|bash\""
+              - "|bash;"
+              - "| zsh "
+              - "| zsh'"
+              - "| zsh\""
+              - "| zsh;"
+              - "|zsh "
+              - "|zsh'"
+              - "|zsh\""
+              - "|zsh;"
+              - "| sudo sh "
+              - "| sudo sh'"
+              - "| sudo sh\""
+              - "| sudo sh;"
+              - "| sudo bash "
+              - "| sudo bash'"
+              - "| sudo bash\""
+              - "| sudo bash;"
+              - "| /bin/sh"
+              - "| /bin/bash"
+              - "| pwsh"
+              - "|pwsh"
+              - "| powershell"
+              - "|powershell"
+              - "| iex"
+              - "|iex"
+              - "iex("
+              - "iex ("
+              - "Invoke-Expression"
+        - CommandLine|endswith:
+              - "| sh"
+              - "|sh"
+              - "| bash"
+              - "|bash"
+              - "| zsh"
+              - "|zsh"
+              - "| sudo sh"
+              - "| sudo bash"
+    condition: 1 of agent_* and (1 of risk_* or (dl_tool and dl_exec))
+falsepositives:
+    - Commands that create, use or print an SSH key under .ssh, such as
+      ssh-keygen -f ~/.ssh/id_ed25519, ssh -i with a key file, or reading a
+      .pub public key
+    - An agent asked to install a tool with its vendor's curl | sh, bash -c
+      "$(curl ...)" or irm | iex installer
+    - Reading a project's own .npmrc file, which has the same name as the
+      user's
+    - A search (grep, rg or the agent's own search tool) or a git command that
+      names a listed file
+    - A VS Code extension that runs gh auth token or another listed command
+      directly from the extension host for its own use
+    - A token handed to another command through the agent's shell, such as
+      GH_TOKEN=$(gh auth token) gh ... for a multi-account gh user, or a hook,
+      status-line or MCP server command from the agent's own configuration
+      that names a listed string; these repeat on every run, so allowlist the
+      exact command
+    - A commit message, heredoc or echo whose text contains the matched words;
+      the match is case-insensitive
+    - Tune by allowlisting an exact command per repository or host group rather
+      than by dropping a branch; an agent reading a credential it was not asked
+      about is the case to chase
+level: high</code></pre>
+
+            <h2>Detection 3: hunting the editor terminal</h2>
+            <p>
+                Agents that type into the editor's integrated terminal (GitHub Copilot agent mode, Cline's default
+                mode and Roo Code's terminal mode) leave nothing a Sigma rule can key on: the terminal's shell is the
+                same one a person opens, and only the programs it starts become processes. Microsoft Defender XDR
+                records one level more than Sigma's <code>process_creation</code>: <code>DeviceProcessEvents</code>
+                names each child's grandparent, though as a file name only. That is enough to ask a narrower
+                question: which commands run in a VS Code terminal named a credential source, or fetched something
+                and ran an interpreter straight after? This is a hunt, not an alert. It cannot tell an agent from the
+                person at the keyboard.
+            </p>
+            <p>
+                The query keeps the children of a shell whose parent is <code>Code.exe</code> and whose command line
+                loads VS Code's shell-integration script (<code>shellIntegration.ps1</code> for PowerShell,
+                <code>--init-file</code> with <code>shellIntegration-bash.sh</code> for bash). Then it needs one of
+                two things. The credential branch matches the same credential strings as Detection 2. The pairing
+                branch takes a child whose command line names a download tool and a different child, an interpreter
+                (sh, bash, python, the Windows <code>py</code> launcher, node, pwsh or powershell), that starts in
+                the same shell up to 60 seconds later.
+                It does not check that the interpreter runs what was downloaded, so <code>curl</code> fetching a test
+                fixture followed by <code>python -m pytest</code> pairs too. That is the query's main false positive,
+                and the reason it is a hunt.
+            </p>
+            <p>
+                The coverage is narrower than it looks. As shipped it covers PowerShell terminals in VS Code on
+                Windows, because <code>Code.exe</code> is the only editor process name a public capture confirms; add
+                the Linux or macOS name once you have checked what your sensor records. A <code>cmd.exe</code>
+                terminal gets no shell-integration injection, so it is not seen. Git Bash gets the bash marker, but
+                its process tree is not confirmed: it may put another <code>bash.exe</code> between the terminal and
+                each command, which would hide its commands from the query. zsh, the macOS default, loads shell
+                integration through <code>ZDOTDIR</code> and has no marker on its command line, so a zsh terminal is
+                not seen at all. PowerShell cmdlets such as <code>Invoke-WebRequest</code> and
+                <code>Get-Content</code> run inside the shell and start no process, which is an inference in the
+                research rather than a capture. PowerShell records a native program by its quoted full path, so the
+                query also matches <code>gh.exe" auth token</code>. Git Bash quotes the path only when it holds a
+                space, so the query also matches <code>gh.exe auth token</code>. Both forms are inferred rather
+                than captured. In a pipe
+                such as <code>curl ... | sh</code> both processes start together, so the pair is found only when the download is recorded first or at the same moment. The
+                <a href="../tools/sigma-pack/">sigma-pack</a> holds the canonical copy, with these notes in its
+                header.
+            </p>
+            <pre><code>// A command in a VS Code terminal named a credential source, or one terminal shell ran a download and then an interpreter
+let Lookback = 1d;
+let PairWindow = 60s;
+// Bare names: InitiatingProcessParentFileName holds no path
+let Editors = dynamic(["Code.exe"]);
+let ShellIntegrationMarkers = dynamic(["shellIntegration.ps1", "shellIntegration-bash.sh"]);
+// The credential and download strings of ai-agent-shell-risky-command, plus
+// gh.exe" auth token and gh.exe auth token: the forms inferred for gh started from
+// PowerShell and from Git Bash on a path with no space (neither captured)
+let CredentialMarkers = dynamic([".aws/credentials", @".aws\credentials", ".ssh/id_",
+    @".ssh\id_", ".npmrc", ".git-credentials", "gh auth token", ".kube/config",
+    @".kube\config", "/Login Data", @"\Login Data", @"/Login\ Data", ".codex/auth.json",
+    @".codex\auth.json", "CODEX_HOME/auth.json", 'gh.exe" auth token',
+    "gh.exe auth token"]);
+// /environ, then a space, ', ", ;, ) or the end of the line
+let ProcEnvironEnd = @"(?i)/environ([ '"";)]|$)";
+let DownloadTools = dynamic(["curl", "wget", "Invoke-WebRequest", "iwr",
+    "Invoke-RestMethod", " irm ", "(irm ", '"irm ', "'irm ", "DownloadString"]);
+// py and py.exe are the Windows Python launcher
+let Interpreters = dynamic(["sh", "sh.exe", "bash", "bash.exe", "python", "python.exe",
+    "python3", "python3.exe", "py", "py.exe", "node", "node.exe", "pwsh", "pwsh.exe",
+    "powershell", "powershell.exe"]);
+let TerminalChildren = DeviceProcessEvents
+    | where Timestamp &gt; ago(Lookback)
+    | where InitiatingProcessParentFileName in~ (Editors)
+    | where InitiatingProcessCommandLine has_any (ShellIntegrationMarkers);
+let CredentialReads = TerminalChildren
+    | mv-apply Marker = CredentialMarkers to typeof(string) on (
+        where ProcessCommandLine contains Marker
+        | summarize CredentialHits = make_list(Marker))
+    | where array_length(CredentialHits) &gt; 0
+        or (ProcessCommandLine contains "/proc/"
+            and ProcessCommandLine matches regex ProcEnvironEnd)
+    | extend Branch = "credential";
+let Downloads = TerminalChildren
+    | mv-apply Tool = DownloadTools to typeof(string) on (
+        where ProcessCommandLine contains Tool
+        | summarize DownloadHits = make_list(Tool))
+    | where array_length(DownloadHits) &gt; 0
+    | project DeviceId, InitiatingProcessId, InitiatingProcessCreationTime,
+              DownloadTime = Timestamp, DownloadProcessId = ProcessId,
+              DownloadCommandLine = ProcessCommandLine;
+// The few download children on the left, the many interpreter children on the right
+let Pairs = Downloads
+    | join kind=inner (TerminalChildren | where FileName in~ (Interpreters))
+        on DeviceId, InitiatingProcessId, InitiatingProcessCreationTime
+    // A different child, starting 0 to PairWindow after the download
+    | where not(ProcessId == DownloadProcessId and Timestamp == DownloadTime)
+    | where Timestamp between (DownloadTime .. DownloadTime + PairWindow)
+    | extend Branch = "pairing";
+union CredentialReads, Pairs
+| project Timestamp, Branch, DeviceName, AccountName, InitiatingProcessParentFileName,
+          InitiatingProcessCommandLine, FileName, ProcessCommandLine, CredentialHits,
+          DownloadTime, DownloadCommandLine
+| sort by Timestamp desc</code></pre>
+
+            <h2>What this does not cover</h2>
+            <ul>
+                <li><strong>Agents with an unconfirmed launch chain:</strong> the Cursor IDE agent, Windsurf (now
+                    Devin Desktop), the Copilot CLI's own shell tool and the Copilot harness in VS Code (see the
+                    table above).</li>
+                <li><strong>Hidden command text:</strong> the Cursor CLI hands its shell each command on a separate
+                    file descriptor by default (a <code>-File</code> script on Windows), and Cline's background mode
+                    gives PowerShell, its default on Windows, the command on stdin behind a constant stub.</li>
+                <li><strong>Approvals switched off without a matching flag:</strong> Copilot runs with only
+                    <code>--allow-all-tools</code> (see Detection 1), and a bypass set through the
+                    <code>COPILOT_ALLOW_ALL</code> environment variable or in a settings file, where Claude Code can
+                    also take its permission mode.</li>
+                <li><strong>Flag spellings Detection 1 does not read:</strong> short flags combined into one
+                    argument, flags wrapped in quotes, and a Gemini or Copilot <code>-p</code> as the last word on
+                    the line; the rule matches each flag after a space.</li>
+                <li><strong>Other editor terminals:</strong> anything beyond VS Code PowerShell terminals on Windows
+                    (see Detection 3).</li>
+                <li><strong>File reads:</strong> there is no file-access rule (see Honest limitations).</li>
+                <li><strong>Config writes and MCP abuse:</strong> auto-approve written into
+                    <code>.vscode/settings.json</code> (Copilot, CVE-2025-53773), a new MCP server entry (Cursor,
+                    CVE-2025-54135) or an approved one swapped for another command (Cursor, CVE-2025-54136). These
+                    are candidates for later rules.</li>
+                <li><strong>Agent-native telemetry:</strong> no detection here reads an agent's own logs, which are
+                    the better signal where you can turn them on: Claude Code's OpenTelemetry export (with
+                    <code>OTEL_LOG_TOOL_DETAILS=1</code> for the Bash command text) and its <code>PreToolUse</code>
+                    hooks, and VS Code's <code>terminal.log</code>, where its own agent terminal tool writes every
+                    command it runs.</li>
+            </ul>
+
+            <h2>Honest limitations</h2>
+            <p>
+                Each agent fingerprint in these detections, whether a process name, a flag or a wrapper string, was
+                read from one version of an agent or editor, and any release can change it. Agents whose process
+                names or launch chain no public source confirms, such as Cursor and Windsurf (now Devin Desktop),
+                are left out rather than guessed at. The Claude Code wrapper string that Detection 2 matches comes
+                from watching Claude Code 2.1.310 on Linux, not from documentation, so no vendor commitment keeps it
+                stable.
+            </p>
+            <p>
+                Credential access is seen only when a credential file or token command is named on a command line.
+                An agent that reads a file through its own built-in tool starts no process at all, and Sysmon has no
+                event for a file read. Detection 3 cannot tell an agent from the developer typing in the same terminal,
+                so each row it returns is a lead to check, not a finding.
+            </p>
+            <p>
+                The KQL hunt has been parse-checked with the Kusto language service but has never run against a
+                Defender XDR tenant, and the Claims Ledger marks its claims as not executed. None of the three
+                detections has been run against a sensor capture on any OS, and on Windows the process names, the
+                Git Bash process tree and the quoted path PowerShell records for a native program come from source
+                code, public issue reports and inference. Both Sigma rules pass their claims on synthetic events
+                built from the cited sources, which proves the rule logic, not your sensor's field names or formats.
+                They are <code>experimental</code>: tune them against your own logs and read each file's
+                false-positive notes before alerting on them.
+            </p>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c" target="_blank" rel="noopener">Nx - GHSA-cxm3-wv7p-598c, malicious versions of Nx and some supporting plugins were published</a></li>
+                <li><a href="https://snyk.io/blog/weaponizing-ai-coding-agents-for-malware-in-the-nx-malicious-package/" target="_blank" rel="noopener">Snyk - Weaponizing AI coding agents for malware in the Nx malicious package</a></li>
+                <li><a href="https://aws.amazon.com/security/security-bulletins/AWS-2025-015/" target="_blank" rel="noopener">AWS - Security Bulletin AWS-2025-015 (Amazon Q Developer for VS Code, CVE-2025-8217)</a></li>
+                <li><a href="https://labs.zenity.io/p/reconstructing-a-timeline-for-amazon-q-prompt-infection-81e5" target="_blank" rel="noopener">Zenity Labs - Reconstructing a timeline for the Amazon Q prompt infection</a></li>
+                <li>VulnCheck - Roo Code through 3.54.0 auto-approve bypass advisories: <a href="https://www.vulncheck.com/advisories/roo-code-through-3.54.0-auto-approve-bypass-via-redirect-operator-stripping" target="_blank" rel="noopener">CVE-2026-110202</a>, <a href="https://www.vulncheck.com/advisories/roo-code-through-3.54.0-auto-approve-bypass-via-command-substitution-at-command-position" target="_blank" rel="noopener">CVE-2026-110203, 110205 and 110206</a> and <a href="https://www.vulncheck.com/advisories/roo-code-through-3.54.0-auto-approve-bypass-via-funsub-command-substitution" target="_blank" rel="noopener">CVE-2026-110204</a></li>
+                <li><a href="https://code.claude.com/docs/en/tools-reference#bash-tool-behavior" target="_blank" rel="noopener">Claude Code docs - Tools reference</a>, <a href="https://code.claude.com/docs/en/cli-reference" target="_blank" rel="noopener">CLI reference</a>, <a href="https://code.claude.com/docs/en/setup" target="_blank" rel="noopener">Setup</a>, <a href="https://code.claude.com/docs/en/permission-modes" target="_blank" rel="noopener">Permission modes</a> and <a href="https://code.claude.com/docs/en/sandboxing" target="_blank" rel="noopener">Sandboxing</a></li>
+                <li><a href="https://code.claude.com/docs/en/monitoring-usage" target="_blank" rel="noopener">Claude Code docs - Monitoring (OpenTelemetry)</a> and <a href="https://code.claude.com/docs/en/hooks" target="_blank" rel="noopener">Hooks</a></li>
+                <li><a href="https://registry.npmjs.org/@anthropic-ai/claude-code/1.0.93" target="_blank" rel="noopener">npm registry - @anthropic-ai/claude-code 1.0.93 metadata</a></li>
+                <li><a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/docs/cli/cli-reference.md" target="_blank" rel="noopener">Gemini CLI - CLI reference</a> and <a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699" target="_blank" rel="noopener">shell-utils.ts</a></li>
+                <li><a href="https://learn.chatgpt.com/docs/developer-commands?surface=cli" target="_blank" rel="noopener">OpenAI - Codex CLI command reference</a>, <a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-cli/bin/codex.js#L80-L95" target="_blank" rel="noopener">codex.js</a>, <a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50" target="_blank" rel="noopener">shell.rs</a> and <a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/utils/cli/src/shared_options.rs#L43-L59" target="_blank" rel="noopener">shared_options.rs</a></li>
+                <li><a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference" target="_blank" rel="noopener">GitHub - Copilot CLI command reference</a></li>
+                <li><a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/mod.rs" target="_blank" rel="noopener">Amazon Q Developer CLI - chat/mod.rs</a>, <a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/util/consts.rs#L3" target="_blank" rel="noopener">consts.rs</a> and <a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48" target="_blank" rel="noopener">execute/unix.rs</a></li>
+                <li><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160" target="_blank" rel="noopener">Kilo Code - server-manager.ts</a> and <a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/core/src/kilocode/powershell.ts#L1-L16" target="_blank" rel="noopener">powershell.ts</a></li>
+                <li><a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54" target="_blank" rel="noopener">Roo Code - ExecaTerminalProcess.ts</a> and <a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/Terminal.ts#L153-L160" target="_blank" rel="noopener">Terminal.ts</a></li>
+                <li><a href="https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/hosts/vscode/terminal/VscodeTerminalProcess.ts#L96-L110" target="_blank" rel="noopener">Cline - VscodeTerminalProcess.ts</a> and <a href="https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/executors/bash.ts#L733-L741" target="_blank" rel="noopener">bash.ts (background mode)</a></li>
+                <li><a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts#L2726-L2768" target="_blank" rel="noopener">VS Code - runInTerminalTool.ts</a> (its <a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts#L2043" target="_blank" rel="noopener">terminal.log line</a>), <a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/platform/terminal/node/terminalEnvironment.ts" target="_blank" rel="noopener">terminalEnvironment.ts</a> and <a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.ts#L261-L284" target="_blank" rel="noopener">localProcessExtensionHost.ts</a></li>
+                <li><a href="https://github.com/microsoft/vscode/issues/228661" target="_blank" rel="noopener">VS Code issue 228661 (Windows extension-host process capture)</a> and <a href="https://github.com/microsoft/vscode/issues/219075" target="_blank" rel="noopener">issue 219075 (macOS extension-host process name)</a></li>
+                <li><a href="https://code.visualstudio.com/docs/agents/run/agent-harnesses" target="_blank" rel="noopener">VS Code docs - Agent harnesses</a></li>
+                <li><a href="https://cursor.com/docs/agent/terminal" target="_blank" rel="noopener">Cursor docs - Terminal</a>, and the Cursor CLI <a href="https://cursor.com/install" target="_blank" rel="noopener">install script</a> and the package it installs (2026.10.22, Linux x64), read 2026-10-26</li>
+                <li><a href="https://devin.ai/blog/windsurf-is-now-devin-desktop" target="_blank" rel="noopener">Devin - Windsurf is now Devin Desktop</a> and <a href="https://docs.devin.ai/desktop/terminal" target="_blank" rel="noopener">Devin Desktop docs - Terminal</a></li>
+                <li><a href="https://github.com/SigmaHQ/sigma-specification/blob/main/specification/sigma-appendix-taxonomy.md" target="_blank" rel="noopener">Sigma specification - Taxonomy appendix</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table" target="_blank" rel="noopener">Microsoft Learn - DeviceProcessEvents table</a> and <a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicefileevents-table" target="_blank" rel="noopener">DeviceFileEvents table</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon" target="_blank" rel="noopener">Microsoft Sysinternals - Sysmon</a></li>
+                <li><a href="https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/" target="_blank" rel="noopener">Embrace The Red - GitHub Copilot remote code execution via prompt injection (CVE-2025-53773)</a></li>
+                <li><a href="https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm" target="_blank" rel="noopener">Cursor - GHSA-4cxx-hrm3-49rm (CVE-2025-54135)</a></li>
+                <li><a href="https://research.checkpoint.com/2025/cursor-vulnerability-mcpoison/" target="_blank" rel="noopener">Check Point Research - MCPoison (CVE-2025-54136)</a></li>
+                <li><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1059 Command and Scripting Interpreter</a>, <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698 Indirect Prompt Injection</a>, <a href="https://attack.mitre.org/techniques/T1552/001/" target="_blank" rel="noopener">T1552.001 Credentials In Files</a> and <a href="https://attack.mitre.org/techniques/T1105/" target="_blank" rel="noopener">T1105 Ingress Tool Transfer</a></li>
+                <li><a href="https://github.com/umbrasec-labs/detections" target="_blank" rel="noopener">UMBRASEC - Claims Ledger (detections)</a></li>
+                <li><a href="roo-code-auto-approve-bypass">UMBRASEC - When the Allowlist Isn't a Boundary</a></li>
+            </ul>
+        </div>
+
+        <!-- end-of-article: share + nav -->
+        <div class="prose mx-auto mt-16 pt-8 border-t border-[#525252]">
+            <!-- newsletter: The Shipwreck (beehiiv) -->
+            <div class="callout mt-0 mb-8">
+                <div class="font-mono text-xs text-[#88a57d] mb-2">THE SHIPWRECK &middot; WEEKLY BRIEFING</div>
+                <p class="text-sm text-[#959c95]">Five security stories a week: what happened, what it broke, and what to do Monday. Free, sourced, five minutes.</p>
+                <a href="https://theshipwreck.beehiiv.com/subscribe" target="_blank" rel="noopener" class="inline-flex items-center gap-x-1.5 mt-2 text-sm font-semibold text-[#f25623] hover:text-[#f56e0f]">Subscribe free <span class="arrow">&rarr;</span></a>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <a href="beyondtrust-remote-support-armory-castle" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← The Remote Support Appliance Was Open for Seven Weeks</a>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=What%20a%20Hijacked%20AI%20Coding%20Agent%20Leaves%20in%20Your%20Logs&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-hijacked-ai-coding-agents" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fdetecting-hijacked-ai-coding-agents" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+                <a href="./" class="text-sm text-[#f25623] hover:text-[#f56e0f]">All research →</a>
+            </div>
+        </div>
+    </article>
+
+    </main>
+
+    <footer class="border-t border-[#525252] mt-8">
+        <div class="max-w-[1280px] mx-auto px-8 py-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+                <div class="col-span-2">
+                    <a href="../" class="brand flex items-center gap-x-2.5 mb-4">
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                        </div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                    </a>
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
+                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../guide/foundation" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../research/" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../tools/" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
+                        <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../about" class="hover:text-[#f25623]">About</a> · <a href="../#contact" class="hover:text-[#f25623]">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/umbra.js" defer></script>
+</body>
+</html>
