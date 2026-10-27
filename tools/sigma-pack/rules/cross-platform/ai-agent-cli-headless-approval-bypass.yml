@@ -3,31 +3,72 @@ id: efead37d-b263-4f88-843c-39fc390ff510
 status: experimental
 description: >
     An AI coding agent CLI (Claude Code, Gemini CLI, Codex CLI, GitHub Copilot
-    CLI or Amazon Q Developer CLI) was started headless, with its permission
-    prompts switched off, so it runs whatever the prompt asks with no human in
-    the loop. That is how malware hijacks an installed agent. The Nx
-    "s1ngularity" packages (August 2025) started claude, gemini and q this way
-    from a node postinstall script. Amazon Q for VS Code 1.84.0 (CVE-2025-8217)
-    carried an injected q --trust-all-tools --no-interactive launch through a
-    shell, with no chat subcommand; it never ran, because of a syntax error.
+    CLI, Amazon Q Developer CLI, Cursor CLI or Devin CLI) was started headless,
+    with its permission prompts switched off, so it runs whatever the prompt
+    asks with no human in the loop. That is how malware hijacks an installed
+    agent. The Nx "s1ngularity" packages (August 2025) started claude, gemini
+    and q this way from a node postinstall script. Amazon Q for VS Code 1.84.0
+    (CVE-2025-8217) carried an injected q --trust-all-tools --no-interactive
+    launch through a shell, with no chat subcommand; it never ran, because of
+    a syntax error.
     Matched per CLI: claude with --dangerously-skip-permissions or
     --permission-mode bypassPermissions, and -p or --print; gemini with
     --yolo, -y or --approval-mode yolo, and -p or --prompt; codex exec or e
     with --dangerously-bypass-approvals-and-sandbox or its --yolo alias;
     copilot with --allow-all or --yolo, and -p or --prompt; q or qchat with
-    --trust-all-tools or -a, and --no-interactive or --non-interactive. Gemini
-    CLI runs under node, Claude Code ran under node as an npm package before
-    its native binary, and the Copilot CLI process image is not confirmed, so
-    for those three the rule also matches node with the CLI name on its
-    command line. Under node, Gemini's -y is not matched, because npx takes -y
-    for itself; a node-run Gemini needs --yolo or --approval-mode yolo.
+    --trust-all-tools or -a, and --no-interactive or --non-interactive.
+    Copilot also matches with a bare shell grant, --allow-tool=shell or
+    --allow-tool shell on its own or first in a list, and its headless flags
+    also include -p at the end of the line and --acp. A list with shell after
+    another tool (write,shell) is not matched, nor a quoted list such as
+    "shell,write", nor a quoted shell after a space (--allow-tool "shell"),
+    where the sensor records the quotes (Windows); a Linux or macOS argv
+    sensor strips them, so those two forms arrive unquoted and match. A
+    prompt that quotes --allow-tool shell followed by a space or a comma
+    matches.
+    The Cursor CLI matches as node running index.js from a cursor-agent
+    folder, with --force, -f or --yolo. Cursor's branch needs no headless
+    flag, because the CLI is headless whenever stdin or stdout is not a
+    terminal, so an interactive Run Everything session also matches. Keying
+    on node, not on the cmd.exe and powershell.exe shims or the bash launcher
+    that carry the same flags, avoids repeat alerts for one launch.
+    approvalMode "unrestricted" in the user's cli-config.json switches
+    approvals off with nothing on the command line and is not seen. A Cursor
+    run with a Gemini model (--model gemini-2.5-pro --yolo -p) also satisfies
+    the node Gemini branch; a Sigma rule raises one alert with one title
+    whichever branch matched, so it is the same alert.
+    Devin CLI matches as devin from a bin folder (/bin/devin or
+    \bin\devin.exe, never the Devin.exe editor) with --permission-mode
+    dangerous, yolo or bypass, written with a space or =, and followed by a
+    space or the end of the line, and -p or --print. Sandboxed autonomous mode
+    is left out, as are the DEVIN_PERMISSION_MODE environment variable and a
+    permissions.allow exec entry in the Devin config, which switch approvals
+    off with nothing on the command line.
+    Copilot in VS Code, the Cursor editor and Devin Desktop keep approvals-off
+    in the app's own settings, and copilot-runtime --headless is a normal VS
+    Code process, so none of them is matched.
+    Gemini CLI runs under node, Claude Code ran under node as an npm package
+    before its native binary, and an npm install of the Copilot CLI runs a
+    node loader (npm-loader.js) that starts the native copilot with the same
+    flags, so for those three the rule also matches node with the CLI name on
+    its command line; an npm-installed Copilot run would therefore give two
+    matching process rows, node and copilot (read in the loader's shipped
+    code). Under node, Gemini's -y is not matched, because
+    npx takes -y for itself; a node-run Gemini needs --yolo or --approval-mode
+    yolo.
     Claude Code's --allow-dangerously-skip-permissions only adds bypass mode
     to the Shift+Tab cycle without starting in it, and does not match: it is
     not a superstring of the bypass flag, and the rule matches the flag only
     after a space, never a shorter part of it. A Copilot run that passes only
     --allow-all-tools is not covered, nor one that spells --allow-all out as
-    its three separate flags: Copilot needs --allow-all-tools for any
-    programmatic run, so the rule matches only --allow-all and --yolo. Codex's
+    its three separate flags, nor COPILOT_ALLOW_ALL, which leaves nothing on
+    the command line. A -p run with no permission options denies
+    every approval-gated request, so a pipeline that needs the shell passes
+    --allow-all-tools, an --allow-tool grant, --assisted-approval or
+    COPILOT_ALLOW_ALL; --allow-all-tools is the common CI form, so matching it
+    alone would fire on every pipeline, and the rule matches --allow-all,
+    --yolo and a bare shell grant through --allow-tool instead. A Copilot
+    prompt piped on stdin carries no headless flag and is not matched. Codex's
     --not-so-yolo does not match: it is an alias of --approve-for-me, which
     sends approval requests to automatic review instead of switching them off.
     A Gemini positional prompt without -p is not matched: in a terminal it
@@ -43,10 +84,13 @@ references:
     - https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/utils/cli/src/shared_options.rs#L43-L59
     - https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference
     - https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/mod.rs
+    - https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference#using-assisted-permissions
+    - https://cursor.com/docs/cli/reference/parameters
+    - https://docs.devin.ai/cli/reference/commands.md
     - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
 author: UMBRASEC
 date: 2026-10-26
-modified: 2026-10-26
+modified: 2026-10-27
 tags:
     - attack.execution
     - attack.t1059
@@ -126,12 +170,23 @@ detection:
         - CommandLine|contains:
               - ' --allow-all '
               - ' --yolo'
-        - CommandLine|endswith: ' --allow-all'
+              - ' --allow-tool=shell '
+              - ' --allow-tool shell '
+              - ' --allow-tool=shell,'
+              - ' --allow-tool shell,'
+              - " --allow-tool='shell'"
+              - ' --allow-tool="shell"'
+        - CommandLine|endswith:
+              - ' --allow-all'
+              - ' --allow-tool=shell'
+              - ' --allow-tool shell'
     sel_copilot_headless:
-        CommandLine|contains:
-            - ' -p '
-            - ' --prompt '
-            - ' --prompt='
+        - CommandLine|contains:
+              - ' -p '
+              - ' --prompt '
+              - ' --prompt='
+              - ' --acp'
+        - CommandLine|endswith: ' -p'
     sel_q_image:
         Image|endswith:
             - '/q'
@@ -147,22 +202,66 @@ detection:
         CommandLine|contains:
             - ' --no-interactive'
             - ' --non-interactive'
+    sel_cursor_image:
+        Image|endswith:
+            - '/node'
+            - '\node.exe'
+        CommandLine|contains|all:
+            - 'cursor-agent'
+            - 'index.js'
+    sel_cursor_bypass:
+        - CommandLine|contains:
+              - ' --force'
+              - ' --yolo'
+              - ' -f '
+        - CommandLine|endswith: ' -f'
+    sel_devin_image:
+        Image|endswith:
+            - '/bin/devin'
+            - '\bin\devin.exe'
+    sel_devin_bypass:
+        - CommandLine|contains:
+              - ' --permission-mode dangerous '
+              - ' --permission-mode yolo '
+              - ' --permission-mode bypass '
+              - ' --permission-mode=dangerous '
+              - ' --permission-mode=yolo '
+              - ' --permission-mode=bypass '
+        - CommandLine|endswith:
+              - ' --permission-mode dangerous'
+              - ' --permission-mode yolo'
+              - ' --permission-mode bypass'
+              - ' --permission-mode=dangerous'
+              - ' --permission-mode=yolo'
+              - ' --permission-mode=bypass'
+    sel_devin_headless:
+        - CommandLine|contains:
+              - ' -p '
+              - ' --print'
+        - CommandLine|endswith: ' -p'
     condition: >-
         (sel_claude_image and sel_claude_bypass and sel_claude_headless) or
         (sel_gemini_image and sel_gemini_bypass and sel_gemini_headless) or
         (sel_gemini_node and sel_gemini_node_bypass and sel_gemini_headless) or
         (sel_codex_image and sel_codex_bypass and sel_codex_headless) or
         (sel_copilot_image and sel_copilot_bypass and sel_copilot_headless) or
-        (sel_q_image and sel_q_bypass and sel_q_headless)
+        (sel_q_image and sel_q_bypass and sel_q_headless) or
+        (sel_cursor_image and sel_cursor_bypass) or
+        (sel_devin_image and sel_devin_bypass and sel_devin_headless)
 falsepositives:
     - CI runners and disposable containers that run agents headless with
       approvals off by design
     - A developer scripting an agent on their own workstation with the same
       flags, or an application built on an agent SDK that starts the CLI with
-      bypass on
+      bypass on, or an editor's ACP integration that starts copilot --acp with
+      a bypass flag the user set
     - An interactive bypass run whose prompt text happens to contain a headless
       flag such as -p (for example mkdir -p), or a short flag such as e, -a or
       -y; the match is case-insensitive
+    - Prompt text that itself contains a matched flag, such as a Cursor CLI
+      prompt with -f (for example rm -f), since that branch needs no headless
+      flag, or a Copilot or Devin prompt that quotes --allow-tool shell or
+      --permission-mode dangerous followed by a space
     - Scope the rule by host group (exclude CI runners and agent sandboxes)
       rather than by dropping a flag; an agent started by a package install
       script or an editor extension is the case to chase

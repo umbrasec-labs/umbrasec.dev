@@ -7,30 +7,89 @@ description: >
     source, piped a download into an interpreter, ran a download through
     command substitution, or built a DNS lookup from a command substitution.
     That is what an agent does with the shell it already has once indirect
-    prompt injection or malware steers it. The agent is recognised in three
+    prompt injection or malware steers it. The agent is recognised in four
     ways. By its parent process: Claude Code's native binary (\claude.exe on
     Windows, the .local/share/claude/versions/ folder on macOS and Linux),
     codex, Kilo Code's bundled kilo server, and qchat from the Amazon Q
-    Developer CLI. A sandboxed Codex or Kilo Code run can put a hop such as
-    bwrap, sandbox-exec or codex-linux-sandbox between the agent and the shell,
-    so the parent branch can miss it; the Claude Code wrapper branch does not
-    depend on the parent. By a wrapper the agent writes onto its own shell
-    command line: Gemini CLI's shopt -u promptvars nullglob extglob nocaseglob
-    dotglob prefix, Kilo Code's PowerShell UTF-8 prologue, and Claude Code's
-    shell-snapshots/snapshot- file, matched with / or \ separators. The Claude
-    Code wrapper is a local observation of Claude Code 2.1.310 on Linux, not a
-    documented interface, and can change in any release. By a VS Code
-    extension host as the direct parent: Code.exe on Windows or Code Helper
-    (Plugin) on macOS, with --inspect-port=0 on the parent command line. That
-    branch matches any VS Code extension that spawns a shell directly, not one
-    agent; it is how Roo Code's default mode, which runs each command through a
-    shell from the extension host, is seen. Cursor, VS Code Insiders builds and
-    the Linux editor process are left out, because their process names are not
-    confirmed. Credential sources matched: .aws/credentials, SSH private keys
-    under .ssh/id_, .kube/config, .codex/auth.json and a browser's Login Data
-    file, each with / or \ separators; .npmrc, .git-credentials and gh auth
-    token; CODEX_HOME/auth.json with / only; and /proc/PID/environ. Download
-    and execute: curl, wget, Invoke-WebRequest, iwr, Invoke-RestMethod, irm or
+    Developer CLI; also the GitHub Copilot CLI (copilot or copilot.exe) and
+    any process in a cursor-agent folder, such as the Cursor CLI's node. The
+    Copilot CLI starts each command as its own shell, bash --norc --noprofile
+    -c on macOS and Linux and pwsh -NoProfile -NoLogo -NonInteractive -Command
+    on Windows; that shape is seen in user reports for 1.0.60 to 1.0.80, and
+    that the command text sits on that line is inferred. The Copilot parent
+    branch leaves out any parent under \WindowsApps\, where the consumer
+    Microsoft Copilot app (Copilot.exe) is installed; that exclusion applies
+    to the Copilot branch only. Copilot's own helper shells and children
+    (hooks, the start-up environment probe, git and rg) match nothing unless
+    they name a listed string. The Cursor CLI parent, read in shipped code,
+    covers the paths that put the command on the shell's own command line:
+    Windows Git Bash and the fallback /bin/sh -c executors. On the default
+    macOS and Linux path its child is a wrapper shell with no command text, so
+    this branch matches nothing there and the wrapper on the parent command
+    line does the work. A sandboxed Codex or Kilo Code run can put a hop such
+    as bwrap, sandbox-exec or codex-linux-sandbox between the agent and the
+    shell, so the parent branch can miss it; the Claude Code wrapper branch
+    does not depend on the parent. Copilot's optional sandbox, off by default,
+    can add the same kind of hop. By a wrapper the agent writes onto its own
+    shell command line: Gemini CLI's shopt -u promptvars nullglob extglob
+    nocaseglob dotglob prefix, Kilo Code's PowerShell UTF-8 prologue, and
+    Claude Code's shell-snapshots/snapshot- file, matched with / or \
+    separators. The Claude Code wrapper is a local observation of Claude Code
+    2.1.310 on Linux, not a documented interface, and can change in any
+    release. Three more wrapper strings are read in shipped code: the Copilot
+    CLI's PowerShell wrapper variable __copilotCommandFinished;
+    CURSOR_STATE_INPUT_FILE, from the Cursor wrapper on Windows Git Bash,
+    where the command follows -- on the same line; and
+    WINDSURF_STATE_MISSING=0, from the legacy Windsurf Cascade dedicated
+    terminal. On Windows Git Bash one Cursor command can give two matching
+    rows, because Git for Windows' bin\bash.exe starts usr\bin\bash.exe with
+    the same command line (inferred), or three when the command is a program
+    whose own line names a listed string, since that program is also a child
+    of the wrapper. The Windsurf wrapper exists only in Cascade's dedicated
+    terminal ("managed" profile) on macOS and Linux, from its beta in Windsurf
+    1.13.3 (documented) until Cascade's removal in Devin Desktop 3.9.19; it
+    was read in shipped code in Windsurf 2.3.15 and is still present, unused,
+    in Devin Desktop 3.11.228. The inherit or legacy terminal profile is not
+    covered. That wrapper puts the command inside eval '...', so the | sh' and
+    | bash' forms of the pipe branch match and the end-of-line forms never do.
+    By a wrapper on the shell's parent command line: the Cursor CLI and the
+    Cursor IDE agent run each command through a bash or zsh wrapper, so what
+    the command starts is a child of a wrapper shell whose command line holds
+    dump_bash_state, builtin eval -- "$snap" or the zsh head builtin unalias
+    -m '*' 2>/dev/null || true. On macOS and Linux the command reaches that
+    shell on a file descriptor, not on its command line, so this branch is
+    what sees it there; the Windows Git Bash wrapper carries the two bash
+    strings as well. The strings are read in shipped code (Cursor CLI
+    2026.10.22-27dcf5f, Cursor 3.27.14); that the risky command is a child of
+    that shell is inferred. Every wrapper also starts a bare cat child for the
+    state read, which matches nothing. The wrapper shell expands the command
+    before its children start, so a plain pipeline or substitution leaves no
+    pipe or substitution text on any child (inferred): a credential read or gh
+    auth token matches, but a plain curl | sh splits into sibling children
+    (curl, then sh) and is not matched, and neither is a plain download run
+    through $( or <(. The exception is a command that itself runs another
+    shell's -c, such as bash -c 'curl ... | sh', whose child keeps that text
+    and matches. By a VS Code extension host as the direct parent: Code.exe on
+    Windows or Code Helper (Plugin) on macOS, with --inspect-port=0 on the
+    parent command line. That branch matches any VS Code extension that spawns
+    a shell directly, not one agent; it is how Roo Code's default mode, which
+    runs each command through a shell from the extension host, is seen. The
+    Cursor and Devin Desktop extension hosts are not listed, so this branch
+    does not see them (the Cursor IDE agent is seen through its wrapper
+    instead), and VS Code Insiders and the Linux editor process are left out,
+    because their process names are not confirmed. It does not see GitHub
+    Copilot in VS Code under either harness: the Local harness types into a
+    terminal under the pty host, and the Copilot harness runs its shells under
+    copilot-runtime, which is not listed. Not covered at all: Devin Local and
+    the Devin CLI, whose shell launch is inferred, not confirmed; and the
+    default Cursor executor on Windows, which runs PowerShell with the command
+    only inside a temporary .ps1 file, so the command line names nothing and
+    cmdlets such as Invoke-WebRequest or Get-Content start no process.
+    Credential sources matched: .aws/credentials, SSH private keys under
+    .ssh/id_, .kube/config, .codex/auth.json and a browser's Login Data file,
+    each with / or \ separators; .npmrc, .git-credentials and gh auth token;
+    CODEX_HOME/auth.json with / only; and /proc/PID/environ. Download and
+    execute: curl, wget, Invoke-WebRequest, iwr, Invoke-RestMethod, irm or
     DownloadString on the same command line as a pipe into sh, bash, zsh, sudo
     sh, sudo bash, pwsh, powershell or iex, or as iex( or Invoke-Expression.
     Command substitution that runs a download: -c "$(curl, -c "`curl, eval
@@ -45,8 +104,9 @@ description: >
     by a line break, or closed by ) inside a subshell; a pipe into sudo with
     options, or into node, perl or ruby; a shell reading process substitution
     straight after (, ; or && with no space; and agents that type into the
-    editor's integrated terminal (GitHub Copilot agent mode, Cline's default,
-    Roo Code's terminal mode), whose shells look the same as a user's.
+    editor's integrated terminal (GitHub Copilot in VS Code under its Local
+    harness, Cline's default, Roo Code's terminal mode), whose shells look the
+    same as a user's.
 references:
     - https://code.claude.com/docs/en/tools-reference#bash-tool-behavior
     - https://code.claude.com/docs/en/setup#auto-updates
@@ -68,10 +128,23 @@ references:
     - https://corgea.com/research/codexui-android-openai-token-stealer
     - https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages
     - https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests/
+    - https://github.com/github/copilot-cli/issues/4385
+    - https://github.com/github/copilot-cli/issues/4163
+    - https://github.com/github/copilot-cli/issues/3683
+    - https://github.com/github/copilot-cli/issues/4549
+    - https://docs.github.com/en/copilot/concepts/about-cloud-and-local-sandboxes
+    - https://downloads.cursor.com/lab/2026.10.22-27dcf5f/linux/x64/agent-cli-package.tar.gz
+    - https://downloads.cursor.com/lab/2026.10.22-27dcf5f/windows/x64/agent-cli-package.zip
+    - https://downloads.cursor.com/production/69b724ebc67ec522c1b5d287a5025f7a7e81be97/linux/x64/deb/amd64/deb/cursor_3.27.14_amd64.deb
+    - https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt/pool/main/w/windsurf/Windsurf-linux-x64-2.3.15.deb
+    - https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt/pool/main/d/devin-desktop/Devin-linux-x64-3.11.228.deb
+    - https://docs.devin.ai/desktop/changelog.md
+    - https://docs.devin.ai/desktop/terminal.md
+    - https://raw.githubusercontent.com/microsoft/vscode-docs/main/release-notes/v1_143.md
     - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
 author: UMBRASEC
 date: 2026-10-26
-modified: 2026-10-26
+modified: 2026-10-27
 tags:
     - attack.execution
     - attack.t1059
@@ -92,18 +165,35 @@ detection:
               - '\bin\kilo.exe'
               - '/qchat'
               - '\qchat.exe'
-        - ParentImage|contains: '/.local/share/claude/versions/'
+        - ParentImage|contains:
+              - '/.local/share/claude/versions/'
+              - '/cursor-agent/'
+              - '\cursor-agent\'
     agent_wrapper:
         CommandLine|contains:
             - 'shell-snapshots/snapshot-'
             - 'shell-snapshots\snapshot-'
             - 'shopt -u promptvars nullglob extglob nocaseglob dotglob'
             - '[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);'
+            - '__copilotCommandFinished'
+            - 'CURSOR_STATE_INPUT_FILE'
+            - 'WINDSURF_STATE_MISSING=0'
+    agent_cursor_wrapper_parent:
+        ParentCommandLine|contains:
+            - 'dump_bash_state'
+            - 'builtin eval -- "$snap"'
+            - 'builtin unalias -m ''\*'' 2>/dev/null || true'
     agent_exthost:
         ParentImage|endswith:
             - '\Code.exe'
             - '/Code Helper (Plugin)'
         ParentCommandLine|contains: '--inspect-port=0'
+    copilot_parent:
+        ParentImage|endswith:
+            - '/copilot'
+            - '\copilot.exe'
+    filter_ms_copilot_app:
+        ParentImage|contains: '\WindowsApps\'
     risk_credential:
         - CommandLine|contains:
               - '.aws/credentials'
@@ -246,7 +336,7 @@ detection:
               - "|zsh"
               - "| sudo sh"
               - "| sudo bash"
-    condition: 1 of agent_* and (1 of risk_* or (dl_tool and dl_exec))
+    condition: (1 of agent_* or (copilot_parent and not filter_ms_copilot_app)) and (1 of risk_* or (dl_tool and dl_exec))
 falsepositives:
     - Commands that create, use or print an SSH key under .ssh, such as
       ssh-keygen -f ~/.ssh/id_ed25519, ssh -i with a key file, or reading a
@@ -264,6 +354,9 @@ falsepositives:
       status-line or MCP server command from the agent's own configuration
       that names a listed string; these repeat on every run, so allowlist the
       exact command
+    - A command the user's own shell start-up files run, under the one-off
+      interactive login shell Cursor starts to snapshot the shell state; it
+      repeats once per session, so allowlist the exact command
     - A commit message, heredoc or echo whose text contains the matched words;
       the match is case-insensitive
     - Tune by allowlisting an exact command per repository or host group rather
