@@ -7,10 +7,11 @@
       "nav_title": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "category": "ai",
       "date": "2026-10-26",
-      "read_min": 15,
+      "updated": "2026-10-27",
+      "read_min": 18,
       "home_blurb": "An AI coding agent runs commands with a developer's access, so whoever steers it borrows that access. Malware has launched agent CLIs with their permission prompts off, and planted text has turned auto-approve into a hole. This article ships three detections for it and says plainly which agents they see and which they cannot.",
       "card_blurb": "How malware and planted prompts turn an AI coding agent into a confused deputy, from Nx s1ngularity and Amazon Q for VS Code 1.84.0 to the Roo Code auto-approve bypasses. What each kind of agent leaves in endpoint logs, and three detections that ship with the article: two Sigma rules and a Defender XDR hunt, each with its limits stated.",
-      "feed_desc": "A coding agent acts on text it reads, with the developer's shell and credentials. Nx s1ngularity (August 2025) started installed agent CLIs headless with permission prompts disabled, Amazon Q for VS Code 1.84.0 (CVE-2025-8217) carried an injected instruction that failed to run, and Roo Code (CVE-2026-110202 to 110206) shows planted text beating an auto-approve allowlist. This article describes what each kind of agent leaves in endpoint logs and ships three detections: a Sigma rule for an agent CLI started headless with approvals off, a Sigma rule for an agent's shell doing something risky, and a Defender XDR KQL hunt for the VS Code terminal on Windows, with what they do not cover stated plainly.",
+      "feed_desc": "A coding agent acts on text it reads, with the developer's shell and credentials. Nx s1ngularity (August 2025) started installed agent CLIs headless with permission prompts disabled, Amazon Q for VS Code 1.84.0 (CVE-2025-8217) carried an injected instruction that failed to run, and Roo Code (CVE-2026-110202 to 110206) shows planted text beating an auto-approve allowlist. This article describes what each kind of agent leaves in endpoint logs and ships three detections: a Sigma rule for an agent CLI started headless with approvals off, a Sigma rule for an agent's shell doing something risky, and a Defender XDR KQL hunt for the VS Code terminal on Windows and the shells of Copilot's VS Code harness, with what they do not cover stated plainly.",
       "palette": {
         "label": "What a Hijacked AI Coding Agent Leaves in Your Logs",
         "hint": "AI coding agent detections",
