@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-10-26">
-    <meta property="article:modified_time" content="2026-10-27">
+    <meta property="article:modified_time" content="2026-10-28">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="AI &amp; LLM Security">
     <meta property="article:tag" content="AI coding agents">
@@ -36,7 +36,7 @@
       "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "description": "Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a VS Code terminal hunt, and what logs miss.",
       "datePublished": "2026-10-26",
-      "dateModified": "2026-10-27",
+      "dateModified": "2026-10-28",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -117,6 +117,10 @@
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships three detections for it, with their limits stated.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-10-28: Honest limitations now covers Defender's <code>SensitiveFileRead</code> event,
+                Microsoft's description of it, and a query to see what it records before relying on it for file reads.
             </p>
             <p class="mt-4 text-sm text-[#959c95]">
                 Updated 2026-10-27: Cursor, Devin and Copilot coverage. Detection 1 now also covers the Cursor CLI,
@@ -1142,6 +1146,22 @@ union CredentialReads, Pairs
                 so each row it returns is a lead to check, not a finding.
             </p>
             <p>
+                Defender for Endpoint may cover part of that gap. Its <code>DeviceEvents</code> table has an action type,
+                <code>SensitiveFileRead</code>, that Microsoft Learn never names. The Defender portal's built-in schema
+                reference (checked 2026-10-28) describes it as "A file that matched DLP policy was accessed or processes
+                that are reading sensitive files such as ssh keys, Outlook mail archives etc." Nothing public says which
+                files count, which operating systems record it, or whether the second half needs Purview DLP. We have not
+                seen it record an agent reading a credential: the one tenant we could check runs no coding agents and
+                holds no developer credentials, and there the event was mostly security and telemetry software reading
+                Office files, mail archives and PDFs, with <code>AdditionalFields</code> always empty. Before you build
+                on it, run this in your own tenant to see what it records:
+            </p>
+            <pre><code>DeviceEvents
+| where Timestamp &gt; ago(30d) and ActionType == "SensitiveFileRead"
+| summarize Events = count(), Devices = dcount(DeviceId)
+    by InitiatingProcessFileName, Ext = tolower(extract(@"\.([^.\\/]+)$", 1, FileName))
+| sort by Events desc</code></pre>
+            <p>
                 The KQL hunt has been parse-checked with the Kusto language service but has never run against a
                 Defender XDR tenant, and the Claims Ledger marks its claims as not executed. None of the three
                 detections has been run against a sensor capture on any OS, and on Windows the process names, the
@@ -1177,6 +1197,7 @@ union CredentialReads, Pairs
                 <li><a href="https://devin.ai/blog/windsurf-is-now-devin-desktop" target="_blank" rel="noopener">Devin - Windsurf is now Devin Desktop</a>, <a href="https://docs.devin.ai/desktop/terminal" target="_blank" rel="noopener">Devin Desktop docs - Terminal</a>, <a href="https://docs.devin.ai/desktop/changelog.md" target="_blank" rel="noopener">Devin Desktop changelog</a> and <a href="https://docs.devin.ai/cli/reference/commands.md" target="_blank" rel="noopener">Devin CLI commands</a>, and the <a href="https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt/pool/main/w/windsurf/Windsurf-linux-x64-2.3.15.deb" target="_blank" rel="noopener">Windsurf 2.3.15</a> and <a href="https://windsurf-stable.codeiumdata.com/wVxQEIWkwPUEAGf3/apt/pool/main/d/devin-desktop/Devin-linux-x64-3.11.228.deb" target="_blank" rel="noopener">Devin Desktop 3.11.228</a> Linux packages, read 2026-10-27</li>
                 <li><a href="https://github.com/SigmaHQ/sigma-specification/blob/main/specification/sigma-appendix-taxonomy.md" target="_blank" rel="noopener">Sigma specification - Taxonomy appendix</a></li>
                 <li><a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table" target="_blank" rel="noopener">Microsoft Learn - DeviceProcessEvents table</a> and <a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicefileevents-table" target="_blank" rel="noopener">DeviceFileEvents table</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceevents-table" target="_blank" rel="noopener">Microsoft Learn - DeviceEvents table</a> (ActionType values are listed only in the Defender portal's built-in schema reference)</li>
                 <li><a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon" target="_blank" rel="noopener">Microsoft Sysinternals - Sysmon</a></li>
                 <li><a href="https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/" target="_blank" rel="noopener">Embrace The Red - GitHub Copilot remote code execution via prompt injection (CVE-2025-53773)</a></li>
                 <li><a href="https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm" target="_blank" rel="noopener">Cursor - GHSA-4cxx-hrm3-49rm (CVE-2025-54135)</a></li>

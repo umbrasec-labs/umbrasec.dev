@@ -7,7 +7,7 @@
       "nav_title": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "category": "ai",
       "date": "2026-10-26",
-      "updated": "2026-10-27",
+      "updated": "2026-10-28",
       "read_min": 18,
       "home_blurb": "An AI coding agent runs commands with a developer's access, so whoever steers it borrows that access. Malware has launched agent CLIs with their permission prompts off, and planted text has turned auto-approve into a hole. This article ships three detections for it and says plainly which agents they see and which they cannot.",
       "card_blurb": "How malware and planted prompts turn an AI coding agent into a confused deputy, from Nx s1ngularity and Amazon Q for VS Code 1.84.0 to the Roo Code auto-approve bypasses. What each kind of agent leaves in endpoint logs, and three detections that ship with the article: two Sigma rules and a Defender XDR hunt, each with its limits stated.",
