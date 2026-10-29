@@ -225,7 +225,7 @@ many ransomware operators share, so a match says "look now", not "this is SafePa
 
 | Rule | What it catches | Level |
 |---|---|---|
-| [`rules/windows/ransomware-inhibit-recovery-native-utilities.yml`](rules/windows/ransomware-inhibit-recovery-native-utilities.yml) | `vssadmin` / `wmic` deleting shadow copies, `wbadmin delete catalog`, or `bcdedit` set to ignore boot failures or to disable automatic recovery - including renamed copies of the utilities | high |
+| [`rules/windows/ransomware-inhibit-recovery-native-utilities.yml`](rules/windows/ransomware-inhibit-recovery-native-utilities.yml) | `vssadmin` / `wmic` deleting shadow copies, `wbadmin delete catalog`, `delete backup` or `delete systemstatebackup`, or `bcdedit` set to ignore boot failures or to disable automatic recovery - including renamed copies of the utilities | high |
 | [`rules/windows/defender-tamper-systemsettingsadminflows.yml`](rules/windows/defender-tamper-systemsettingsadminflows.yml) | `SystemSettingsAdminFlows.exe` run with a Defender argument by anything other than the Settings app - the INC Ransom Defender switch-off Huntress documented | medium |
 | [`rules/windows/archiver-admin-share-collection.yml`](rules/windows/archiver-admin-share-collection.yml) | WinRAR, RAR or 7-Zip creating or adding to an archive with a `C$` to `F$` admin share on the command line | medium |
 | [`rules/windows/rclone-transfer-to-remote.yml`](rules/windows/rclone-transfer-to-remote.yml) | rclone, renamed or not, started with a command that writes to a destination (`copy`, `sync`, `move`, `rcat`, `archive create` and the rest) | medium |

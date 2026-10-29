@@ -4,35 +4,50 @@ status: experimental
 description: >
     A built-in Windows utility was run with the arguments that remove a
     host's ability to roll back: vssadmin or wmic deleting Volume Shadow
-    Copies, wbadmin deleting the local backup catalog, or bcdedit telling
-    the boot loader to ignore boot failures or to disable automatic
-    recovery, either of which stops Windows failing over to recovery after
-    a failed boot. Ransomware runs this housekeeping just before or while it
-    encrypts, so a match is a reason to isolate the host, not to wait for
-    the ransom note. Acronis TRU found that SafePay samples started with the
-    -uac flag use CMSTPLUA COM elevation to run the vssadmin, wmic and both
-    bcdedit commands as "/c" command strings via ShellExecuteW, and the
-    joint advisory CISA AA26-293A (October 2026) reports SafePay inhibiting
-    system recovery. The wbadmin selection is generic T1490 coverage from
-    ATT&CK, not a SafePay observation. Each selection needs the utility
-    itself (by Image, or by OriginalFileName so renamed copies are caught),
-    so the parent shell that launches it does not fire a second time.
+    Copies, wbadmin deleting the local backup catalog or the backups
+    themselves, or bcdedit telling the boot loader to ignore boot failures
+    or to disable automatic recovery, either of which stops Windows failing
+    over to recovery after a failed boot. Ransomware runs this housekeeping
+    just before or while it encrypts, so a match is a reason to isolate the
+    host, not to wait for the ransom note. Acronis TRU found that SafePay
+    samples started with the -uac flag use CMSTPLUA COM elevation to run the
+    vssadmin, wmic and both bcdedit commands as "/c" command strings via
+    ShellExecuteW, and the joint advisory CISA AA26-293A (October 2026)
+    reports SafePay inhibiting system recovery. The wbadmin selection is not
+    a SafePay observation: ATT&CK gives delete catalog for T1490, LockBit,
+    Avaddon and Ranzy reports give delete systemstatebackup, and a public
+    Security 4688 sample shows delete backup -deleteOldest. The wbadmin
+    check matches "delete" with "backup" or "catalog" as substrings, so it
+    covers delete systemstatebackup as well as delete backup. Any other
+    wbadmin command line that has "delete" anywhere in it, for example in a
+    path, also fires if it contains "backup" (the start backup, enable
+    backup and start systemstatebackup verbs, or a -backupTarget switch) or
+    "catalog" (restore catalog). Each
+    selection needs the utility itself (by Image, or by OriginalFileName so
+    renamed copies are caught), so the parent shell that launches it does
+    not fire a second time.
     The vssadmin check matches "delete" and "shadows" as substrings, so a
     vssadmin delete shadowstorage command line also fires.
-    Limitation: this sees command lines only. Deleting shadow copies
-    through the VSS API or by stopping the VSS service creates no matching
-    process, and CISA reports SafePay halting the Volume Shadow Copy
-    Service, so pair this with a service-state rule. Acronis does not
-    document these commands for SafePay runs without -uac. PowerShell
-    Win32_ShadowCopy deletion, diskshadow script mode, vssadmin resize
-    shadowstorage, reagentc /disable, wbadmin delete backup or
-    systemstatebackup, and NAS backup resets are also outside this rule.
+    Limitation: this sees command lines only. Deleting shadow copies through
+    the VSS API or by stopping the VSS service creates no matching process,
+    and CISA reports SafePay halting the Volume Shadow Copy Service, so pair
+    this with a service-state rule. Acronis does not document these commands
+    for SafePay runs without -uac. PowerShell Win32_ShadowCopy deletion,
+    diskshadow script mode, vssadmin resize shadowstorage, reagentc
+    /disable, Remove-WBBackupSet in PowerShell, and NAS backup resets are
+    also outside this rule.
 references:
     - https://attack.mitre.org/techniques/T1490/
     - https://www.acronis.com/en/tru/posts/safepay-ransomware-the-fast-rising-threat-targeting-msps/
     - https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-293a
     - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/vssadmin-delete-shadows
     - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wbadmin-delete-catalog
+    - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wbadmin-delete-systemstatebackup
+    - https://learn.microsoft.com/en-us/powershell/module/windowsserverbackup/remove-wbbackupset
+    - https://www.sentinelone.com/labs/ranzy-ransomware-better-encryption-among-new-features-of-thunderx-derivative/
+    - https://github.com/albertzsigovits/malware-notes/blob/558898932c1579ff589290092a2c8febefc3a4c9/Ransomware/Lockbit.md
+    - https://www.trendaisecurity.com/en-us/resources-insights/deep-research/ransomware-report-avaddon-and-new-techniques-emerge-industrial-sector-targeted
+    - https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack
     - https://learn.microsoft.com/en-us/azure/virtual-machines/windows/prepare-for-upload-vhd-image
     - https://umbrasec.dev/research/safepay-australian-smb.html
 author: UMBRASEC
@@ -63,9 +78,17 @@ detection:
         - Image|endswith: '\wbadmin.exe'
         - OriginalFileName: 'WBADMIN.EXE'
     selection_wbadmin_cli:
-        CommandLine|contains|all:
-            - 'delete'
-            - 'catalog'
+        # One item per target, like the bcdedit block. "backup" also
+        # matches "systemstatebackup" on purpose, but it also sits in the
+        # start backup, enable backup and start systemstatebackup verbs
+        # and the -backupTarget switch, and "catalog" in restore catalog,
+        # so "delete" in a path on those lines fires too.
+        - CommandLine|contains|all:
+              - 'delete'
+              - 'catalog'
+        - CommandLine|contains|all:
+              - 'delete'
+              - 'backup'
     selection_bcdedit_img:
         - Image|endswith: '\bcdedit.exe'
         - OriginalFileName: 'bcdedit.exe'
@@ -102,6 +125,20 @@ falsepositives:
       /for= and the account that ran it
     - An administrator running wbadmin delete catalog because the backup
       catalog is corrupted, the use Microsoft documents for that command
+    - An administrator or a scheduled script running wbadmin delete backup
+      or delete systemstatebackup to keep only the latest backups. The
+      system state examples Microsoft documents are -keepVersions:3 and a
+      line with -backupTarget:f:\ -deleteOldest, and that -deleteOldest
+      switch is also in the LockBit, Avaddon and Ranzy command lines, so
+      the switch does not tell them apart. The switch -keepVersions:0
+      deletes every system state backup. The rule stays at high, and a
+      scheduled retention task with -keepVersions:N (N above 0) fires at
+      high on every run, so tune it out first. None of the cited attack
+      command lines uses -keepVersions above 0. Allowlist that task by its
+      exact CommandLine (the -keepVersions:N value and -backupTarget volume
+      it uses) together with the User and the script or task that runs it.
+      Never allowlist -deleteOldest, a bare delete systemstatebackup or
+      -keepVersions:0 by command line, because those are the attacker forms
     - Backup or imaging software whose agent runs vssadmin delete shadows to
       clean up its own snapshots. Allowlist that agent by ParentImage, not by
       command line
