@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-06-10">
-    <meta property="article:modified_time" content="2026-10-25">
+    <meta property="article:modified_time" content="2026-10-29">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="Detection Engineering">
     <meta property="article:tag" content="Kerberoasting">
@@ -34,7 +34,7 @@
       "headline": "Detecting Kerberoasting: A Practical Walkthrough with Sigma",
       "description": "A defender-focused walkthrough of Kerberoasting (MITRE ATT&CK T1558.003): how it works, why RC4 service tickets expose it, and Sigma rules with tuning notes you can run against your own logs.",
       "datePublished": "2026-06-10",
-      "dateModified": "2026-10-25",
+      "dateModified": "2026-10-29",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -225,7 +225,7 @@
                     <tbody>
                         <tr><td><code>TicketEncryptionType</code></td><td><code>0x17</code> = RC4 (the downgrade signal). <code>0x12</code> = AES-256, <code>0x11</code> = AES-128.</td></tr>
                         <tr><td><code>ServiceName</code> / <code>ServiceSid</code></td><td>The account whose ticket was requested - i.e. the roast target. Names ending in <code>$</code> are computer accounts (usually benign).</td></tr>
-                        <tr><td><code>TargetUserName</code> / Account Name</td><td>The principal that <em>made</em> the request - the account you'd investigate.</td></tr>
+                        <tr><td><code>TargetUserName</code> / Account Name</td><td>The principal that <em>made</em> the request - the account you'd investigate. Windows writes it as <code>name@REALM</code>, so a computer account shows as <code>HOST$@REALM</code>.</td></tr>
                         <tr><td><code>TicketOptions</code></td><td>Roasting tools often produce recognizable option flags (commonly <code>0x40810000</code>), though this varies and shouldn't be relied on alone.</td></tr>
                         <tr><td><code>Status</code></td><td><code>0x0</code> = the ticket was successfully issued.</td></tr>
                     </tbody>
@@ -308,10 +308,12 @@ description: >
     window - consistent with bulk Kerberoasting enumeration.
 references:
     - https://attack.mitre.org/techniques/T1558/003/
+    - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769
+    - https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack
     - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
-modified: 2026-10-25
+modified: 2026-10-29
 tags:
     - attack.credential-access
     - attack.t1558.003
@@ -340,9 +342,21 @@ detection:
     selection:
         EventID: 4769
         Status: '0x0'
+    # Requests from computer accounts. Windows writes the requester as
+    # name@REALM, so a computer account shows as HOST$@REALM (Microsoft's
+    # event 4769 reference, and the public EVTX-to-MITRE-Attack samples);
+    # the bare $ ending is kept for sensors that strip the realm.
     filter_machine:
-        TargetUserName|endswith: '$'
-    condition: selection and not filter_machine</code></pre>
+        - TargetUserName|endswith: '$'
+        - TargetUserName|contains: '$@'
+    # Tickets for computer accounts and krbtgt, the same filters as the RC4
+    # rule: a burst of host tickets (BloodHound host enumeration in the
+    # EVTX-to-MITRE-Attack samples) is not Kerberoasting of service accounts.
+    filter_machine_service:
+        ServiceName|endswith: '$'
+    filter_krbtgt:
+        ServiceName: 'krbtgt'
+    condition: selection and not 1 of filter_*</code></pre>
             <p>
                 Updated 2026-10-23: the correlation rule now carries a <code>falsepositives</code> list - vulnerability
                 scanners and monitoring accounts, and busy legitimate accounts above the default threshold - taken from
@@ -352,6 +366,19 @@ detection:
                 Updated 2026-10-25: the correlation rule now sets <code>level: medium</code>, the RC4 rule above ships
                 with its <code>TicketOptions</code> constraint off, and the honeypot rule below drops
                 <code>attack.deception</code>, which is not an ATT&amp;CK tactic tag.
+            </p>
+            <p>
+                Updated 2026-10-29: the base rule's computer-account filter now matches what Windows writes. Event 4769
+                records the requester as <code>name@REALM</code>, so a computer account is <code>HOST$@REALM</code>
+                (<a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769" target="_blank" rel="noopener">Microsoft's event 4769 reference</a>)
+                and the old ends-in-<code>$</code> filter never matched a 4769 event as Windows writes it; it now
+                also drops a requester that contains <code>$@</code>. The base rule also drops tickets <em>for</em> computer accounts and <code>krbtgt</code>,
+                like the RC4 rule above. In the public
+                <a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack" target="_blank" rel="noopener">EVTX-to-MITRE-Attack</a>
+                samples, a BloodHound host-enumeration run from a user account asked for 17 distinct service names in
+                one minute, all computer accounts or <code>krbtgt</code>, and tripped the old rule; it is not
+                Kerberoasting of service accounts, and the rule no longer fires on it. The RC4 roast in the same
+                sample set still reaches the base rule.
             </p>
             <p>
                 The <code>gte: 15</code> threshold and <code>5m</code> window are starting points, not gospel. Run it in

@@ -115,3 +115,14 @@ engines cut the snippet there; aim for about 155, and `og:description` and
 prints the new hash), when a sigma-pack `rules/**/*.yml` or
 `queries/**/*.kql` file has no row in the ATT&CK table, or when a table row
 points at a file that doesn't exist.
+
+It also exits 1 when a sigma-pack rule's `detection` map, or one list item of
+it, names the same field twice, such as `CommandLine|contains` next to
+`CommandLine|endswith`. Sigma allows that and sigma-cli passes it, but Chainsaw
+refuses to load the rule ("No valid detection rules were found"). Split it
+instead: one list item per value with the shared string under `|contains|all`,
+or two selections joined in the `condition`. The scan reads the `detection:`
+block of each YAML document line by line, so it needs no YAML library. It sees
+block-style, unquoted keys only: a quoted key (`'CommandLine|contains':`) or a
+flow-style map (`{CommandLine|contains: a, CommandLine|endswith: b}`) is not
+checked, so write detection maps in the pack's usual block style.
