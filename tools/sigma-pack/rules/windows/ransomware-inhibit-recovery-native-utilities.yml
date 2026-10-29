@@ -37,6 +37,7 @@ references:
     - https://umbrasec.dev/research/safepay-australian-smb.html
 author: UMBRASEC
 date: 2026-10-25
+modified: 2026-10-29
 tags:
     - attack.impact
     - attack.t1490
@@ -73,15 +74,23 @@ detection:
         # SafePay command as "bcdedit / set{default}", so spacing varies.
         # Microsoft's Azure image steps write the value as Off, and a quoted
         # value has a quote before it instead of a space.
+        # The recoveryenabled check is one item per value, each with
+        # recoveryenabled, rather than one item with CommandLine twice:
+        # Chainsaw cannot load a detection map that names one field twice.
         - CommandLine|contains|all:
               - 'bootstatuspolicy'
               - 'ignoreallfailures'
         - CommandLine|contains|all:
               - 'recoveryenabled'
-          CommandLine|contains:
               - ' no'
+        - CommandLine|contains|all:
+              - 'recoveryenabled'
               - ' off'
+        - CommandLine|contains|all:
+              - 'recoveryenabled'
               - '"no'
+        - CommandLine|contains|all:
+              - 'recoveryenabled'
               - '"off'
     condition: all of selection_vssadmin_* or all of selection_wmic_* or all of selection_wbadmin_* or all of selection_bcdedit_*
 falsepositives:

@@ -27,7 +27,8 @@ Usage:
 The --check mode writes nothing; it just fails if the committed files don't match
 what the manifest would produce. That's what the pre-commit hook runs. It also
 fails when a site page's meta description is missing or longer than 160
-characters (decoded text).
+characters (decoded text), and when a sigma-pack rule's detection map (or one
+list item of it) names the same field twice, which Chainsaw cannot load.
 """
 
 import argparse
@@ -299,6 +300,54 @@ def find_sigma_problems(rows):
     unlisted = sorted(sigma_files_on_disk() - listed)
     missing = sorted(p for p in listed if not (SIGMA_DIR / p).exists())
     return unlisted, missing
+
+
+# Chainsaw refuses to load a rule whose detection map names one field twice
+# with different modifiers (CommandLine|contains next to CommandLine|endswith in
+# one selection, or in one list item of a selection): it prints "No valid
+# detection rules were found". Sigma allows it, so sigma-cli does not catch it.
+# The scan is line based, stdlib only (the hook runs the system python3), and
+# reads only the detection: block of each YAML document in rules/**/*.yml.
+# It sees block-style, unquoted keys only; quoted keys and flow-style maps
+# ({a: 1, b: 2}) are not checked (none in the pack; see the README).
+_DET_KEY_RE = re.compile(r"^(?P<indent> *)(?P<dash>- +)?(?P<key>[A-Za-z0-9_.-]+(?:\|[A-Za-z0-9_|]+)?)\s*:(?:\s|$)")
+
+
+def repeated_field_problems():
+    """(rule path, line number, field) for each map that names a field twice."""
+    out = []
+    for path in sorted(SIGMA_DIR.glob("rules/**/*.yml")):
+        rel = str(path.relative_to(SIGMA_DIR)).replace("\\", "/")
+        in_det = False
+        stack = []  # (key column, {field: first line})
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if line.startswith("---"):
+                in_det, stack = False, []
+                continue
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            if not line.startswith((" ", "-")):
+                in_det, stack = line.startswith("detection:"), []
+                continue
+            if not in_det:
+                continue
+            m = _DET_KEY_RE.match(line)
+            if not m:
+                continue
+            col = len(m.group("indent")) + len(m.group("dash") or "")
+            while stack and stack[-1][0] > col:
+                stack.pop()
+            if m.group("dash") or not stack or stack[-1][0] != col:
+                if stack and stack[-1][0] == col:
+                    stack.pop()  # a new list item starts a new map
+                stack.append((col, {}))
+            field = m.group("key").split("|", 1)[0]
+            seen = stack[-1][1]
+            if field in seen:
+                out.append((rel, n, field))
+            else:
+                seen[field] = n
+    return out
 
 
 def md_cell_to_html(cell: str) -> str:
@@ -612,6 +661,7 @@ def build(check: bool, list_drift: bool = False) -> int:
 
     orphans = find_orphans(articles)
     sigma_unlisted, sigma_missing = find_sigma_problems(sigma_rows)
+    repeated_fields = repeated_field_problems()
     # every page needs the skip link and the <main> landmark it targets; a new
     # page copied from an old template would silently drop them
     no_main = [rel for rel in site_pages() + ["404.html"]
@@ -640,6 +690,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in sigma_missing:
                 print(f"  - {rel}")
             print("\nFix the path in tools/sigma-pack/README.md, or remove the row.")
+            problems = True
+        if repeated_fields:
+            print("site-build: SIGMA - a detection map names one field twice (Chainsaw will not load the rule):")
+            for rel, n, field in repeated_fields:
+                print(f"  - {rel}:{n}: {field}")
+            print("\nSplit it into list items or separate selections joined in the condition (see tools/site-build/README.md).")
             problems = True
         if no_main:
             print("site-build: MISSING - pages without the skip link or <main id=\"main\">:")
@@ -699,6 +755,11 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in items:
                 print(f"  - {rel}")
             print(f"{fix} in tools/sigma-pack/README.md; the hook will fail while this stands.")
+    if repeated_fields:
+        print("site-build: WARNING - a detection map names one field twice (Chainsaw will not load the rule):")
+        for rel, n, field in repeated_fields:
+            print(f"  - {rel}:{n}: {field}")
+        print("Split it; the hook will fail while this stands.")
     return 0
 
 

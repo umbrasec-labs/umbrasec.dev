@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-10-26">
-    <meta property="article:modified_time" content="2026-10-28">
+    <meta property="article:modified_time" content="2026-10-29">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="AI &amp; LLM Security">
     <meta property="article:tag" content="AI coding agents">
@@ -36,7 +36,7 @@
       "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "description": "Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a VS Code terminal hunt, and what logs miss.",
       "datePublished": "2026-10-26",
-      "dateModified": "2026-10-28",
+      "dateModified": "2026-10-29",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -117,6 +117,13 @@
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships three detections for it, with their limits stated.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-10-29: Detection 2 drops the two wrapper rows that Claude Code's Linux sandbox
+                (bubblewrap) adds to each command. They list the paths the sandbox masks, and in the capture those
+                included <code>.git-credentials</code>, so they fired on harmless commands such as
+                <code>uname -s</code>; the command itself is still matched on the
+                inner shell row. Seen in a local strace capture of Claude Code 2.1.312.
             </p>
             <p class="mt-4 text-sm text-[#959c95]">
                 Updated 2026-10-28: Honest limitations now covers Defender's <code>SensitiveFileRead</code> event,
@@ -562,6 +569,20 @@ level: high</code></pre>
                 parent.
             </p>
             <p>
+                Claude Code's own sandbox needs a filter. With it on (Linux, bubblewrap), each command also starts two
+                wrapper rows, <code>/bin/sh -c bwrap --new-session --die-with-parent ...</code> under the
+                <code>claude</code> binary and <code>bwrap --new-session --die-with-parent ...</code> under that shell.
+                Their command lines list the paths the sandbox masks, which follow its deny-read settings. In the
+                capture that list named <code>.git-credentials</code>, a string the rule lists, so without a filter
+                they fired on every sandboxed command. They also name <code>curl</code>, in
+                <code>CURL_CA_BUNDLE</code>, which alone does not fire the rule. The rule drops a row that
+                starts with either form and also carries the sandbox runtime's marker,
+                <code>--setenv SANDBOX_RUNTIME 1</code>. The command itself is still matched on the inner shell row,
+                which carries the <code>shell-snapshots</code> wrapper and the command text, and on the outer
+                <code>zsh</code> row that starts the sandbox's proxies, which carries the same text. These shapes come
+                from a local strace capture of Claude Code 2.1.312 on Linux, not from documentation.
+            </p>
+            <p>
                 Cursor needs its own explanation. On macOS and Linux the Cursor CLI and IDE agent hand each command to
                 a bash or zsh wrapper shell on a file descriptor, not on its command line, so the rule sees only what
                 the command starts, as a child of that wrapper (inferred). The wrapper shell expands the command first,
@@ -635,8 +656,28 @@ description: &gt;
     Claude Code's shell-snapshots/snapshot- file, matched with / or \
     separators. The Claude Code wrapper is a local observation of Claude Code
     2.1.310 on Linux, not a documented interface, and can change in any
-    release. Three more wrapper strings are read in shipped code: the Copilot
-    CLI's PowerShell wrapper variable __copilotCommandFinished;
+    release. With Claude Code's sandbox on (Linux, bubblewrap), each command
+    also starts two wrapper rows: /bin/sh -c bwrap --new-session
+    --die-with-parent ... under the claude binary, and bwrap --new-session
+    --die-with-parent ... under that shell. Their command lines list the
+    paths the sandbox masks, which follow its deny-read settings; in the
+    capture that list named .git-credentials, a string the rule lists, so
+    they fired on any command, even uname -s. They also name curl, in
+    CURL_CA_BUNDLE, which alone does not fire the rule. The rule drops a row
+    whose command line starts with either form and also sets SANDBOX_RUNTIME 1, the
+    sandbox runtime's own marker, so another sandbox that starts bwrap with
+    the same flags is not dropped. The command itself still reaches the rule
+    on the inner shell row, which carries the shell-snapshots wrapper and the
+    command text, and on the outer zsh row that starts the sandbox's socat
+    proxies and then the inner shell, which carries the same text. Both shapes
+    are a local observation of Claude Code 2.1.312 on Linux (a strace capture,
+    not a sensor). A command that itself starts with bwrap --new-session
+    --die-with-parent and sets SANDBOX_RUNTIME 1 is dropped on that row as
+    well. On macOS the sandbox uses another wrapper, sandbox-exec; its rows
+    were not captured, so whether they fire the same way is a guess, and this
+    filter does not drop them. Three more wrapper strings are read in shipped
+    code: the Copilot CLI's PowerShell wrapper variable
+    __copilotCommandFinished;
     CURSOR_STATE_INPUT_FILE, from the Cursor wrapper on Windows Git Bash,
     where the command follows -- on the same line; and
     WINDSURF_STATE_MISSING=0, from the legacy Windsurf Cascade dedicated
@@ -743,7 +784,7 @@ references:
     - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
 author: UMBRASEC
 date: 2026-10-26
-modified: 2026-10-27
+modified: 2026-10-29
 tags:
     - attack.execution
     - attack.t1059
@@ -825,8 +866,15 @@ detection:
         - CommandLine|contains|all:
               - '/proc/'
               - "/environ)"
-        - CommandLine|contains: '/proc/'
-          CommandLine|endswith: '/environ'
+    # /proc/ with /environ at the end of the line is split into proc_any and
+    # environ_end, joined in the condition: Chainsaw cannot load a detection
+    # map that names one field twice (CommandLine|contains and
+    # CommandLine|endswith). Neither name starts with risk_, so 1 of risk_*
+    # does not pick one up alone.
+    proc_any:
+        CommandLine|contains: '/proc/'
+    environ_end:
+        CommandLine|endswith: '/environ'
     risk_substitution:
         CommandLine|contains:
             - '-c "$(curl'
@@ -935,7 +983,16 @@ detection:
               - "|zsh"
               - "| sudo sh"
               - "| sudo bash"
-    condition: (1 of agent_* or (copilot_parent and not filter_ms_copilot_app)) and (1 of risk_* or (dl_tool and dl_exec))
+    # Claude Code's Linux sandbox wrapper rows (see the description): the
+    # command reaches the rule on the inner shell row instead. Two selections
+    # joined in the condition, not one map, so Chainsaw can load the rule.
+    filter_claude_sandbox_wrapper:
+        CommandLine|startswith:
+            - 'bwrap --new-session --die-with-parent'
+            - '/bin/sh -c bwrap --new-session --die-with-parent'
+    filter_claude_sandbox_runtime:
+        CommandLine|contains: '--setenv SANDBOX_RUNTIME 1'
+    condition: (1 of agent_* or (copilot_parent and not filter_ms_copilot_app)) and (1 of risk_* or (proc_any and environ_end) or (dl_tool and dl_exec)) and not (filter_claude_sandbox_wrapper and filter_claude_sandbox_runtime)
 falsepositives:
     - Commands that create, use or print an SSH key under .ssh, such as
       ssh-keygen -f ~/.ssh/id_ed25519, ssh -i with a key file, or reading a
@@ -1140,6 +1197,13 @@ union CredentialReads, Pairs
                 documentation, so no vendor commitment keeps it stable.
             </p>
             <p>
+                Detection 2's filter for Claude Code's Linux sandbox drops a row that starts with
+                <code>bwrap --new-session --die-with-parent</code> (on its own or after <code>/bin/sh -c</code>) and
+                sets <code>SANDBOX_RUNTIME 1</code>, so a hijacked command that itself starts that way is not seen on
+                that row. On macOS the sandbox uses another wrapper, <code>sandbox-exec</code>, which has not been
+                captured; whether its rows fire on harmless commands the same way is a guess.
+            </p>
+            <p>
                 Credential access is seen only when a credential file or token command is named on a command line.
                 An agent that reads a file through its own built-in tool starts no process at all, and Sysmon has no
                 event for a file read. Detection 3 cannot tell an agent from the developer typing in the same terminal,
@@ -1164,7 +1228,8 @@ union CredentialReads, Pairs
             <p>
                 The KQL hunt has been parse-checked with the Kusto language service but has never run against a
                 Defender XDR tenant, and the Claims Ledger marks its claims as not executed. None of the three
-                detections has been run against a sensor capture on any OS, and on Windows the process names, the
+                detections has been run against a sensor capture on any OS (Detection 2's Claude Code sandbox rows
+                come from a local strace capture on Linux, not a sensor), and on Windows the process names, the
                 Git Bash process tree and the quoted path PowerShell records for a native program come from source
                 code, public issue reports and inference. Both Sigma rules pass their claims on synthetic events
                 built from the cited sources, which proves the rule logic, not your sensor's field names or formats.

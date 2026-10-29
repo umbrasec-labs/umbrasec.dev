@@ -7,10 +7,12 @@ description: >
     window - consistent with bulk Kerberoasting enumeration.
 references:
     - https://attack.mitre.org/techniques/T1558/003/
+    - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769
+    - https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack
     - https://umbrasec.dev/research/detecting-kerberoasting.html
 author: UMBRASEC
 date: 2026-06-10
-modified: 2026-10-25
+modified: 2026-10-29
 tags:
     - attack.credential-access
     - attack.t1558.003
@@ -39,6 +41,18 @@ detection:
     selection:
         EventID: 4769
         Status: '0x0'
+    # Requests from computer accounts. Windows writes the requester as
+    # name@REALM, so a computer account shows as HOST$@REALM (Microsoft's
+    # event 4769 reference, and the public EVTX-to-MITRE-Attack samples);
+    # the bare $ ending is kept for sensors that strip the realm.
     filter_machine:
-        TargetUserName|endswith: '$'
-    condition: selection and not filter_machine
+        - TargetUserName|endswith: '$'
+        - TargetUserName|contains: '$@'
+    # Tickets for computer accounts and krbtgt, the same filters as the RC4
+    # rule: a burst of host tickets (BloodHound host enumeration in the
+    # EVTX-to-MITRE-Attack samples) is not Kerberoasting of service accounts.
+    filter_machine_service:
+        ServiceName|endswith: '$'
+    filter_krbtgt:
+        ServiceName: 'krbtgt'
+    condition: selection and not 1 of filter_*
