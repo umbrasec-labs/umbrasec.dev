@@ -7,5 +7,7 @@
 /services       /about  301
 /services.html  /about  301
 /services/      /about  301
+# The editor terminal hunt was renamed when it grew into the all agent shells hunt.
+/tools/sigma-pack/queries/kql/editor-terminal-risky-command.kql  /tools/sigma-pack/queries/kql/all-agent-shells-risky-command.kql  301
 # Splat rules (keep below every static rule).
 /tools/blue-team-mapper/*  https://umbrasec-labs.github.io/BlueTeamMapper/  301

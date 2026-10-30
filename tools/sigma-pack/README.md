@@ -47,7 +47,7 @@ sigma check tools/sigma-pack/rules/
 | [`remote-access-tool-service-install.yml`](rules/windows/remote-access-tool-service-install.yml) | Sigma | [T1219.002](https://attack.mitre.org/techniques/T1219/002/) Remote Desktop Software; [T1543.003](https://attack.mitre.org/techniques/T1543/003/) Windows Service | Command &amp; Control / Persistence | experimental |
 | [`ai-agent-cli-headless-approval-bypass.yml`](rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml) | Sigma | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting | Execution | experimental |
 | [`ai-agent-shell-risky-command.yml`](rules/cross-platform/ai-agent-shell-risky-command.yml) | Sigma | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting; [T1698](https://attack.mitre.org/techniques/T1698/) Indirect Prompt Injection; [T1552.001](https://attack.mitre.org/techniques/T1552/001/) Credentials In Files; [T1105](https://attack.mitre.org/techniques/T1105/) Ingress Tool Transfer | Execution / Credential Access / Command &amp; Control | experimental |
-| [`editor-terminal-risky-command.kql`](queries/kql/editor-terminal-risky-command.kql) | KQL | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting; [T1552.001](https://attack.mitre.org/techniques/T1552/001/) Credentials In Files; [T1105](https://attack.mitre.org/techniques/T1105/) Ingress Tool Transfer | Execution / Credential Access / Command &amp; Control | query |
+| [`all-agent-shells-risky-command.kql`](queries/kql/all-agent-shells-risky-command.kql) | KQL | [T1059](https://attack.mitre.org/techniques/T1059/) Command &amp; Scripting; [T1552.001](https://attack.mitre.org/techniques/T1552/001/) Credentials In Files; [T1105](https://attack.mitre.org/techniques/T1105/) Ingress Tool Transfer | Execution / Credential Access / Command &amp; Control | query |
 
 `experimental` is the [Sigma status](https://sigmahq.io/docs/basics/rules.html) the
 rules themselves declare - new rules, not yet battle-tested by many environments.
@@ -254,7 +254,7 @@ Writeup: [What a Hijacked AI Coding Agent Leaves in Your Logs](https://umbrasec.
 |---|---|---|
 | [`rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml`](rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml) | Claude Code, Gemini CLI, Codex CLI, GitHub Copilot CLI, Amazon Q Developer CLI, Cursor CLI or Devin CLI started headless with its permission prompts switched off - the shape of the Nx "s1ngularity" packages and Amazon Q for VS Code 1.84.0 (CVE-2025-8217). Codex is matched on `--dangerously-bypass-approvals-and-sandbox` and its `--yolo` alias; Copilot also on a bare `--allow-tool` shell grant, with `-p` last or `--acp` as headless markers; the Cursor CLI (node from a `cursor-agent` folder) on `--force`, `-f` or `--yolo` with no headless flag; the Devin CLI on `--permission-mode dangerous`, `yolo` or `bypass`. A Copilot run with only `--allow-all-tools` or `COPILOT_ALLOW_ALL`, Cursor's `approvalMode` config, `DEVIN_PERMISSION_MODE`, Gemini's `-y` under node and a Gemini positional prompt are not covered | high |
 | [`rules/cross-platform/ai-agent-shell-risky-command.yml`](rules/cross-platform/ai-agent-shell-risky-command.yml) | A shell started by a coding agent (Claude Code, Codex, Kilo Code, Amazon Q Developer CLI, GitHub Copilot CLI or a `cursor-agent` folder process as parent; Claude Code, Gemini CLI, Kilo Code, Copilot CLI, Cursor Git Bash or legacy Windsurf Cascade wrapper on the command line; a Cursor CLI or IDE agent wrapper on the parent command line; or any VS Code extension spawning a shell directly from the extension host) that names a credential file or token source, pipes a download into an interpreter, runs a download through command substitution, or builds a DNS lookup from a command substitution. A `.env` read, a download saved and run later or captured into a variable, a Codex, Kilo Code or Copilot CLI shell behind a sandbox hop (parent branch), a plain pipe or substitution under a Cursor wrapper, Cursor's default PowerShell executor on Windows, Devin Desktop and the Devin CLI, VS Code Insiders, the Copilot harness in VS Code (not a listed parent) and agents that type into the integrated terminal are not covered | high |
-| [`queries/kql/editor-terminal-risky-command.kql`](queries/kql/editor-terminal-risky-command.kql) | KQL over Defender XDR `DeviceProcessEvents`: a hunt over commands run in a VS Code terminal (where GitHub Copilot under its Local harness, Cline's default and Roo Code's terminal mode type) or in a shell of the Copilot harness under `copilot-runtime`, with a `Source` column, that name a credential source, or a download tool followed within 60 seconds by an interpreter in the same shell. It cannot tell an agent from a person. As shipped the terminal source covers PowerShell terminals in VS Code on Windows; cmd.exe terminals get no marker, the Git Bash process tree and the Linux and macOS editor names are not confirmed, zsh terminals carry no marker, and in-process PowerShell cmdlets start no process | query |
+| [`queries/kql/all-agent-shells-risky-command.kql`](queries/kql/all-agent-shells-risky-command.kql) | KQL over Defender XDR `DeviceProcessEvents`: a hunt over the programs started by an AI coding agent's shell (Cursor, Copilot CLI, Claude Code, Gemini CLI, Kilo Code, the legacy Windsurf terminal, Codex, Amazon Q), a shell of the Copilot harness under `copilot-runtime`, or a VS Code terminal (where GitHub Copilot under its Local harness, Cline's default and Roo Code's terminal mode type), with a `Source` column naming which, that name a credential source, or a download tool followed within 60 seconds by an interpreter in the same shell. It reads one level below the shell rule, so it also sees a Cursor download piped into `sh`, which splits into sibling children, and the native programs of Cursor's Windows PowerShell executor. It cannot tell an agent from a person in a terminal, and a program that replaces its shell (such as a lone command under the Copilot CLI's or Codex's shell) is not seen. As shipped the terminal source covers PowerShell terminals in VS Code on Windows; in-process PowerShell cmdlets start no process | query |
 
 Prerequisite: process-creation telemetry with full command lines (Sysmon Event 1,
 Sysmon for Linux, auditd execve or EDR) from developer machines. The CLI-launch rule
@@ -268,14 +268,22 @@ on Linux, and the extension-host branch matches any extension, not one agent. Tu
 it by allowlisting exact commands per repository or host group, not by dropping a
 branch.
 
-The terminal hunt is for the agents the two rules cannot see. It keeps the children
-of a VS Code terminal shell (grandparent `Code.exe`, shell-integration script on the
-shell's command line) and the children of a shell under `copilot-runtime`, the
-Copilot harness in VS Code (no marker condition; a `Source` column names which), and pairs a download with an interpreter only inside one
-shell. An unrelated interpreter run in the same terminal within the window pairs
-too; that is its main false positive. Add your Linux or macOS editor process name to
-`Editors` once you have checked what your sensor records, and add the file name to
-`RuntimeNames` if `chat.agentHost.copilot.runtimePath` renames the runtime.
+The agent shells hunt reads one level below the shell rule: the programs an agent's
+shell starts, not the shell's own command line. It keeps the children of the shells
+the shell rule knows (by the same wrapper strings, now on the shell's command line as
+seen from its child, or by the shell's parent as a bare file name), of a shell under
+`copilot-runtime`, the Copilot harness in VS Code, and of a VS Code terminal shell
+(grandparent `Code.exe`, shell-integration script on the shell's command line). It
+leaves out the shells an extension starts straight from the extension host (Roo Code's
+default mode), which only the shell rule covers. A
+`Source` column names which, one per row. It pairs a download with an interpreter only
+inside one shell, and most agents start a shell per command, so a download in one
+command and a run in a later one do not pair. An unrelated interpreter run in the same
+shell within the window pairs too, and so does a download piped into a parser such as
+`python3 -m json.tool`; those are its main false positives. Add your Linux or macOS
+editor process name to `Editors` once you have checked what your sensor records, and
+add the file name to `RuntimeNames` if `chat.agentHost.copilot.runtimePath` renames
+the runtime.
 
 ## How to use these
 
