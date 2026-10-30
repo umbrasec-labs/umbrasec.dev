@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC</title>
-    <meta name="description" content="Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a VS Code terminal hunt, and what logs miss.">
+    <meta name="description" content="Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a hunt over agent shells, and what logs miss.">
     <link rel="canonical" href="https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
     <meta property="article:published_time" content="2026-10-26">
-    <meta property="article:modified_time" content="2026-10-29">
+    <meta property="article:modified_time" content="2026-10-30">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="AI &amp; LLM Security">
     <meta property="article:tag" content="AI coding agents">
@@ -34,9 +34,9 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
-      "description": "Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a VS Code terminal hunt, and what logs miss.",
+      "description": "Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a hunt over agent shells, and what logs miss.",
       "datePublished": "2026-10-26",
-      "dateModified": "2026-10-29",
+      "dateModified": "2026-10-30",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -110,13 +110,22 @@
                 <span class="text-[#7d837d]">·</span>
                 <span class="text-[#959c95]">Oct 26, 2026</span>
                 <span class="text-[#7d837d]">·</span>
-                <span class="text-[#959c95]">~18 min</span>
+                <span class="text-[#959c95]">~20 min</span>
             </div>
             <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
                 What a Hijacked AI Coding Agent Leaves in Your Logs
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships three detections for it, with their limits stated.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-10-30: Detection 3 now hunts all agent shells and is renamed
+                <code>all-agent-shells-risky-command.kql</code> (the old link redirects). Besides the VS Code terminal
+                and the Copilot harness, it reads the programs started by the shells of Cursor, the Copilot CLI,
+                Claude Code, Gemini CLI, Kilo Code, the legacy Windsurf terminal, Codex and Amazon Q, and by Cursor's
+                PowerShell executor on Windows, with a <code>Source</code> column naming the agent. The new sources
+                rest on shipped code, vendor docs, user reports or, for Claude Code, a local observation, and none on
+                a sensor capture.
             </p>
             <p class="mt-4 text-sm text-[#959c95]">
                 Updated 2026-10-29: Detection 2 drops the two wrapper rows that Claude Code's Linux sandbox
@@ -162,8 +171,8 @@
             <p>
                 This article ships three detections for that surface: a Sigma rule for an agent CLI started headless
                 with approvals off, a Sigma rule for an agent's shell doing something risky, and a Defender XDR KQL
-                hunt for the VS Code terminal (as shipped, Windows only) and for the shells of Copilot's VS Code
-                harness. Before this article the
+                hunt over the programs that agents' shells start, the VS Code terminal (as shipped, Windows only) and
+                the shells of Copilot's VS Code harness included. Before this article the
                 <a href="../tools/sigma-pack/">sigma-pack</a> had no detection for coding agents. Different agents
                 launch commands in different ways, so each detection sees some agents and not others, and the article
                 says which. Both rules are tagged ATT&amp;CK T1059 (Command and Scripting Interpreter), and the
@@ -180,17 +189,17 @@
                 <table class="data">
                     <thead><tr><th>Agent</th><th>How it runs a command</th><th>Visible to process logs</th><th>Covered here</th><th>Source</th></tr></thead>
                     <tbody>
-                        <tr><td>Claude Code CLI</td><td>A fresh shell per command, as a child of the <code>claude</code> binary, with the command inside a wrapper on the shell's command line</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://code.claude.com/docs/en/tools-reference#bash-tool-behavior">Claude Code tools reference</a></td></tr>
-                        <tr><td>Gemini CLI</td><td>node starts a shell per command; on macOS and Linux the command carries a fixed <code>shopt</code> prefix</td><td>Yes</td><td>Detection 1; Detection 2 on macOS and Linux</td><td><a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699">gemini-cli shell-utils.ts</a></td></tr>
-                        <tr><td>OpenAI Codex CLI</td><td>The Rust binary starts the shell directly; a sandbox can add a hop in between</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50">codex shell.rs</a></td></tr>
-                        <tr><td>Amazon Q Developer CLI</td><td><code>qchat</code> starts <code>bash -c</code> or <code>cmd /C</code> with the command</td><td>Yes</td><td>Detections 1 and 2</td><td><a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48">amazon-q-developer-cli unix.rs</a></td></tr>
-                        <tr><td>Kilo Code 7.8.17</td><td>A bundled <code>kilo</code> server starts a fresh shell per command, PowerShell included</td><td>Yes</td><td>Detection 2</td><td><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160">kilocode server-manager.ts</a></td></tr>
+                        <tr><td>Claude Code CLI</td><td>A fresh shell per command, as a child of the <code>claude</code> binary, with the command inside a wrapper on the shell's command line</td><td>Yes</td><td>Detections 1, 2 and 3</td><td><a href="https://code.claude.com/docs/en/tools-reference#bash-tool-behavior">Claude Code tools reference</a></td></tr>
+                        <tr><td>Gemini CLI</td><td>node starts a shell per command; on macOS and Linux the command carries a fixed <code>shopt</code> prefix</td><td>Yes</td><td>Detection 1; Detections 2 and 3 on macOS and Linux</td><td><a href="https://github.com/google-gemini/gemini-cli/blob/cd1b45c2db0a5ea7b7fc3b67c1ba5879601d6005/packages/core/src/utils/shell-utils.ts#L658-L699">gemini-cli shell-utils.ts</a></td></tr>
+                        <tr><td>OpenAI Codex CLI</td><td>The Rust binary starts the shell directly; a sandbox can add a hop in between</td><td>Yes</td><td>Detections 1, 2 and 3</td><td><a href="https://github.com/openai/codex/blob/970111f6cb62cc02fe36a82ea7d71b37a2889c97/codex-rs/core/src/shell.rs#L24-L50">codex shell.rs</a></td></tr>
+                        <tr><td>Amazon Q Developer CLI</td><td><code>qchat</code> starts <code>bash -c</code> or <code>cmd /C</code> with the command</td><td>Yes</td><td>Detections 1, 2 and 3</td><td><a href="https://github.com/aws/amazon-q-developer-cli/blob/15cc8f3cd18c4272925ce1c7053268eedff1ea0a/crates/chat-cli/src/cli/chat/tools/execute/unix.rs#L34-L48">amazon-q-developer-cli unix.rs</a></td></tr>
+                        <tr><td>Kilo Code 7.8.17</td><td>A bundled <code>kilo</code> server starts a fresh shell per command, PowerShell included</td><td>Yes</td><td>Detections 2 and 3</td><td><a href="https://github.com/Kilo-Org/kilocode/blob/9723be621429771ea47a2614b0ac433448023cec/packages/kilo-vscode/src/services/cli-backend/server-manager.ts#L129-L160">kilocode server-manager.ts</a></td></tr>
                         <tr><td>Roo Code 3.54.0, default mode</td><td>The VS Code extension host starts <code>/bin/sh -c</code> or <code>cmd.exe /d /s /c</code> with the full command</td><td>Partly: the command is visible, but only as the work of some VS Code extension</td><td>Detection 2 on Windows and macOS</td><td><a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/ExecaTerminalProcess.ts#L36-L54">Roo Code ExecaTerminalProcess.ts</a></td></tr>
                         <tr><td>GitHub Copilot in VS Code under its Local harness, Cline's default mode, Roo Code's terminal mode</td><td>Types the command into a VS Code integrated terminal (a hidden one for Copilot's Local harness)</td><td>No: the shell looks like a person's</td><td>Detection 3 (a hunt), VS Code PowerShell terminals on Windows</td><td><a href="https://github.com/microsoft/vscode/blob/af3b54ddd0c4f81765fc218856e2e73491051092/src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts#L2726-L2768">VS Code runInTerminalTool.ts</a>, <a href="https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/hosts/vscode/terminal/VscodeTerminalProcess.ts#L96-L110">Cline VscodeTerminalProcess.ts</a>, <a href="https://github.com/RooCodeInc/Roo-Code/blob/b867ec9145750d0ae1ff7f02d35406e9bf2a0b16/src/integrations/terminal/Terminal.ts#L153-L160">Roo Code Terminal.ts</a></td></tr>
                         <tr><td>GitHub Copilot in VS Code under the Copilot harness, the default for new sessions since 1.143</td><td>The bundled <code>copilot-runtime</code>, started by VS Code's agent host, runs the shell: one persistent PTY shell per session on Windows and macOS (read in VS Code source, not captured); on Linux VS Code asks for one shell per command, which the runtime may not honour</td><td>Partly: the shell's children carry <code>copilot-runtime</code> as their grandparent; the shell's own command line is not captured</td><td>Detection 3 (a hunt)</td><td><a href="https://raw.githubusercontent.com/microsoft/vscode-docs/main/release-notes/v1_143.md">VS Code 1.143 release notes</a>, <a href="https://code.visualstudio.com/docs/agents/run/agent-harnesses">VS Code agent harnesses</a></td></tr>
-                        <tr><td>GitHub Copilot CLI</td><td>The native <code>copilot</code> binary starts <code>bash --norc --noprofile -c</code> (macOS, Linux) or <code>pwsh -NoProfile -NoLogo -NonInteractive -Command</code> (Windows) for each command, a shape seen in user reports for 1.0.60 to 1.0.80 (a session-reuse path with an unknown shape also exists); an npm install puts a node loader in front of it</td><td>Probably: that the command text sits on that shell's command line is inferred</td><td>Detection 1; Detection 2 (parent and wrapper branches)</td><td><a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">Copilot CLI command reference</a>, <a href="https://github.com/github/copilot-cli/issues/4385">copilot-cli issue 4385</a>, <a href="https://github.com/github/copilot-cli/issues/4163">issue 4163</a></td></tr>
-                        <tr><td>Cursor CLI and Cursor IDE agent</td><td>The CLI runs as node, with no native binary; the IDE agent runs from an extension-host process. Both start bash or zsh with a fixed wrapper and hand it the command on a file descriptor on macOS and Linux. On Windows the default is PowerShell running a temporary <code>.ps1</code>, and Git Bash puts the command on the line (all read in shipped code, not captured)</td><td>Partly: on macOS and Linux only what the command starts, as a child of the wrapper shell; on Windows Git Bash, yes; on Windows PowerShell, nothing</td><td>Detection 1 (the CLI); Detection 2 through the wrapper on the shell's parent, the Git Bash wrapper and the CLI as parent</td><td><a href="https://cursor.com/docs/cli/reference/parameters">Cursor CLI parameters</a>, <a href="https://downloads.cursor.com/lab/2026.10.22-27dcf5f/linux/x64/agent-cli-package.tar.gz">Cursor CLI package 2026.10.22</a>, <a href="https://downloads.cursor.com/production/69b724ebc67ec522c1b5d287a5025f7a7e81be97/linux/x64/deb/amd64/deb/cursor_3.27.14_amd64.deb">Cursor 3.27.14 Linux package</a></td></tr>
-                        <tr><td>Devin Desktop (formerly Windsurf) and Devin CLI</td><td>The editor starts the bundled <code>devin</code> binary as <code>devin acp</code>; how it starts its shells is inferred, not captured. The legacy Cascade dedicated terminal (macOS and Linux, until Cascade's removal in Devin Desktop 3.9.19) ran each command inside a wrapper that carries <code>WINDSURF_STATE_MISSING=0</code> (read in shipped code)</td><td>Not confirmed (legacy Cascade terminal: yes, read in shipped code)</td><td>Detection 1 (the Devin CLI launch); Detection 2 for the legacy Cascade terminal only</td><td><a href="https://docs.devin.ai/cli/reference/commands.md">Devin CLI commands</a>, <a href="https://docs.devin.ai/desktop/terminal">Devin Desktop docs: terminal</a>, <a href="https://docs.devin.ai/desktop/changelog.md">changelog</a></td></tr>
+                        <tr><td>GitHub Copilot CLI</td><td>The native <code>copilot</code> binary starts <code>bash --norc --noprofile -c</code> (macOS, Linux) or <code>pwsh -NoProfile -NoLogo -NonInteractive -Command</code> (Windows) for each command, a shape seen in user reports for 1.0.60 to 1.0.80 (a session-reuse path with an unknown shape also exists); an npm install puts a node loader in front of it</td><td>Probably: that the command text sits on that shell's command line is inferred</td><td>Detection 1; Detection 2 (parent and wrapper branches); Detection 3 (wrapper, or parent with the per-command shell shape)</td><td><a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">Copilot CLI command reference</a>, <a href="https://github.com/github/copilot-cli/issues/4385">copilot-cli issue 4385</a>, <a href="https://github.com/github/copilot-cli/issues/4163">issue 4163</a></td></tr>
+                        <tr><td>Cursor CLI and Cursor IDE agent</td><td>The CLI runs as node, with no native binary; the IDE agent runs from an extension-host process. Both start bash or zsh with a fixed wrapper and hand it the command on a file descriptor on macOS and Linux. On Windows the default is PowerShell running a temporary <code>.ps1</code>, and Git Bash puts the command on the line (all read in shipped code, not captured)</td><td>Partly: on macOS and Linux only what the command starts, as a child of the wrapper shell; on Windows Git Bash, yes; on Windows PowerShell, only the native programs the script starts (inferred), not its cmdlets</td><td>Detection 1 (the CLI); Detection 2 through the wrapper on the shell's parent, the Git Bash wrapper and the CLI as parent; Detection 3 through the wrapper and, on Windows, the PowerShell executor's script</td><td><a href="https://cursor.com/docs/cli/reference/parameters">Cursor CLI parameters</a>, <a href="https://downloads.cursor.com/lab/2026.10.22-27dcf5f/linux/x64/agent-cli-package.tar.gz">Cursor CLI package 2026.10.22</a>, <a href="https://downloads.cursor.com/production/69b724ebc67ec522c1b5d287a5025f7a7e81be97/linux/x64/deb/amd64/deb/cursor_3.27.14_amd64.deb">Cursor 3.27.14 Linux package</a></td></tr>
+                        <tr><td>Devin Desktop (formerly Windsurf) and Devin CLI</td><td>The editor starts the bundled <code>devin</code> binary as <code>devin acp</code>; how it starts its shells is inferred, not captured. The legacy Cascade dedicated terminal (macOS and Linux, until Cascade's removal in Devin Desktop 3.9.19) ran each command inside a wrapper that carries <code>WINDSURF_STATE_MISSING=0</code> (read in shipped code)</td><td>Not confirmed (legacy Cascade terminal: yes, read in shipped code)</td><td>Detection 1 (the Devin CLI launch); Detections 2 and 3 for the legacy Cascade terminal only</td><td><a href="https://docs.devin.ai/cli/reference/commands.md">Devin CLI commands</a>, <a href="https://docs.devin.ai/desktop/terminal">Devin Desktop docs: terminal</a>, <a href="https://docs.devin.ai/desktop/changelog.md">changelog</a></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1020,28 +1029,71 @@ falsepositives:
       about is the case to chase
 level: high</code></pre>
 
-            <h2>Detection 3: hunting the editor terminal</h2>
+            <h2>Detection 3: hunting agent shells and the editor terminal</h2>
             <p>
-                Agents that type into the editor's integrated terminal (GitHub Copilot in VS Code under its Local
-                harness, Cline's default mode and Roo Code's terminal mode) leave nothing a Sigma rule can key on: the terminal's shell is the
-                same one a person opens, and only the programs it starts become processes. Microsoft Defender XDR
-                records one level more than Sigma's <code>process_creation</code>: <code>DeviceProcessEvents</code>
-                names each child's grandparent, though as a file name only. That is enough to ask a narrower
-                question: which commands run in a VS Code terminal named a credential source, or fetched something
-                and ran an interpreter straight after? This is a hunt, not an alert. It cannot tell an agent from the
-                person at the keyboard.
+                Detection 2 reads an agent shell's own command line, and some agents leave nothing useful there. They
+                keep one shell for many commands, hand the shell each command on a file descriptor, or type into the
+                editor's integrated terminal (GitHub Copilot in VS Code under its Local harness, Cline's default mode
+                and Roo Code's terminal mode), whose shell is the same one a person opens. Only the programs those
+                shells start become processes. Microsoft Defender XDR records one level more than Sigma's
+                <code>process_creation</code>: <code>DeviceProcessEvents</code> names each child's grandparent, though
+                as a file name only. That is enough to ask a narrower question: which programs started by an agent's
+                shell or a VS Code terminal named a credential source, or fetched something and ran an interpreter
+                straight after? This is a hunt, not an alert. In a terminal it cannot tell an agent from the person
+                at the keyboard, and every agent source rests on vendor docs, shipped code, user reports or, for
+                Claude Code, a local observation, and none on a sensor capture.
             </p>
             <p>
-                The query keeps the children of a shell whose parent is <code>Code.exe</code> and whose command line
-                loads VS Code's shell-integration script (<code>shellIntegration.ps1</code> for PowerShell,
-                <code>--init-file</code> with <code>shellIntegration-bash.sh</code> for bash). Then it needs one of
-                two things. The credential branch matches the same credential strings as Detection 2. The pairing
-                branch takes a child whose command line names a download tool and a different child, an interpreter
-                (sh, bash, python, the Windows <code>py</code> launcher, node, pwsh or powershell), that starts in
-                the same shell up to 60 seconds later.
+                The query names each row's source in a <code>Source</code> column, from the shell that started it:
+                from wrapper text an agent writes onto the shell's command line, or from the shell's own parent. The
+                agent sources reuse Detection 2's strings, read from the child: Cursor's wrapper, the Copilot CLI's
+                wrapper variable, Claude Code's
+                <code>shell-snapshots</code> wrapper or a <code>claude.exe</code> parent, Gemini CLI's
+                <code>shopt</code> prefix, Kilo Code's PowerShell prologue or a <code>kilo</code> parent, the legacy
+                Windsurf terminal's marker, and a <code>codex</code> or <code>qchat</code> parent. Two conditions are
+                new. First, a <code>copilot</code> parent counts only with the Copilot CLI's per-command shell shape
+                (<code>--norc --noprofile</code> for bash, <code>-NonInteractive</code> for pwsh), which stands in for
+                Detection 2's <code>\WindowsApps\</code> filter, because Defender gives a grandparent no folder.
+                Second, on Windows, Cursor's default executor runs PowerShell on a temporary
+                <code>ps-script-&lt;uuid&gt;.ps1</code> (read in shipped code), so the shell's line names only the
+                script and Detection 2 has nothing to match. The hunt keys that line together with a
+                <code>node.exe</code> or <code>Cursor.exe</code> parent and reads the native programs the script
+                starts (inferred), though not its cmdlets. <code>Cursor.exe</code> is used only behind that marker,
+                never as a bare parent. The terminal source keeps the children of a shell whose parent is
+                <code>Code.exe</code> and whose command line loads VS Code's shell-integration script
+                (<code>shellIntegration.ps1</code> for PowerShell, <code>--init-file</code> with
+                <code>shellIntegration-bash.sh</code> for bash). A row gets the first source that matches, so no row
+                is given two sources.
+            </p>
+            <p>
+                Then it needs one of two things. The credential branch matches the same credential strings as
+                Detection 2. The pairing branch takes a child whose command line names a download tool and a
+                different child, an interpreter (sh, dash, bash, zsh, python, the Windows <code>py</code> launcher,
+                node, pwsh or powershell), that starts in the same shell up to 60 seconds later.
                 It does not check that the interpreter runs what was downloaded, so <code>curl</code> fetching a test
-                fixture followed by <code>python -m pytest</code> pairs too. That is the query's main false positive,
-                and the reason it is a hunt.
+                fixture followed by <code>python -m pytest</code> pairs too, and so does a download piped into a
+                parser, such as <code>curl ... | python3 -m json.tool</code>, which Detection 2 leaves out on purpose.
+                Those are the query's main false positives, and the reason it is a hunt.
+            </p>
+            <p>
+                Reading one level down has gains and gaps. Under a Cursor wrapper a plain <code>curl ... | sh</code>
+                splits into two sibling children that Detection 2 cannot match; here they pair. But the Copilot CLI,
+                Claude Code, Codex and Cursor start a new shell for each command, so a download in one command and a
+                run in a later one do not pair. A shell can also replace itself with the last program of its command
+                instead of starting a child: in local tests bash did this for a lone command and for the last command
+                after <code>;</code>, and zsh after <code>&amp;&amp;</code> as well. Under the Copilot CLI, Codex,
+                Amazon Q and Kilo Code (macOS and Linux) sources, a single <code>cat ~/.aws/credentials</code>
+                can then have the agent as its parent and match no source; Detection 2 still sees it on the shell's
+                line. Claude Code, Cursor and Windsurf run the command through <code>eval</code> with more after it,
+                and Gemini CLI runs it in a subshell with more commands after it, so they are not affected: in a local
+                test of Gemini's wrapper a lone command stayed a child of that subshell, whose command line keeps the
+                <code>shopt</code> prefix. Whether Defender records that forked subshell as the parent is not known
+                (inferred). The sources keyed on a parent name do not check that the parent is a shell,
+                so the children of an MCP server or hook the agent starts directly are kept too. With Claude Code's
+                Linux sandbox on, the sandbox's own <code>bwrap</code> row has the wrapper on its parent's line and
+                the masked paths, such as <code>.git-credentials</code>, on its own, so it comes back for every
+                command: the false positive Detection 2 now filters. Here it is a tuning line in the query's header,
+                not a filter (seen in a local strace capture, not a sensor).
             </p>
             <p>
                 Copilot in VS Code moved in 1.143. The release notes make the Copilot harness the default for new
@@ -1049,10 +1101,10 @@ level: high</code></pre>
                 probably keeps the Local harness (inferred). Under the Copilot harness the shells are started by
                 <code>copilot-runtime</code>, the Copilot SDK runtime that VS Code bundles, not by the integrated
                 terminal; that parent relation is read in VS Code source and the shipped SDK, not captured. So the
-                query has a second source: the children of a shell whose parent is <code>copilot-runtime</code>, with
-                no shell-integration condition, because the runtime's shells do not load VS Code's scripts (inferred
-                from the SDK's strings). A <code>Source</code> column names the source of each row,
-                <code>vscode-terminal</code> or <code>copilot-harness</code>, and both branches read both sources.
+                query has a source for it, <code>copilot-harness</code>: the children of a shell whose parent is
+                <code>copilot-runtime</code>, with no shell-integration condition, because the runtime's shells do not
+                load VS Code's scripts (inferred from the SDK's strings). It is checked before the Copilot CLI's
+                wrapper, which lives in the runtime library <code>copilot-runtime</code> loads too.
                 The runtime keeps one persistent PTY shell per session on Windows and macOS (read in VS Code source),
                 so a download and a later interpreter in that shell pair. On Linux VS Code asks the runtime for one
                 shell per command; if the runtime honours that (not confirmed), a download and a later separate command
@@ -1082,13 +1134,20 @@ level: high</code></pre>
                 <a href="../tools/sigma-pack/">sigma-pack</a> holds the canonical copy, with these notes in its
                 header.
             </p>
-            <pre><code>// A command in a VS Code terminal or a Copilot harness shell named a credential source, or one such shell ran a download and then an interpreter
+            <pre><code>// A program started by an AI coding agent's shell or a VS Code terminal named a credential source, or one such shell ran a download and then an interpreter
 let Lookback = 1d;
 let PairWindow = 60s;
 // Bare names: InitiatingProcessParentFileName holds no path
 let Editors = dynamic(["Code.exe"]);
 let RuntimeNames = dynamic(["copilot-runtime.exe", "copilot-runtime"]);
 let ShellIntegrationMarkers = dynamic(["shellIntegration.ps1", "shellIntegration-bash.sh"]);
+let CopilotCliNames = dynamic(["copilot", "copilot.exe"]);
+let CursorHosts = dynamic(["node.exe", "Cursor.exe"]);
+// Wrapper strings of ai-agent-shell-risky-command, matched with contains
+let CursorEvalHead = 'builtin eval -- "$snap"';
+let CursorZshHead = "builtin unalias -m '*' 2&gt;/dev/null || true";
+let GeminiPrefix = "shopt -u promptvars nullglob extglob nocaseglob dotglob";
+let KiloPrologue = "[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);";
 // The credential and download strings of ai-agent-shell-risky-command, plus
 // gh.exe" auth token and gh.exe auth token: the forms inferred for gh started from
 // PowerShell and from Git Bash on a path with no space (neither captured)
@@ -1101,22 +1160,46 @@ let CredentialMarkers = dynamic([".aws/credentials", @".aws\credentials", ".ssh/
 let ProcEnvironEnd = @"(?i)/environ([ '"";)]|$)";
 let DownloadTools = dynamic(["curl", "wget", "Invoke-WebRequest", "iwr",
     "Invoke-RestMethod", " irm ", "(irm ", '"irm ', "'irm ", "DownloadString"]);
-// py and py.exe are the Windows Python launcher
-let Interpreters = dynamic(["sh", "sh.exe", "bash", "bash.exe", "python", "python.exe",
-    "python3", "python3.exe", "py", "py.exe", "node", "node.exe", "pwsh", "pwsh.exe",
-    "powershell", "powershell.exe"]);
-// Copilot harness shells: no shell-integration condition
-let CopilotRuntimeChildren = DeviceProcessEvents
+// py and py.exe are the Windows Python launcher; zsh is the macOS default shell; dash
+// is /bin/sh on Debian and Ubuntu
+let Interpreters = dynamic(["sh", "sh.exe", "dash", "bash", "bash.exe", "zsh", "python",
+    "python.exe", "python3", "python3.exe", "py", "py.exe", "node", "node.exe", "pwsh",
+    "pwsh.exe", "powershell", "powershell.exe"]);
+// One Source per row: the first case that matches. Only the columns the branches and
+// the output use are kept, because the table is materialized
+let AgentShellChildren = materialize(DeviceProcessEvents
     | where Timestamp &gt; ago(Lookback)
-    | where InitiatingProcessParentFileName in~ (RuntimeNames)
-    | extend Source = "copilot-harness";
-let TerminalChildren = DeviceProcessEvents
-    | where Timestamp &gt; ago(Lookback)
-    | where InitiatingProcessParentFileName in~ (Editors)
-    | where InitiatingProcessCommandLine has_any (ShellIntegrationMarkers)
-    | extend Source = "vscode-terminal"
-    | union CopilotRuntimeChildren;
-let CredentialReads = TerminalChildren
+    | extend Source = case(
+        InitiatingProcessCommandLine contains "dump_bash_state"
+            or InitiatingProcessCommandLine contains CursorEvalHead
+            or InitiatingProcessCommandLine contains CursorZshHead
+            or InitiatingProcessCommandLine contains "CURSOR_STATE_INPUT_FILE", "cursor",
+        InitiatingProcessParentFileName in~ (CursorHosts)
+            and InitiatingProcessCommandLine contains @"\ps-script-"
+            and InitiatingProcessCommandLine contains ".ps1", "cursor",
+        InitiatingProcessParentFileName in~ (RuntimeNames), "copilot-harness",
+        InitiatingProcessCommandLine contains "__copilotCommandFinished", "copilot-cli",
+        InitiatingProcessParentFileName in~ (CopilotCliNames)
+            and (InitiatingProcessCommandLine contains "--norc --noprofile"
+                or InitiatingProcessCommandLine contains "-NonInteractive"), "copilot-cli",
+        InitiatingProcessCommandLine contains "shell-snapshots/snapshot-"
+            or InitiatingProcessCommandLine contains @"shell-snapshots\snapshot-"
+            or InitiatingProcessParentFileName =~ "claude.exe", "claude-code",
+        InitiatingProcessCommandLine contains GeminiPrefix, "gemini-cli",
+        InitiatingProcessCommandLine contains KiloPrologue
+            or InitiatingProcessParentFileName in~ ("kilo", "kilo.exe"), "kilo-code",
+        InitiatingProcessCommandLine contains "WINDSURF_STATE_MISSING=0", "windsurf-cascade",
+        InitiatingProcessParentFileName in~ ("codex", "codex.exe"), "codex",
+        InitiatingProcessParentFileName in~ ("qchat", "qchat.exe"), "amazon-q",
+        InitiatingProcessParentFileName in~ (Editors)
+            and InitiatingProcessCommandLine has_any (ShellIntegrationMarkers), "vscode-terminal",
+        "")
+    | where isnotempty(Source)
+    | project Timestamp, DeviceId, DeviceName, AccountName, ReportId, Source,
+              InitiatingProcessParentFileName, InitiatingProcessFileName,
+              InitiatingProcessId, InitiatingProcessCreationTime,
+              InitiatingProcessCommandLine, FileName, ProcessId, ProcessCommandLine);
+let CredentialReads = AgentShellChildren
     | mv-apply Marker = CredentialMarkers to typeof(string) on (
         where ProcessCommandLine contains Marker
         | summarize CredentialHits = make_list(Marker))
@@ -1124,7 +1207,7 @@ let CredentialReads = TerminalChildren
         or (ProcessCommandLine contains "/proc/"
             and ProcessCommandLine matches regex ProcEnvironEnd)
     | extend Branch = "credential";
-let Downloads = TerminalChildren
+let Downloads = AgentShellChildren
     | mv-apply Tool = DownloadTools to typeof(string) on (
         where ProcessCommandLine contains Tool
         | summarize DownloadHits = make_list(Tool))
@@ -1134,16 +1217,20 @@ let Downloads = TerminalChildren
               DownloadCommandLine = ProcessCommandLine;
 // The few download children on the left, the many interpreter children on the right
 let Pairs = Downloads
-    | join kind=inner (TerminalChildren | where FileName in~ (Interpreters))
+    | join kind=inner (AgentShellChildren | where FileName in~ (Interpreters))
         on DeviceId, InitiatingProcessId, InitiatingProcessCreationTime
     // A different child, starting 0 to PairWindow after the download
     | where not(ProcessId == DownloadProcessId and Timestamp == DownloadTime)
     | where Timestamp between (DownloadTime .. DownloadTime + PairWindow)
     | extend Branch = "pairing";
+// DeviceId and ReportId let an analyst take action on a row; the shell's full command
+// line comes last, because for cursor rows it is wrapper text only
 union CredentialReads, Pairs
-| project Timestamp, Branch, Source, DeviceName, AccountName, InitiatingProcessParentFileName,
-          InitiatingProcessCommandLine, FileName, ProcessCommandLine, CredentialHits,
-          DownloadTime, DownloadCommandLine
+| project Timestamp, Branch, Source, DeviceName, AccountName, DeviceId, ReportId,
+          InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessId,
+          InitiatingProcessCreationTime, FileName, ProcessId, ProcessCommandLine,
+          CredentialHits, DownloadTime, DownloadProcessId, DownloadCommandLine,
+          InitiatingProcessCommandLine
 | sort by Timestamp desc</code></pre>
 
             <h2>What this does not cover</h2>
@@ -1151,12 +1238,13 @@ union CredentialReads, Pairs
                 <li><strong>Cursor and Devin beyond shipped code:</strong> the Cursor CLI and IDE agent strings and
                     the Devin binary paths are read in the vendors' packages, and none of their shells has been
                     captured. How Devin Desktop's agent (<code>devin acp</code>) and the Devin CLI start their shells
-                    is inferred, so Detection 2 does not cover them, and the Cursor and Devin Desktop extension hosts
-                    are not in its extension-host branch (see the table above).</li>
+                    is inferred, so Detections 2 and 3 do not cover them, and the Cursor and Devin Desktop extension hosts
+                    are not in Detection 2's extension-host branch (see the table above).</li>
                 <li><strong>Hidden command text:</strong> Cursor hands its wrapper shell each command on a file
                     descriptor on macOS and Linux, so only what the command starts is seen, and on Windows its default
                     PowerShell executor runs the command from a temporary <code>.ps1</code> file, so its command
-                    line names nothing. Cline's background
+                    line names nothing: Detection 3 sees the native programs the script starts (inferred), but not
+                    its cmdlets. Cline's background
                     mode gives PowerShell, its default on Windows, the command on stdin behind a constant stub.</li>
                 <li><strong>Approvals switched off without a matching flag:</strong> Copilot runs with only
                     <code>--allow-all-tools</code> (see Detection 1), and a bypass set with nothing on the command
@@ -1170,7 +1258,7 @@ union CredentialReads, Pairs
                     space.</li>
                 <li><strong>Other editor terminals:</strong> anything beyond VS Code PowerShell terminals on Windows
                     for Detection 3's terminal source, and the opt-in custom terminal tool of Copilot's agent host,
-                    which neither of its sources sees (see Detection 3).</li>
+                    which none of its sources sees (see Detection 3).</li>
                 <li><strong>File reads:</strong> there is no file-access rule (see Honest limitations).</li>
                 <li><strong>Config writes and MCP abuse:</strong> auto-approve written into
                     <code>.vscode/settings.json</code> (Copilot, CVE-2025-53773, the 2025 behaviour; in VS Code
