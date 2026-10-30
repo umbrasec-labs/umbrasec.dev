@@ -16,7 +16,8 @@
 #
 # Generated files: index.html, research/index.html, feed.xml, sitemap.xml,
 # assets/umbra.js (command palette), each research/<slug>.html prev/next nav,
-# the tools/sigma-pack/index.html coverage table, and the shared footer on
+# the tools/sigma-pack/index.html coverage table, the homepage trace-to-rule
+# reel (from the pack and ../detections/claims), and the shared footer on
 # every site page (about, guide/*, tools/index, tools/sigma-pack).
 #
 # Before regenerating, it refuses to run if a file it would rewrite, or one of
@@ -72,8 +73,15 @@ while IFS= read -r path; do
     [ -n "$path" ] && drift+=("$path")
 done < <(python3 tools/site-build/build_indexes.py --list-drift)
 
-inputs=(research/articles.json tools/sigma-pack/README.md tools/site-build/build_indexes.py)
-unstaged="$(git diff --name-only -- "${inputs[@]}" ${drift[@]+"${drift[@]}"})"
+inputs=(research/articles.json tools/sigma-pack/README.md tools/site-build/build_indexes.py
+        tools/site-build/hero_reel.py tools/site-build/hero-reel.json
+        tools/sigma-pack/rules tools/sigma-pack/queries)
+# The homepage reel also reads ../detections/claims; uncommitted claim edits
+# there would be baked into this commit's index.html.
+unstaged="$(git diff --name-only -- "${inputs[@]}" ${drift[@]+"${drift[@]}"}
+            if [ -d ../detections/claims ]; then
+                git -C ../detections status --porcelain -- claims | sed 's|^...|../detections/|'
+            fi)"
 if [ -n "$unstaged" ]; then
     echo "pre-commit: site-build needs to regenerate, but these files have unstaged changes:" >&2
     printf '  %s\n' $unstaged >&2
