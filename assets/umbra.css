@@ -120,6 +120,230 @@ body {
     .ghost-line-1, .ghost-line-2 { animation: none; opacity: 1; }
 }
 
+/* "Forge the rule." - hot-metal fill: Orange to Ember, with a soft light band
+   sweeping across every 8s. Reads as solid orange at rest; static under
+   reduced motion and dropped in forced-colours mode. */
+.forge-line {
+    background-image:
+        linear-gradient(100deg, transparent 43%, rgba(204,208,207,0.34) 50%, transparent 57%),
+        linear-gradient(90deg, var(--accent) 0%, var(--ember) 52%, var(--accent) 100%);
+    background-size: 260% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    background-position: 130% 0, 0 0;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation:
+        heroIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.22s forwards,
+        forgeSheen 8s ease-in-out 1.8s infinite;
+}
+/* the decode glyphs keep a solid khaki fill as on line 1; inside the clipped
+   text they would otherwise not paint at all */
+.forge-line .scramble-rnd { -webkit-text-fill-color: var(--khaki); }
+@keyframes forgeSheen {
+    0%        { background-position: 130% 0, 0 0; }
+    38%, 100% { background-position: -30% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .forge-line { animation: none; opacity: 1; }
+}
+@media (forced-colors: active) {
+    .forge-line { background-image: none; -webkit-text-fill-color: currentColor; }
+}
+
+/* Hero: technique -> trace -> rule strip. Three examples, each a technique,
+   a Claims Ledger synthetic event and the sigma-pack lines that catch it. */
+.tr { margin-top: 34px; min-width: 0; }
+.tr-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px 20px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.tr-kicker {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim);
+}
+.tr-kicker span { color: var(--accent); }
+.tr-tabs { display: flex; align-items: center; gap: 6px; }
+.tr-tab, .tr-pause {
+    position: relative; overflow: hidden;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px; line-height: 1;
+    color: var(--muted); background: rgba(34,34,34,0.85);
+    border: 1px solid var(--border); border-radius: 8px;
+    transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.tr-tab { padding: 8px 11px 9px; }
+.tr-tab:hover, .tr-pause:hover { color: var(--text); border-color: var(--border-hi); }
+.tr-tab[aria-pressed="true"] {
+    color: var(--accent); background: var(--bg-soft); border-color: rgba(242,86,35,0.55);
+}
+.tr-prog {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+    background: var(--accent); transform: scaleX(0); transform-origin: left;
+}
+.tr-tab.is-on .tr-prog { animation: trProg 7s linear forwards; }
+.tr.is-paused .tr-prog { animation-play-state: paused; }
+.tr-pause {
+    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 4px;
+}
+.tr-pause svg { width: 12px; height: 12px; fill: currentColor; }
+.tr-pause .tr-ico-play { display: none; }
+.tr-pause[aria-pressed="true"] .tr-ico-pause { display: none; }
+.tr-pause[aria-pressed="true"] .tr-ico-play { display: block; }
+
+.tr-stage { position: relative; min-width: 0; }
+.tr-ex {
+    display: grid; gap: 20px;
+    grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.25fr) minmax(0, 1.1fr);
+}
+.tr-ex[hidden] { display: none; }
+.tr-panel {
+    position: relative; min-width: 0;
+    display: flex; flex-direction: column;
+    background: rgba(34,34,34,0.94);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 15px 18px 12px;
+}
+/* node dot on each panel, lit as the trace line reaches it */
+.tr-panel::before {
+    content: ""; position: absolute; z-index: 3;
+    top: -5px; left: 20px; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--border-hi); box-sizing: border-box;
+}
+.tr-label {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px;
+    color: var(--muted); margin-bottom: 9px; white-space: nowrap;
+}
+.tr-label > span:first-child { color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+.tr-meta { overflow: hidden; text-overflow: ellipsis; }
+.tr-lvl {
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid;
+}
+.tr-lvl-high { color: var(--ember); border-color: rgba(245,110,15,0.5); background: rgba(245,110,15,0.08); }
+.tr-lvl-medium { color: var(--khaki); border-color: rgba(174,171,148,0.5); background: rgba(174,171,148,0.08); }
+
+.tr-id {
+    font-size: 30px; line-height: 1.05; font-weight: 500; letter-spacing: -0.02em;
+    color: var(--text); margin-top: 4px;
+}
+.tr-name { font-size: 17px; line-height: 1.25; font-weight: 500; color: var(--text); margin-top: 8px; }
+.tr-tactic { margin-top: 12px; }
+.tr-pill {
+    display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 999px;
+    color: var(--khaki); border: 1px solid rgba(174,171,148,0.45); background: rgba(174,171,148,0.06);
+}
+.tr-tag {
+    margin-top: auto; padding-top: 9px; border-top: 1px solid rgba(82,82,82,0.6);
+    font-size: 10.5px; color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* Long values wrap rather than scroll, so the highlighted match and the file
+   names stay visible at every width and nothing needs a keyboard scroller. */
+.tr-code {
+    font-size: 12px; line-height: 1.55; color: var(--text);
+    min-width: 0;
+}
+.tr-code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tr-code .k { color: var(--khaki); }
+.tr-code .d { color: var(--muted); }
+.tr-code .c-dim, .tr-code .c-dim .k { color: var(--muted); }
+.tr-code .hl {
+    background: rgba(242,86,35,0.14);
+    box-shadow: inset 0 -1.5px 0 var(--accent);
+    border-radius: 3px; padding: 1px 2px;
+    color: var(--text);
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.tr-code .hl .k, .tr-code .hl .s { color: inherit; }
+.tr-foot {
+    margin-top: auto; padding-top: 9px; border-top: 1px solid rgba(82,82,82,0.6);
+    font-size: 10.5px; line-height: 1.5; color: var(--muted);
+    overflow-wrap: anywhere;
+}
+.tr-code + .tr-foot { margin-top: auto; }
+.tr-code { margin-bottom: 10px; }
+.tr-foot .tr-path { color: var(--muted); }
+.tr-rule .tr-foot { color: var(--text); }
+.tr-ok {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sage); margin-right: 7px; vertical-align: 1px;
+}
+.tr-expect { color: var(--sage); }
+.tr-more { margin-top: 12px; }
+
+/* the trace line: horizontal along the panel tops (desktop), vertical on the left (stacked) */
+.tr-wire { position: absolute; z-index: 2; overflow: visible; pointer-events: none; filter: drop-shadow(0 0 3px rgba(242,86,35,0.55)); }
+.tr-wire path { fill: none; stroke-linecap: butt; }
+.tr-wire-draw {
+    stroke: var(--accent); stroke-width: 2;
+    stroke-dasharray: 1; stroke-dashoffset: 0;
+}
+.tr-wire-h {
+    display: block; top: -1px; height: 2px;
+    left: 24.5px;
+    /* stop on the RULE dot: the rule column is 1.1/3 of the track.
+       An SVG is a replaced element, so it needs an explicit width. */
+    width: calc(100% - (100% - 40px) * 0.36667);
+}
+.tr-wire-v { display: none; }
+
+/* lit state (static default, also the reduced-motion state) */
+.tr-panel::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242,86,35,0.18); }
+
+/* motion: only when the user allows it */
+@media (prefers-reduced-motion: no-preference) {
+    .tr-stage.is-run .tr-wire-draw { animation: trDraw 1.1s linear both; }
+    .tr-stage.is-run .tr-panel::before { animation: trDot .35s ease-out both; }
+    .tr-stage.is-run .tr-trace::before { animation-delay: .46s; }
+    .tr-stage.is-run .tr-rule::before { animation-delay: 1.08s; }
+    .tr-stage.is-run .tr-trace .hl { animation: trPulse .9s ease-out .46s 1; }
+    .tr-stage.is-run .tr-rule .hl { animation: trPulse .9s ease-out 1.08s 1; }
+    .tr-stage.is-run .tr-ex.is-active .tr-code,
+    .tr-stage.is-run .tr-ex.is-active .tr-tech > :not(.tr-label) { animation: trIn .4s ease-out both; }
+}
+@keyframes trDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes trDot {
+    from { background: var(--bg); border-color: var(--border-hi); box-shadow: 0 0 0 0 rgba(242,86,35,0); }
+    60%  { box-shadow: 0 0 0 6px rgba(242,86,35,0.25); }
+    to   { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242,86,35,0.18); }
+}
+@keyframes trPulse {
+    0%   { background: rgba(242,86,35,0.14); box-shadow: inset 0 -1.5px 0 var(--accent), 0 0 0 0 rgba(242,86,35,0); }
+    30%  { background: rgba(242,86,35,0.42); box-shadow: inset 0 -1.5px 0 var(--accent), 0 0 0 4px rgba(242,86,35,0.2); }
+    100% { background: rgba(242,86,35,0.14); box-shadow: inset 0 -1.5px 0 var(--accent), 0 0 0 0 rgba(242,86,35,0); }
+}
+@keyframes trIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes trProg { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .tr-prog, .tr-pause { display: none; }
+}
+
+/* stacked: below lg the panels stack and the line runs down the left */
+@media (max-width: 1023.98px) {
+    .tr { margin-top: 40px; }
+    .tr-stage { padding-left: 22px; }
+    .tr-ex { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .tr-panel { padding: 13px 15px 11px; }
+    .tr-panel::before { top: 17px; left: -20px; }
+    .tr-wire-h { display: none; }
+    .tr-wire-v { display: block; left: 5.5px; width: 2px; top: 21px; height: calc(100% - 49px); }
+    .tr-tech { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: baseline; }
+    .tr-tech .tr-label { grid-column: 1 / -1; }
+    .tr-id { font-size: 22px; margin-top: 0; }
+    .tr-name { margin-top: 0; font-size: 15px; }
+    .tr-tactic { margin-top: 8px; }
+    .tr-tag { margin-top: 8px; padding-top: 0; align-self: center; text-align: right; }
+    .tr-code { font-size: 11.5px; line-height: 1.6; }
+    .tr-tag { display: none; }
+    .tr-foot .tr-path, .tr-sep { display: none; }
+    .tr-claim { display: block; padding-left: 13px; }
+}
+@media (max-width: 480px) {
+    .tr-head { flex-direction: column; align-items: flex-start; }
+}
+
 /* Logo badge hover (scale + glow) */
 .logo-badge { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease; }
 .brand:hover .logo-badge {

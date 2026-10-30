@@ -18,16 +18,21 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
 
-  <!-- faint constellation dots -->
-  <g fill="#f25623" fill-opacity="0.35">
-    <circle cx="980" cy="120" r="3"/><circle cx="1080" cy="190" r="2.5"/>
-    <circle cx="1010" cy="260" r="2"/><circle cx="1120" cy="300" r="3"/>
-    <circle cx="930" cy="210" r="2"/><circle cx="1060" cy="90" r="2"/>
-  </g>
-  <g stroke="#f25623" stroke-opacity="0.18" stroke-width="1">
-    <line x1="980" y1="120" x2="1060" y2="90"/><line x1="980" y1="120" x2="1080" y2="190"/>
-    <line x1="1080" y1="190" x2="1010" y2="260"/><line x1="1080" y1="190" x2="1120" y2="300"/>
-    <line x1="930" y1="210" x2="1010" y2="260"/>
+  <!-- faint trace-to-rule motif: technique -> event -> rule
+       (tools/sigma-pack/rules/windows/kerberoasting-rc4-service-ticket.yml and its Claims Ledger events) -->
+  <g opacity="0.7" transform="translate(-22 0)">
+    <path d="M840 124 H966 M990 124 H1094" fill="none" stroke="#f25623" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="6 6"/>
+    <circle cx="830" cy="124" r="8" fill="#171717" stroke="#f25623" stroke-opacity="0.65" stroke-width="2"/>
+    <circle cx="978" cy="124" r="8" fill="#171717" stroke="#f25623" stroke-opacity="0.65" stroke-width="2"/>
+    <rect x="1098" y="114" width="20" height="20" rx="4" fill="#f25623" fill-opacity="0.6"/>
+    <g font-family="monospace" font-size="15" text-anchor="middle">
+      <text x="830" y="96" fill="#7d837d">technique</text>
+      <text x="978" y="96" fill="#7d837d">event</text>
+      <text x="1108" y="96" fill="#7d837d">rule</text>
+      <text x="830" y="164" fill="#aeab94">T1558.003</text>
+      <text x="978" y="164" fill="#aeab94">4769 0x17</text>
+      <text x="1108" y="164" fill="#f56e0f">match</text>
+    </g>
   </g>
 
   <!-- brand lockup -->
@@ -39,8 +44,8 @@
   </g>
 
   <!-- headline -->
-  <text x="88" y="320" font-size="84" font-weight="bold" fill="#ccd0cf" letter-spacing="-3">Show the query.</text>
-  <text x="88" y="416" font-size="84" font-weight="bold" fill="#f25623" letter-spacing="-3">Cite the source.</text>
+  <text x="88" y="320" font-size="80" font-weight="bold" fill="#ccd0cf" letter-spacing="-3">Trace the technique.</text>
+  <text x="88" y="411" font-size="80" font-weight="bold" fill="#f25623" letter-spacing="-3">Forge the rule.</text>
 
   <!-- subtitle -->
   <text x="90" y="486" font-size="27" fill="#959c95">Independent defensive security research - detection engineering,</text>

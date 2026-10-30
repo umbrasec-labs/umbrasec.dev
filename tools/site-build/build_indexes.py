@@ -27,8 +27,10 @@ Usage:
 The --check mode writes nothing; it just fails if the committed files don't match
 what the manifest would produce. That's what the pre-commit hook runs. It also
 fails when a site page's meta description is missing or longer than 160
-characters (decoded text), and when a sigma-pack rule's detection map (or one
-list item of it) names the same field twice, which Chainsaw cannot load.
+characters (decoded text), when a sigma-pack rule's detection map (or one
+list item of it) names the same field twice, which Chainsaw cannot load, and
+when the homepage trace-to-rule strip quotes rule lines, a tag, a level, a
+claim or an event that no longer match the sigma-pack or the Claims Ledger.
 """
 
 import argparse
@@ -402,7 +404,7 @@ def render_footer(prefix: str) -> str:
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                        Trace the technique. Forge the rule. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
@@ -563,6 +565,130 @@ def csp_hash_problems():
     return missing
 
 
+# The homepage hero's trace-to-rule strip quotes three sigma-pack rules and one
+# Claims Ledger event for each. Those are hand-copied, so a rule or claim edit
+# would leave the hero showing lines the pack no longer has. Each example names
+# its rule file in the RULE footer. The shown rule lines must be one run of that
+# file in order (trailing YAML comments and blank or comment lines ignored; a
+# "..." line stands for any number of left-out lines), and its tag and level
+# lines must be in it. The technique id and its tab must match the tag. The
+# claim must be in ../detections/claims/<rule>.yml with the shown expect: value,
+# and each shown event key: value pair must be in that claim or the file's
+# event_defaults (_note text ignored); that half runs only where the detections
+# checkout sits next to this repo (the workspace), not in a lone clone.
+DETECTIONS_CLAIMS = ROOT.parent / "detections" / "claims"
+_TR_EX_RE = re.compile(r'data-tr-ex="(\d+)"(.*?)(?=<div class="tr-ex\b|class="tr-more|</section>)', re.DOTALL)
+_TR_LN_RE = re.compile(r'<div class="ln[^"]*">(.*?)</div>', re.DOTALL)
+_YAML_NOTE_RE = re.compile(r"""_note:\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^']|'')*')""")
+
+
+def _tr_text(fragment: str) -> str:
+    return html.unescape(re.sub(r"<[^>]+>", "", fragment)).strip()
+
+
+def _tr_first(pattern: str, text: str):
+    m = re.search(pattern, text, re.DOTALL)
+    return _tr_text(m.group(1)) if m else None
+
+
+def _tr_run_ok(shown, lines):
+    """True if shown (with "..." gaps) is one in-order run of lines."""
+    for start in [i for i, ln in enumerate(lines) if ln == shown[0]]:
+        i, gap, ok = start, False, True
+        for want in shown[1:]:
+            if want == "...":
+                gap = True
+                continue
+            if gap:
+                nxt = [j for j in range(i + 1, len(lines)) if lines[j] == want]
+                if not nxt:
+                    ok = False
+                    break
+                i, gap = nxt[0], False
+            elif i + 1 < len(lines) and lines[i + 1] == want:
+                i += 1
+            else:
+                ok = False
+                break
+        if ok:
+            return True
+    return False
+
+
+def _tr_claim_text(ctext: str, claim: str):
+    """The claim's block plus the file's event_defaults block, _note text removed."""
+    lines = ctext.splitlines()
+    head = [i for i, ln in enumerate(lines) if re.fullmatch(rf"\s*- id: {re.escape(claim)}\s*", ln)]
+    if not head:
+        return None
+    end = next((j for j in range(head[0] + 1, len(lines)) if re.match(r"\s*- id: ", lines[j])), len(lines))
+    block = lines[head[0]:end]
+    if "event_defaults:" in lines:
+        d = lines.index("event_defaults:")
+        dend = next((j for j in range(d + 1, len(lines)) if lines[j] and not lines[j].startswith((" ", "#"))), len(lines))
+        block += lines[d:dend]
+    return _YAML_NOTE_RE.sub("", "\n".join(block))
+
+
+def hero_trace_problems():
+    """(example, problem) for each strip line that no longer matches its source."""
+    page = (ROOT / "index.html").read_text(encoding="utf-8")
+    examples = _TR_EX_RE.findall(page)
+    out = []
+    if page.count('data-tr-ex="') != len(examples):
+        out.append(("strip", f"{page.count('data-tr-ex=')} examples on the page but {len(examples)} parsed"))
+    for idx, block in examples:
+        ex = f"example {idx}"
+        trace, _, rule = block.partition('<div class="tr-panel tr-rule">')
+        foot = re.search(r'<span class="tr-path">([^<]+)</span>([^<]+\.yml)</div>', rule)
+        if not foot:
+            out.append((ex, "no rule file in the RULE footer"))
+            continue
+        rel = foot.group(1) + foot.group(2)
+        rule_path = SIGMA_DIR / rel
+        if not rule_path.exists():
+            out.append((ex, f"rule file {rel} does not exist"))
+            continue
+        lines = [re.sub(r"\s+#.*$", "", ln).strip() for ln in rule_path.read_text(encoding="utf-8").splitlines()]
+        lines = [ln for ln in lines if ln and not ln.startswith("#")]
+        shown = [_tr_text(m) for m in _TR_LN_RE.findall(rule)]
+        if not shown or not _tr_run_ok(shown, lines):
+            out.append((ex, f"{rule_path.name}: the shown lines are not one in-order run of the file (mark left-out lines with ...)"))
+        tag = _tr_first(r'<div class="tr-tag[^"]*">(.*?)</div>', trace)
+        level = _tr_first(r'<span class="tr-lvl[^"]*">(.*?)</span>', rule)
+        tid = _tr_first(r'<div class="tr-id[^"]*">(.*?)</div>', trace)
+        tab = _tr_first(rf'data-tr-tab="{idx}"[^>]*>(.*?)</button>', page)
+        if not tag or not tag.startswith("tag: attack."):
+            out.append((ex, "no 'tag: attack.<id>' line in the TECHNIQUE panel"))
+        elif f"- {tag[5:]}" not in lines:
+            out.append((ex, f"{rule_path.name}: no tag line '- {tag[5:]}'"))
+        elif not tid or tid.lower() != tag[len("tag: attack."):] or tab != tid:
+            out.append((ex, f"technique id '{tid}' and tab '{tab}' do not both match {tag}"))
+        if not level or level not in lines:
+            out.append((ex, f"{rule_path.name}: no line '{level or 'level: (none shown)'}'"))
+        if not DETECTIONS_CLAIMS.is_dir():
+            continue
+        claims = DETECTIONS_CLAIMS / rule_path.name
+        if not claims.exists():
+            out.append((ex, f"no claims file detections/claims/{rule_path.name}"))
+            continue
+        claim = _tr_first(r'<span class="tr-claim">(.*?)</span>', trace)
+        ctext = _tr_claim_text(claims.read_text(encoding="utf-8"), claim) if claim else None
+        if ctext is None:
+            out.append((ex, f"claim '{claim}' not in {claims.name}"))
+            continue
+        expect = _tr_first(r'<span class="tr-expect">(.*?)</span>', trace)
+        if not expect or not re.search(rf"^\s*{re.escape(expect)}\s*$", ctext, re.MULTILINE):
+            out.append((ex, f"{claims.name}: claim {claim} has no '{expect}'"))
+        for ln in (_tr_text(m) for m in _TR_LN_RE.findall(trace)):
+            key, _, value = ln.partition(": ")
+            if len(value) > 1 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            pair = rf"(?<![\w.]){re.escape(key)}:\s*([\"']?){re.escape(value)}\1(?=[,}}\s]|$)"
+            if not re.search(pair, ctext, re.MULTILINE):
+                out.append((ex, f"{claims.name}: claim {claim} has no event '{key}: {value}'"))
+    return out
+
 PRE_RE = re.compile(r"<pre\b.*?</pre>", re.DOTALL)
 # an internal href (relative, root-relative or on umbrasec.dev) that ends in .html
 HTML_HREF_RE = re.compile(r'href="((?:https://umbrasec\.dev/|(?![a-z]+:|//|#))[^"#?]*\.html(?:[#?][^"]*)?)"')
@@ -670,6 +796,7 @@ def build(check: bool, list_drift: bool = False) -> int:
     bad_hashes = csp_hash_problems()
     html_links = html_link_problems()
     long_descs = description_problems()
+    hero_trace = hero_trace_problems()
 
     if check:
         problems = False
@@ -696,6 +823,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel, n, field in repeated_fields:
                 print(f"  - {rel}:{n}: {field}")
             print("\nSplit it into list items or separate selections joined in the condition (see tools/site-build/README.md).")
+            problems = True
+        if hero_trace:
+            print("site-build: HERO - the homepage trace-to-rule strip no longer matches its sources:")
+            for ex, why in hero_trace:
+                print(f"  - {ex}: {why}")
+            print("\nCopy the current lines from the rule and its detections claims into the strip in index.html.")
             problems = True
         if no_main:
             print("site-build: MISSING - pages without the skip link or <main id=\"main\">:")
@@ -760,6 +893,11 @@ def build(check: bool, list_drift: bool = False) -> int:
         for rel, n, field in repeated_fields:
             print(f"  - {rel}:{n}: {field}")
         print("Split it; the hook will fail while this stands.")
+    if hero_trace:
+        print("site-build: WARNING - the homepage trace-to-rule strip no longer matches its sources:")
+        for ex, why in hero_trace:
+            print(f"  - {ex}: {why}")
+        print("Fix the strip in index.html; the hook will fail while this stands.")
     return 0
 
 

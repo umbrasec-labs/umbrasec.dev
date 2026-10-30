@@ -582,6 +582,73 @@
     }
   })();
 
+  /* ── Hero: technique -> trace -> rule strip (homepage) ────────── */
+  (function traceToRule() {
+    const root = $("[data-tr]");
+    if (!root) return;
+    const stage = $(".tr-stage", root);
+    const tabs = $$("[data-tr-tab]", root);
+    const exs = $$("[data-tr-ex]", root);
+    const pauseBtn = $("[data-tr-pause]", root);
+    let cur = 0, hover = false, focus = false, user = false;
+
+    function run() {
+      if (reduceMotion) return;
+      stage.classList.remove("is-run");
+      void stage.offsetWidth; // restart the draw-in and the pulses
+      stage.classList.add("is-run");
+    }
+    function arm(tab) {
+      if (reduceMotion) return;
+      tabs.forEach((t) => t.classList.remove("is-on"));
+      void tab.offsetWidth; // restart the progress bar
+      tab.classList.add("is-on");
+    }
+    function show(i) {
+      cur = i;
+      exs.forEach((e, j) => {
+        e.hidden = j !== i;
+        e.classList.toggle("is-active", j === i);
+      });
+      tabs.forEach((t, j) => t.setAttribute("aria-pressed", j === i ? "true" : "false"));
+      arm(tabs[i]);
+      run();
+    }
+    function sync() {
+      root.classList.toggle("is-paused", hover || focus || user || document.hidden);
+    }
+
+    tabs.forEach((t, i) => t.addEventListener("click", () => show(i)));
+    // The active tab's progress bar is the timer: CSS pauses it, its end advances.
+    root.addEventListener("animationend", (e) => {
+      if (e.animationName === "trProg") show((cur + 1) % exs.length);
+    });
+    root.addEventListener("mouseenter", () => { hover = true; sync(); });
+    root.addEventListener("mouseleave", () => { hover = false; sync(); });
+    // Pause for keyboard focus only: Chromium also focuses a button on a mouse
+    // click, which would otherwise freeze the strip after any tab or Play click.
+    root.addEventListener("focusin", (e) => {
+      let kb = true;
+      try { kb = e.target.matches(":focus-visible"); } catch (_) { /* no :focus-visible */ }
+      focus = kb;
+      sync();
+    });
+    root.addEventListener("focusout", (e) => {
+      if (!root.contains(e.relatedTarget)) { focus = false; sync(); }
+    });
+    document.addEventListener("visibilitychange", sync);
+    if (pauseBtn) pauseBtn.addEventListener("click", () => {
+      user = !user;
+      pauseBtn.setAttribute("aria-pressed", user ? "true" : "false");
+      sync();
+    });
+
+    run();
+    // the 7s timer starts once the page has loaded, so the first example gets its full time
+    if (document.readyState === "complete") arm(tabs[0]);
+    else window.addEventListener("load", () => arm(tabs[0]));
+  })();
+
   /* ── Article table of contents + scrollspy ────────────────────── */
   (function tableOfContents() {
     const rail = $("[data-toc]");
