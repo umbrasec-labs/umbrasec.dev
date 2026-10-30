@@ -48,6 +48,13 @@ KEEP = ["cveID", "vendorProject", "product", "vulnerabilityName",
 LIMIT = 10
 
 
+def plain(value):
+    """CISA text can carry en and em dashes; the site uses plain hyphens only."""
+    if isinstance(value, str):
+        return value.replace("\u2013", "-").replace("\u2014", "-")
+    return value
+
+
 def build():
     req = urllib.request.Request(URL, headers={"User-Agent": "umbrasec-kev-sync"})
     raw = json.load(urllib.request.urlopen(req, timeout=60))
@@ -58,7 +65,7 @@ def build():
         "catalogVersion": raw.get("catalogVersion"),
         "synced": datetime.date.today().isoformat(),
         "count": raw.get("count"),
-        "vulnerabilities": [{k: v.get(k, "") for k in KEEP} for v in vulns],
+        "vulnerabilities": [{k: plain(v.get(k, "")) for k in KEEP} for v in vulns],
     }
 
 
