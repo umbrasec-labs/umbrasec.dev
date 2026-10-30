@@ -582,51 +582,64 @@
     }
   })();
 
-  /* ── Hero: technique -> trace -> rule strip (homepage) ────────── */
+  /* ── Hero: technique -> trace -> rule reel (homepage) ─────────── */
   (function traceToRule() {
     const root = $("[data-tr]");
     if (!root) return;
     const stage = $(".tr-stage", root);
-    const tabs = $$("[data-tr-tab]", root);
     const exs = $$("[data-tr-ex]", root);
+    const now = $(".tr-now", root);
+    const nowId = $("[data-tr-now]", root);
+    const nowI = $("[data-tr-i]", root);
     const pauseBtn = $("[data-tr-pause]", root);
-    let cur = 0, hover = false, focus = false, user = false;
+    if (!exs.length) return;
+    const SECONDS = 7;
+    // read live: a visitor can turn reduced motion on while the page is open
+    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let cur = 0, hover = false, focus = false, user = false, ticks = 0;
 
     function run() {
-      if (reduceMotion) return;
+      if (rm.matches) return;
       stage.classList.remove("is-run");
       void stage.offsetWidth; // restart the draw-in and the pulses
       stage.classList.add("is-run");
     }
-    function arm(tab) {
-      if (reduceMotion) return;
-      tabs.forEach((t) => t.classList.remove("is-on"));
-      void tab.offsetWidth; // restart the progress bar
-      tab.classList.add("is-on");
+    function arm() {
+      ticks = 0;
+      if (!now) return; // under reduced motion the bar is hidden and never ends
+      now.classList.remove("is-on");
+      void now.offsetWidth; // restart the progress bar
+      now.classList.add("is-on");
     }
     function show(i) {
       cur = i;
-      exs.forEach((e, j) => {
-        e.hidden = j !== i;
-        e.classList.toggle("is-active", j === i);
-      });
-      tabs.forEach((t, j) => t.setAttribute("aria-pressed", j === i ? "true" : "false"));
-      arm(tabs[i]);
+      exs.forEach((e, j) => e.classList.toggle("is-active", j === i));
+      if (nowId) nowId.textContent = exs[i].getAttribute("data-tr-id");
+      if (nowI) nowI.textContent = String(i + 1).padStart(2, "0");
+      // stacked layout: the wire stops at the bottom of this example
+      stage.style.setProperty("--tr-h", exs[i].offsetHeight + "px");
+      arm();
       run();
     }
+    const paused = () => hover || focus || user || document.hidden;
     function sync() {
-      root.classList.toggle("is-paused", hover || focus || user || document.hidden);
+      root.classList.toggle("is-paused", paused());
     }
 
-    tabs.forEach((t, i) => t.addEventListener("click", () => show(i)));
-    // The active tab's progress bar is the timer: CSS pauses it, its end advances.
+    // The progress bar is the timer: CSS pauses it, its end advances. Under
+    // reduced motion there is no bar, so a plain timer turns the reel instead.
     root.addEventListener("animationend", (e) => {
       if (e.animationName === "trProg") show((cur + 1) % exs.length);
     });
+    setInterval(() => {
+      if (!rm.matches || paused()) return;
+      if (++ticks >= SECONDS) show((cur + 1) % exs.length);
+    }, 1000);
+    window.addEventListener("resize", () => stage.style.setProperty("--tr-h", exs[cur].offsetHeight + "px"));
     root.addEventListener("mouseenter", () => { hover = true; sync(); });
     root.addEventListener("mouseleave", () => { hover = false; sync(); });
     // Pause for keyboard focus only: Chromium also focuses a button on a mouse
-    // click, which would otherwise freeze the strip after any tab or Play click.
+    // click, which would otherwise freeze the reel after any Play click.
     root.addEventListener("focusin", (e) => {
       let kb = true;
       try { kb = e.target.matches(":focus-visible"); } catch (_) { /* no :focus-visible */ }
@@ -643,10 +656,11 @@
       sync();
     });
 
+    stage.style.setProperty("--tr-h", exs[0].offsetHeight + "px");
     run();
-    // the 7s timer starts once the page has loaded, so the first example gets its full time
-    if (document.readyState === "complete") arm(tabs[0]);
-    else window.addEventListener("load", () => arm(tabs[0]));
+    // the timer starts once the page has loaded, so the first example gets its full time
+    if (document.readyState === "complete") arm();
+    else window.addEventListener("load", arm);
   })();
 
   /* ── Article table of contents + scrollspy ────────────────────── */

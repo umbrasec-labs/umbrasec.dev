@@ -51,6 +51,7 @@ is never touched.
 | `sitemap.xml` | per-article research `<url>` entries | `<!-- AUTO:research ... -->` |
 | `assets/umbra.js` | command-palette "Articles" entries | `/* AUTO:articles ... */` |
 | `tools/sigma-pack/index.html` | ATT&CK coverage table (from the table in `tools/sigma-pack/README.md`) | `<!-- AUTO:sigmapack ... -->` |
+| `index.html` | hero trace-to-rule reel and its counter (from the pack, the detections claims and `tools/site-build/hero-reel.json`) | `<!-- AUTO:reel ... -->`, `<!-- AUTO:reelhead ... -->` |
 | `research/<slug>.html` | prev/next footer nav | located structurally (no marker) |
 | `research/<slug>.html` | JSON-LD `dateModified` + `article:modified_time` meta, only when `updated` is set | the line after `datePublished` / `article:published_time` |
 | standard site pages (see below) | shared site footer (depth-aware links) | the whole `<footer>` element is replaced (no marker) |
@@ -127,15 +128,19 @@ block-style, unquoted keys only: a quoted key (`'CommandLine|contains':`) or a
 flow-style map (`{CommandLine|contains: a, CommandLine|endswith: b}`) is not
 checked, so write detection maps in the pack's usual block style.
 
-It also exits 1 when the homepage hero's trace-to-rule strip no longer matches
-its sources. Each of its three examples names a sigma-pack rule in its RULE
-footer. The rule lines it shows must be one in-order run of that file (trailing
-YAML comments and blank or comment lines are ignored, and a `...` line stands
-for any number of left-out lines, so mark every gap with one). Its `tag:` and
-`level:` must be lines of the file, and the technique id and its tab must match
-the tag. Its claim must be in `../detections/claims/<rule>.yml` with the shown
-`expect:` value, and each shown event `key: value` pair must be in that claim
-or in the file's `event_defaults` (`_note` text does not count). The claims
-half runs only where the detections checkout sits next to this repo, as in the
-workspace. When a rule or claim the strip quotes changes, copy the new lines
-into `index.html`.
+The homepage hero's trace-to-rule reel is generated too, by `hero_reel.py`:
+one example per sigma-pack file, each with its ATT&CK technique (from the
+README coverage table), one synthetic event from its claims in
+`../detections/claims/<rule>.yml`, and the rule or query lines that catch it,
+with the matching values highlighted on both sides. Nothing in it is typed by
+hand, so a rule or claim edit shows up as drift in `index.html` and the hook
+regenerates it. `tools/site-build/hero-reel.json` lists every pack file once,
+in reel order, with optional overrides (technique, tactic, claim, event fields,
+rule lines, highlighted fields; the fields are documented at the top of
+`hero_reel.py`). A pack file missing from it, a claim that is gone or does not
+expect a match, a rule line that is no longer in the file, or an excerpt that
+leaves lines out without a `...` line stops the build. The claims live in the
+detections repo, so the reel is rebuilt and checked only where that checkout
+sits next to this one, as in the workspace (it also needs PyYAML); a lone clone
+leaves it as committed. KQL claims are not executed yet (no Kusto engine in
+CI), and their examples say so.

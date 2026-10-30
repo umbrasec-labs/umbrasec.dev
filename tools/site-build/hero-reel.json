@@ -1,0 +1,253 @@
+{
+  "_about": "Order and overrides for the homepage trace-to-rule reel. Every sigma-pack file once; the first is what a visitor without JavaScript sees. Fields are documented in tools/site-build/hero_reel.py.",
+  "examples": [
+    {
+      "file": "rules/windows/kerberoasting-rc4-service-ticket.yml",
+      "claim": "catches/rc4-service-ticket",
+      "event_keys": [
+        "_synthetic",
+        "EventID",
+        "ServiceName",
+        "TargetUserName",
+        "TicketEncryptionType",
+        "Status"
+      ],
+      "highlight": [
+        "TicketEncryptionType"
+      ]
+    },
+    {
+      "file": "rules/cross-platform/ai-agent-shell-risky-command.yml",
+      "technique": "T1552.001",
+      "tactic": "Credential Access",
+      "claim": "catches/claude-parent-credential-read",
+      "rule_lines": [
+        "agent_parent:",
+        "...",
+        "- ParentImage|contains:",
+        "- '/.local/share/claude/versions/'",
+        "...",
+        "risk_credential:",
+        "- CommandLine|contains:",
+        "- '.aws/credentials'",
+        "..."
+      ]
+    },
+    {
+      "file": "rules/windows/ransomware-inhibit-recovery-native-utilities.yml",
+      "claim": "catches/vssadmin-delete-shadows",
+      "rule_lines": [
+        "selection_vssadmin_img:",
+        "- Image|endswith: '\\vssadmin.exe'",
+        "- OriginalFileName: 'VSSADMIN.EXE'",
+        "selection_vssadmin_cli:",
+        "CommandLine|contains|all:",
+        "- 'delete'",
+        "- 'shadows'",
+        "..."
+      ]
+    },
+    {
+      "file": "rules/windows/kerberoasting-spn-fanout.yml"
+    },
+    {
+      "file": "rules/windows/kerberoasting-honeypot-spn.yml"
+    },
+    {
+      "file": "queries/kql/oauth-consent-sensitive-scopes.kql",
+      "event_keys": [
+        "_synthetic",
+        "OperationName",
+        "Result",
+        "TargetResources"
+      ],
+      "rule_lines": [
+        "AuditLogs",
+        "| where OperationName == \"Consent to application\"",
+        "| where Result == \"success\"",
+        "...",
+        "| extend Permissions   = tostring(props[\"ConsentAction.Permissions\"]),",
+        "...",
+        "| where Permissions has_any (",
+        "\"Mail.Read\", \"Mail.ReadWrite\", \"Mail.Send\", \"MailboxSettings.ReadWrite\",",
+        "..."
+      ]
+    },
+    {
+      "file": "queries/kql/oauth2-permission-grant-post.kql",
+      "event_keys": [
+        "_synthetic",
+        "RequestMethod",
+        "RequestUri",
+        "ResponseStatusCode"
+      ]
+    },
+    {
+      "file": "queries/kql/app-role-assignment.kql",
+      "rule_lines": [
+        "AuditLogs",
+        "| where OperationName in (\"Add app role assignment to service principal\",",
+        "\"Add app role assignment grant to user\")",
+        "| where Result == \"success\"",
+        "...",
+        "| where propName in (\"AppRole.Value\", \"ServicePrincipal.DisplayName\")",
+        "..."
+      ],
+      "event_keys": [
+        "_synthetic",
+        "OperationName",
+        "Result",
+        "TargetResources"
+      ]
+    },
+    {
+      "file": "queries/kql/app-credential-added.kql",
+      "tactic": "Persistence",
+      "claim": "catches/certificate-added-to-application",
+      "event_keys": [
+        "_synthetic",
+        "OperationName",
+        "Result",
+        "TargetResources"
+      ],
+      "rule_lines": [
+        "AuditLogs",
+        "| where OperationName has \"Certificates and secrets management\"",
+        "...",
+        "| where Result == \"success\"",
+        "| mv-expand Target = TargetResources",
+        "| mv-expand Mod = Target.modifiedProperties",
+        "| where tostring(Mod.displayName) == \"KeyDescription\"",
+        "..."
+      ]
+    },
+    {
+      "file": "queries/kql/metabase-egress-inversion.kql",
+      "event_keys": [
+        "_synthetic",
+        "TimeGenerated",
+        "SourceIP",
+        "DestinationIP",
+        "SentBytes",
+        "ReceivedBytes"
+      ],
+      "rule_lines": [
+        "let MetabaseHosts = dynamic([\"10.0.20.15\"]);",
+        "...",
+        "Daily",
+        "| where Day == TestDay",
+        "| join kind=inner Baseline on Host",
+        "| where BaselineDays >= MinBaselineDays",
+        "...",
+        "| where Egress >= MinEgressBytes and EgressMultiple >= Multiple",
+        "..."
+      ],
+      "event": 8
+    },
+    {
+      "file": "rules/linux/litellm-proxy-spawns-shell.yml"
+    },
+    {
+      "file": "rules/web/litellm-mcp-test-endpoint.yml"
+    },
+    {
+      "file": "rules/linux/litellm-stealer-files-linux.yml"
+    },
+    {
+      "file": "rules/windows/litellm-stealer-files-windows.yml"
+    },
+    {
+      "file": "rules/web/litellm-stealer-exfil.yml"
+    },
+    {
+      "file": "rules/windows/masquerading-svchost-outside-system32.yml"
+    },
+    {
+      "file": "rules/windows/cloudflared-tunnel-service-install.yml"
+    },
+    {
+      "file": "rules/web/metabase-reset-password-sqli.yml"
+    },
+    {
+      "file": "rules/web/metabase-reset-password-burst.yml"
+    },
+    {
+      "file": "rules/web/php-upload-progress-multipart-probe.yml"
+    },
+    {
+      "file": "rules/windows/defender-tamper-systemsettingsadminflows.yml"
+    },
+    {
+      "file": "rules/windows/archiver-admin-share-collection.yml",
+      "rule_lines": [
+        "archiver_image:",
+        "Image|endswith:",
+        "- '\\WinRAR.exe'",
+        "...",
+        "add_command:",
+        "CommandLine|contains:",
+        "- ' a '",
+        "...",
+        "admin_share:",
+        "CommandLine|contains:",
+        "- '\\C$'",
+        "..."
+      ]
+    },
+    {
+      "file": "rules/windows/rclone-transfer-to-remote.yml"
+    },
+    {
+      "file": "rules/windows/remote-access-tool-service-install.yml",
+      "rule_lines": [
+        "selection_event:",
+        "EventID: 7045",
+        "tool_screenconnect_binary:",
+        "ImagePath|contains: '\\ScreenConnect.ClientService.exe'",
+        "tool_screenconnect_name:",
+        "ServiceName|startswith: 'ScreenConnect Client'",
+        "...",
+        "condition: selection_event and 1 of tool_* and not 1 of filter_*"
+      ]
+    },
+    {
+      "file": "rules/cross-platform/ai-agent-cli-headless-approval-bypass.yml",
+      "rule_lines": [
+        "sel_claude_image:",
+        "...",
+        "- Image|contains: '/.local/share/claude/versions/'",
+        "...",
+        "sel_claude_bypass:",
+        "- CommandLine|contains: ' --dangerously-skip-permissions'",
+        "...",
+        "condition: >-",
+        "(sel_claude_image and sel_claude_bypass and sel_claude_headless) or",
+        "..."
+      ]
+    },
+    {
+      "file": "queries/kql/all-agent-shells-risky-command.kql",
+      "technique": "T1552.001",
+      "tactic": "Credential Access",
+      "claim": "catches/terminal-credential-read",
+      "event_keys": [
+        "_synthetic",
+        "InitiatingProcessParentFileName",
+        "InitiatingProcessCommandLine",
+        "ProcessCommandLine"
+      ],
+      "rule_lines": [
+        "...",
+        "let Editors = dynamic([\"Code.exe\"]);",
+        "...",
+        "let CredentialMarkers = dynamic([\".aws/credentials\", @\".aws\\credentials\", \".ssh/id_\",",
+        "...",
+        "InitiatingProcessParentFileName in~ (Editors)",
+        "and InitiatingProcessCommandLine has_any (ShellIntegrationMarkers), \"vscode-terminal\",",
+        "...",
+        "where ProcessCommandLine contains Marker",
+        "..."
+      ]
+    }
+  ]
+}
