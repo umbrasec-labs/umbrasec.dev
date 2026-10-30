@@ -709,7 +709,9 @@ html { scroll-behavior: smooth; }
 .to-top:hover { color: var(--text); border-color: var(--border-hi); }
 
 /* ── Hero radial glow ─────────────────────────────────────────── */
-.hero { position: relative; }
+/* overflow-x: clip keeps the drifting glow from widening phone pages (it
+   reaches ~394px at 390px); unlike hidden, it leaves the glow free above. */
+.hero { position: relative; overflow-x: clip; }
 .hero::before {
     content: "";
     position: absolute;
