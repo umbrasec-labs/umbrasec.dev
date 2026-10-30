@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="UMBRASEC - Show the query. Cite the source.">
+    <meta property="og:image:alt" content="UMBRASEC - Trace the technique. Forge the rule.">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="UMBRASEC • Independent Defensive Security Project">
     <meta name="twitter:description" content="An independent defensive security project - detection engineering, threat analysis, and open-source tools.">
@@ -97,7 +97,7 @@
     <main id="main">
 
     <!-- Hero -->
-    <section class="hero max-w-[1280px] mx-auto px-8 pt-16 pb-20 umbra-grid">
+    <section class="hero max-w-[1280px] mx-auto px-8 pt-12 pb-16 lg:pb-8 umbra-grid">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-x-8 items-start">
 
             <div class="lg:col-span-8">
@@ -109,8 +109,8 @@
                     </div>
 
                     <h1 class="hero-headline font-semibold tracking-[-0.045em] leading-none mb-2">
-                        <span class="ghost-line-1" data-scramble>Show the query.</span><br>
-                        <span class="ghost-line-2 text-[#f25623]" data-scramble>Cite the source.</span>
+                        <span class="ghost-line-1" data-scramble>Trace the technique.</span><br>
+                        <span class="ghost-line-2 forge-line text-[#f25623]" data-scramble>Forge the rule.</span>
                     </h1>
 
                     <p class="max-w-[600px] text-xl text-[#959c95] mt-8 leading-tight">
@@ -165,6 +165,142 @@
                     <div>Everything published here is defensive - detection, analysis, and mitigation. No offensive tooling, exploits, or malware.</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Trace to rule strip: technique -> synthetic event -> sigma-pack rule. Every rule line,
+             tag, level and event value here is checked against the pack and the Claims Ledger
+             by build_indexes.py --check (see hero_trace_problems). -->
+        <div class="tr" data-tr>
+            <div class="tr-head">
+                <div class="tr-kicker font-mono">Technique <span aria-hidden="true">→</span> trace <span aria-hidden="true">→</span> rule</div>
+                <div class="tr-tabs" role="group" aria-label="Choose an example">
+                    <button type="button" class="tr-tab" data-tr-tab="0" aria-pressed="true" aria-controls="tr-ex-0">T1558.003<span class="tr-prog" aria-hidden="true"></span></button>
+                    <button type="button" class="tr-tab" data-tr-tab="1" aria-pressed="false" aria-controls="tr-ex-1">T1552.001<span class="tr-prog" aria-hidden="true"></span></button>
+                    <button type="button" class="tr-tab" data-tr-tab="2" aria-pressed="false" aria-controls="tr-ex-2">T1490<span class="tr-prog" aria-hidden="true"></span></button>
+                    <button type="button" class="tr-pause" data-tr-pause aria-label="Pause the examples" aria-pressed="false">
+                        <svg class="tr-ico-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6"/><rect x="7.1" y="2" width="2.4" height="8" rx="0.6"/></svg>
+                        <svg class="tr-ico-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2.2v7.6L9.8 6z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="tr-stage">
+                <svg class="tr-wire tr-wire-h" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                    <path class="tr-wire-draw" d="M0 1H100" pathLength="1"/>
+                </svg>
+                <svg class="tr-wire tr-wire-v" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                    <path class="tr-wire-draw" d="M1 0V100" pathLength="1"/>
+                </svg>
+
+                <!-- Example 1: Kerberoasting -->
+                <div class="tr-ex is-active" id="tr-ex-0" data-tr-ex="0">
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1558.003</div>
+                        <div class="tr-name">Kerberoasting</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Credential Access</span></div>
+                        <div class="tr-tag font-mono">tag: attack.t1558.003</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic event · Claims Ledger</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">EventID</span>: <span class="n">4769</span></div>
+                            <div class="ln"><span class="k">ServiceName</span>: <span class="s">svc-sql</span></div>
+                            <div class="ln"><span class="k">TargetUserName</span>: <span class="s">alice</span></div>
+                            <div class="ln"><span class="hl"><span class="k">TicketEncryptionType</span>: <span class="s">"0x17"</span></span></div>
+                            <div class="ln"><span class="k">Status</span>: <span class="s">"0x0"</span></div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/rc4-service-ticket</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Rule</span><span class="tr-lvl tr-lvl-medium font-mono">level: medium</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln"><span class="k">selection</span>:</div>
+                            <div class="ln">    <span class="k">EventID</span>: <span class="n">4769</span></div>
+                            <div class="ln">    <span class="hl"><span class="k">TicketEncryptionType</span>: <span class="s">'0x17'</span></span></div>
+                            <div class="ln">    <span class="k">Status</span>: <span class="s">'0x0'</span></div>
+                            <div class="ln"><span class="k">filter_machine</span>:</div>
+                            <div class="ln">    <span class="k">ServiceName|endswith</span>: <span class="s">'$'</span></div>
+                            <div class="ln"><span class="k">filter_krbtgt</span>:</div>
+                            <div class="ln">    <span class="k">ServiceName</span>: <span class="s">'krbtgt'</span></div>
+                            <div class="ln"><span class="k">condition</span>: selection and not 1 of filter_*</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">rules/windows/</span>kerberoasting-rc4-service-ticket.yml</div>
+                    </div>
+                </div>
+
+                <!-- Example 2: AI coding agent reads a credential file -->
+                <div class="tr-ex" id="tr-ex-1" data-tr-ex="1" hidden>
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1552.001</div>
+                        <div class="tr-name">Credentials In Files</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Credential Access</span></div>
+                        <div class="tr-tag font-mono">tag: attack.t1552.001</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic event · Claims Ledger</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">ParentImage</span>: <span class="s">/home/dev<span class="hl">/.local/share/claude/versions/</span>2.1.310</span></div>
+                            <div class="ln"><span class="k">Image</span>: <span class="s">/usr/bin/bash</span></div>
+                            <div class="ln"><span class="k">CommandLine</span>: <span class="s">"/usr/bin/bash -c 'cat ~/<span class="hl">.aws/credentials</span>'"</span></div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/claude-parent-credential-read</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Rule</span><span class="tr-lvl tr-lvl-high font-mono">level: high</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln"><span class="k">agent_parent</span>:</div>
+                            <div class="ln c-dim">    ...</div>
+                            <div class="ln">    <span class="d">-</span> <span class="k">ParentImage|contains</span>:</div>
+                            <div class="ln">          <span class="d">-</span> <span class="hl"><span class="s">'/.local/share/claude/versions/'</span></span></div>
+                            <div class="ln c-dim">    ...</div>
+                            <div class="ln"><span class="k">risk_credential</span>:</div>
+                            <div class="ln">    <span class="d">-</span> <span class="k">CommandLine|contains</span>:</div>
+                            <div class="ln">          <span class="d">-</span> <span class="hl"><span class="s">'.aws/credentials'</span></span></div>
+                            <div class="ln c-dim">          ...</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">rules/cross-platform/</span>ai-agent-shell-risky-command.yml</div>
+                    </div>
+                </div>
+
+                <!-- Example 3: ransomware deletes shadow copies -->
+                <div class="tr-ex" id="tr-ex-2" data-tr-ex="2" hidden>
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1490</div>
+                        <div class="tr-name">Inhibit System Recovery</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Impact</span></div>
+                        <div class="tr-tag font-mono">tag: attack.t1490</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic event · Claims Ledger</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">Image</span>: <span class="s">C:\Windows\System32<span class="hl">\vssadmin.exe</span></span></div>
+                            <div class="ln"><span class="k">CommandLine</span>: <span class="s">"vssadmin <span class="hl">delete</span> <span class="hl">shadows</span>"</span></div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/vssadmin-delete-shadows</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Rule</span><span class="tr-lvl tr-lvl-high font-mono">level: high</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln"><span class="k">selection_vssadmin_img</span>:</div>
+                            <div class="ln">    <span class="d">-</span> <span class="hl"><span class="k">Image|endswith</span>: <span class="s">'\vssadmin.exe'</span></span></div>
+                            <div class="ln">    <span class="d">-</span> <span class="k">OriginalFileName</span>: <span class="s">'VSSADMIN.EXE'</span></div>
+                            <div class="ln"><span class="k">selection_vssadmin_cli</span>:</div>
+                            <div class="ln">    <span class="k">CommandLine|contains|all</span>:</div>
+                            <div class="ln">        <span class="d">-</span> <span class="hl"><span class="s">'delete'</span></span></div>
+                            <div class="ln">        <span class="d">-</span> <span class="hl"><span class="s">'shadows'</span></span></div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">rules/windows/</span>ransomware-inhibit-recovery-native-utilities.yml</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="tools/sigma-pack/" class="tr-more inline-block text-sm text-[#f25623] hover:text-[#f56e0f]">See every rule in the sigma-pack →</a>
         </div>
     </section>
 
@@ -391,7 +527,7 @@
                         <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
                     </a>
                     <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
-                        Show the query. Cite the source. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                        Trace the technique. Forge the rule. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
                     </p>
                 </div>
                 <div>
