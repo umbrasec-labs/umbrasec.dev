@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC</title>
-    <meta name="description" content="Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a hunt over agent shells, and what logs miss.">
+    <meta name="description" content="Four detections for a hijacked AI coding agent: a headless CLI with approvals off, a risky shell, a hunt over agent shells, config changes, and what logs miss.">
     <link rel="canonical" href="https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="UMBRASEC">
     <meta property="og:url" content="https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents">
     <meta property="og:title" content="What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC">
-    <meta property="og:description" content="How malware and planted prompts turn an AI coding agent into a confused deputy, what each kind of agent leaves in endpoint logs, and three detections that ship with this article, with their limits stated.">
+    <meta property="og:description" content="How malware and planted prompts turn an AI coding agent into a confused deputy, what each kind of agent leaves in endpoint logs, and four detections that ship with this article, with their limits stated.">
     <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -26,7 +26,7 @@
     <meta property="article:tag" content="KQL">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="What a Hijacked AI Coding Agent Leaves in Your Logs - UMBRASEC">
-    <meta name="twitter:description" content="Malware and planted prompts can steer an AI coding agent. What each kind of agent leaves in your logs, and three detections that say plainly what they miss.">
+    <meta name="twitter:description" content="Malware and planted prompts can steer an AI coding agent. What each kind of agent leaves in your logs, and four detections that say plainly what they miss.">
     <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
     <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
     <script type="application/ld+json">
@@ -34,7 +34,7 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
-      "description": "Three detections for a hijacked AI coding agent: a headless agent CLI with approvals off, a risky agent shell, a hunt over agent shells, and what logs miss.",
+      "description": "Four detections for a hijacked AI coding agent: a headless CLI with approvals off, a risky shell, a hunt over agent shells, config changes, and what logs miss.",
       "datePublished": "2026-10-26",
       "dateModified": "2026-10-30",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
@@ -116,7 +116,12 @@
                 What a Hijacked AI Coding Agent Leaves in Your Logs
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
-                An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships three detections for it, with their limits stated.
+                An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships four detections for it, with their limits stated.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-10-30: added Detection 4, for an agent changing its own configuration: a Sigma rule for a
+                config change or <code>mcp add</code> made by command, a Sigma rule for a new config file, and a
+                Defender XDR hunt that names the writer of each file change.
             </p>
             <p class="mt-4 text-sm text-[#959c95]">
                 Updated 2026-10-30: Detection 3 now hunts all agent shells and is renamed
@@ -169,15 +174,17 @@
                 archived; see <a href="roo-code-auto-approve-bypass">When the Allowlist Isn't a Boundary</a>.
             </p>
             <p>
-                This article ships three detections for that surface: a Sigma rule for an agent CLI started headless
-                with approvals off, a Sigma rule for an agent's shell doing something risky, and a Defender XDR KQL
+                This article ships four detections for that surface: a Sigma rule for an agent CLI started headless
+                with approvals off, a Sigma rule for an agent's shell doing something risky, a Defender XDR KQL
                 hunt over the programs that agents' shells start, the VS Code terminal (as shipped, Windows only) and
-                the shells of Copilot's VS Code harness included. Before this article the
+                the shells of Copilot's VS Code harness included, and a set of three files for an agent changing its
+                own configuration. Before this article the
                 <a href="../tools/sigma-pack/">sigma-pack</a> had no detection for coding agents. Different agents
                 launch commands in different ways, so each detection sees some agents and not others, and the article
-                says which. Both rules are tagged ATT&amp;CK T1059 (Command and Scripting Interpreter), and the
+                says which. The first two rules are tagged ATT&amp;CK T1059 (Command and Scripting Interpreter), and the
                 shell rule adds T1698 (Indirect Prompt Injection), T1552.001 (Credentials In Files) and T1105
-                (Ingress Tool Transfer).
+                (Ingress Tool Transfer). Detection 4 is tagged T1546 (Event Triggered Execution), with T1698 or
+                T1195.002 (Compromise Software Supply Chain).
             </p>
 
             <h2>Two kinds of agent, two kinds of visibility</h2>
@@ -1233,6 +1240,599 @@ union CredentialReads, Pairs
           InitiatingProcessCommandLine
 | sort by Timestamp desc</code></pre>
 
+            <h2>Detection 4: an agent changing its own configuration</h2>
+            <p>
+                The detections above watch what an agent does now. A change to its config lasts: a hook or an MCP
+                server added today runs again in the next session, with no prompt to hijack a second time. Agents also
+                share these files, by the vendors' docs. Hooks in <code>.claude/settings.json</code> reach Claude Code, the Copilot CLI, the
+                Devin CLI and Cursor, <code>.mcp.json</code> reaches Claude Code, the Copilot CLI, the Devin CLI and
+                VS Code, and <code>claude -p</code> uses both in a folder it has never trusted, with no prompt. This
+                is no longer only a lab idea. The Mini Shai-Hulud worm puts a session-start hook in
+                <code>.claude/settings.json</code> and a folder-open task in <code>.vscode/tasks.json</code>, a
+                malicious npm package has been reported running <code>claude mcp add</code> from its install script,
+                and Cursor (CVE-2025-54135) and GitHub Copilot (CVE-2025-53773) both let planted text have the agent
+                edit a file like these.
+            </p>
+            <p>
+                Vendors have closed some routes. On current builds a repository file can no longer turn approvals off
+                in Claude Code (since 2.1.257), VS Code's global auto-approve setting is not accepted from a workspace,
+                and neither the Copilot CLI nor Gemini CLI take allow-all or YOLO from a repository file. Outside Gemini
+                CLI, which takes YOLO from no file, the same keys still work in the user's own files. Still open from a repository file: hooks, <code>.mcp.json</code>,
+                <code>.vscode/tasks.json</code> and VS Code's terminal auto-approve list. Agents guard these files too.
+                In Claude Code 2.1.314, <code>acceptEdits</code> mode refused a Write to
+                <code>.claude/settings.json</code> and <code>.vscode/settings.json</code> and let one through to
+                <code>.cursor/mcp.json</code>, and with permission prompts off the write to
+                <code>.claude/settings.json</code> worked.
+            </p>
+            <p>
+                The hard part is seeing the write at all, because of how files reach the disk. Claude Code and current
+                Gemini CLI builds do not open the config file and write to it. They write a temp file and rename it,
+                and Sysmon has no rename event. Other agents write in place, which a create event can see only for a
+                new file.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Writer</th><th>How it writes</th><th>Final name in a create event?</th><th>Basis</th></tr></thead>
+                    <tbody>
+                        <tr><td>Claude Code Write, Edit, <code>claude mcp add</code></td><td>Temp <code>&lt;name&gt;.tmp.&lt;pid&gt;.&lt;hex&gt;</code>, then rename</td><td>No</td><td>Local strace, 2.1.314, Linux</td></tr>
+                        <tr><td>Gemini CLI <code>write_file</code></td><td>Temp, then rename, in builds from 2026-09-30</td><td>No</td><td>Shipped code</td></tr>
+                        <tr><td><code>sed -i</code>, <code>mv</code></td><td>Temp <code>sedXXXXXX</code>, or a rename only</td><td>No</td><td>Local strace</td></tr>
+                        <tr><td>Codex <code>apply_patch</code>, Cursor CLI Write</td><td>In place</td><td>Yes, for a new file</td><td>Shipped code</td></tr>
+                        <tr><td>VS Code save, Copilot edit tools</td><td>In place, from the main process</td><td>Yes, for a new file (inferred)</td><td>VS Code source</td></tr>
+                        <tr><td>Shell <code>&gt;</code>, <code>tee</code>, node, python</td><td>In place</td><td>Yes, for a new file</td><td>Local strace</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                So no single sensor sees all of this, and the pack ships three files that each see a different part.
+                None can read the file, so none can say which key changed. The sensor differences are from docs and
+                source code, not from a sensor capture: Sysmon for Linux is expected to skip overwrites, Microsoft
+                documents overwrites on Windows but not which open modes count, and Defender's <code>DeviceFileEvents</code> is the only
+                table here that puts a rename, a change and the writer's command line on one row.
+            </p>
+            <h3>A config change made by command</h3>
+            <p>
+                The command rule watches an agent's shell, with the same agent selections as Detection 2, kept equal
+                by a check in the site's pre-commit hook. It fires when that shell changes a config file with
+                <code>sed -i</code>, <code>tee</code>, <code>mv</code>, <code>cp</code>, a PowerShell write cmdlet or
+                a redirect, or runs an <code>mcp add</code>. Lines that use <code>grep</code>, <code>rg</code> or
+                read-only git commands are dropped, because those commands often quote these strings. It cannot link a
+                write word to a path, so a read piped into <code>tee</code> still fires. Over the 446 process rows of
+                our two local Claude Code sessions, which changed no config by shell command, it fired on none. A
+                person running <code>claude mcp add</code> from a README in their own terminal stays quiet, by
+                design.
+            </p>
+            <p>
+                Our test of a package install script changed this rule. We expected the install to show on the parent
+                command line. It does not: under npm 12.2.0 the parent of <code>claude mcp add</code> was
+                <code>node setup.js</code> or <code>/bin/sh -c</code>, with no install text, and Sigma cannot look
+                further up. What did carry it was the working directory, <code>node_modules/&lt;package&gt;</code>,
+                so the rule reads <code>CurrentDirectory</code>; that a sensor records it there is inferred. npm 12.2.0 also refused to run that script until we
+                approved it, so this route depends on the npm version and on what a project has approved. Level is
+                medium: a developer asking an agent to add a server gives the same event as a hijack, and only that
+                developer can tell them apart.
+            </p>
+            <pre><code>title: AI Coding Agent Changes Its Own Config by Command
+id: 6d1f0c2e-3a47-4b8e-9f15-2c7e8a90b1d3
+status: experimental
+description: &gt;
+    A shell started by an AI coding agent changed a file that decides what the
+    agent runs or what it may do without asking, or a coding agent's mcp add
+    command ran under an agent shell or from inside a package's folder under
+    node_modules. A changed config file outlives the session: hooks and MCP
+    servers run again later, and hooks in .claude/settings.json or a server in
+    .mcp.json reach more than one agent, by the vendors' docs. The agent is recognised with the same
+    selections as ai-agent-shell-risky-command, so the same agents are covered
+    and missed, and that rule explains each string. The command rows are the
+    only view of this the Sigma pack has for an existing file: Sysmon has no
+    rename event, so sed -i and mv onto a config file raise no file event with
+    the final name. What counts as a change: a config path on the same line as
+    sed -i (and the -Ei, -ri and --in-place spellings), tee, mv, cp, or
+    PowerShell's Set-Content, Add-Content, Out-File, Copy-Item or Move-Item; or
+    a redirect with the path straight after the &gt; sign, relative or starting
+    ~/, for the eleven paths most used for this. The write word must follow a
+    space, a quote or a slash, so forms such as true;mv, or a line break before
+    the word, are not seen. Sigma cannot link the write word to the path, so a read piped into
+    tee fires, and it cannot end a match at the end of the path, so a copy to
+    .mcp.json.bak fires. A redirect with a quoted path, a ./ prefix, the &gt;|
+    form, or a full path such as /home/dev/.mcp.json is not seen. Python, node
+    and jq one-liners do not count on their own, because an agent reading its
+    config looks the same. A line with grep, rg, git commit, git log, git diff
+    or git show is dropped, because those search or record text that names
+    these strings, so a hijacked command chained after one is not seen on that
+    row. An mcp add from a package install is seen by CurrentDirectory, the
+    only trace of the install on that row: in a local trace (npm 12.2.0 on
+    Linux, strace, with a stub claude) the script ran in
+    node_modules/&lt;package&gt;, and the parent command line was node setup.js or
+    /bin/sh -c with no install text. That a sensor records that folder is
+    inferred; only the chdir was seen. Sigma has no grandparent to look further
+    up. A sensor without CurrentDirectory does not see this branch, nor does a
+    script that sets its own working directory, nor a file: dependency, which
+    runs in its source folder. npm 12.2.0 blocked that script until it was
+    approved. Not seen: an agent's own Write or Edit tool, which is its default
+    route and starts no process; an mcp add typed inside a session; a config
+    path built from variables or reached by cd first; a file that arrives by
+    git or an API commit; and which key changed, since no event carries file
+    content.
+references:
+    - https://code.claude.com/docs/en/mcp
+    - https://code.claude.com/docs/en/hooks
+    - https://code.claude.com/docs/en/permissions
+    - https://learn.chatgpt.com/docs/config-file/config-reference
+    - https://code.visualstudio.com/docs/agent-customization/mcp-servers
+    - https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm
+    - https://osv.dev/vulnerability/MAL-2026-13370
+    - https://www.mend.io/blog/shai-hulud-sap-cap-supply-chain-attack-claude-code/
+    - https://forever.security/blog/hijacking-ai-agents-via-downloads-folder
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-30
+tags:
+    - attack.persistence
+    - attack.t1546
+    - attack.execution
+    - attack.t1698
+logsource:
+    category: process_creation
+detection:
+    # The agent_ and copilot selections and the filter_ selections are the same
+    # as ai-agent-shell-risky-command; --check keeps them equal.
+    agent_parent:
+        - ParentImage|endswith:
+              - '\claude.exe'
+              - '/codex'
+              - '\codex.exe'
+              - '/bin/kilo'
+              - '\bin\kilo.exe'
+              - '/qchat'
+              - '\qchat.exe'
+        - ParentImage|contains:
+              - '/.local/share/claude/versions/'
+              - '/cursor-agent/'
+              - '\cursor-agent\'
+    agent_wrapper:
+        CommandLine|contains:
+            - 'shell-snapshots/snapshot-'
+            - 'shell-snapshots\snapshot-'
+            - 'shopt -u promptvars nullglob extglob nocaseglob dotglob'
+            - '[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);'
+            - '__copilotCommandFinished'
+            - 'CURSOR_STATE_INPUT_FILE'
+            - 'WINDSURF_STATE_MISSING=0'
+    agent_cursor_wrapper_parent:
+        ParentCommandLine|contains:
+            - 'dump_bash_state'
+            - 'builtin eval -- "$snap"'
+            - 'builtin unalias -m ''\*'' 2&gt;/dev/null || true'
+    agent_exthost:
+        ParentImage|endswith:
+            - '\Code.exe'
+            - '/Code Helper (Plugin)'
+        ParentCommandLine|contains: '--inspect-port=0'
+    copilot_parent:
+        ParentImage|endswith:
+            - '/copilot'
+            - '\copilot.exe'
+    filter_ms_copilot_app:
+        ParentImage|contains: '\WindowsApps\'
+    install_folder:
+        CurrentDirectory|contains:
+            - '/node_modules/'
+            - '\node_modules\'
+    mcp_add:
+        CommandLine|contains:
+            - ' mcp add '
+            - ' mcp add-json '
+            - ' mcp import '
+            - '--add-mcp'
+    config_path:
+        CommandLine|contains:
+            - '.claude/settings'
+            - '.claude\settings'
+            - '.claude.json'
+            - '.mcp.json'
+            - '.vscode/settings.json'
+            - '.vscode\settings.json'
+            - '.vscode/tasks.json'
+            - '.vscode\tasks.json'
+            - '.vscode/mcp.json'
+            - '.vscode\mcp.json'
+            - '.cursor/mcp.json'
+            - '.cursor\mcp.json'
+            - '.cursor/hooks.json'
+            - '.cursor\hooks.json'
+            - '.cursor/permissions.json'
+            - '.cursor\permissions.json'
+            - '.cursor/cli-config.json'
+            - '.cursor\cli-config.json'
+            - '.codex/config.toml'
+            - '.codex\config.toml'
+            - '.codex/hooks.json'
+            - '.codex\hooks.json'
+            - '.gemini/settings.json'
+            - '.gemini\settings.json'
+            - '.kiro/settings/mcp.json'
+            - '.kiro\settings\mcp.json'
+            - '.devin/hooks.v1.json'
+            - '.devin\hooks.v1.json'
+            - '.devin/mcp_config.json'
+            - '.devin\mcp_config.json'
+            - '.copilot/mcp-config.json'
+            - '.copilot\mcp-config.json'
+            - '.copilot/settings.json'
+            - '.copilot\settings.json'
+            - '.agents/mcp_config.json'
+            - '.agents\mcp_config.json'
+            - '.agents/hooks.json'
+            - '.agents\hooks.json'
+            - '.roo/mcp.json'
+            - '.roo\mcp.json'
+            - 'cline_mcp_settings.json'
+    # Three selections, not one map, so Chainsaw can load the rule: it refuses a
+    # map that names CommandLine twice.
+    write_form:
+        CommandLine|contains:
+            - ' sed -i'
+            - '''sed -i'
+            - '"sed -i'
+            - '/sed -i'
+            - 'sed -Ei'
+            - 'sed -E -i'
+            - 'sed -ri'
+            - 'sed -r -i'
+            - 'sed --in-place'
+            - ' tee '
+            - '|tee '
+            - '''tee '
+            - '"tee '
+            - ' mv '
+            - '''mv '
+            - '"mv '
+            - '/mv '
+            - ' cp '
+            - '''cp '
+            - '"cp '
+            - '/cp '
+            - 'Set-Content'
+            - 'Add-Content'
+            - 'Out-File'
+            - 'Copy-Item'
+            - 'Move-Item'
+    write_start:
+        CommandLine|startswith:
+            - 'mv '
+            - 'cp '
+            - 'tee '
+            - 'sed -i'
+    write_redirect:
+        CommandLine|contains:
+            - '&gt; .mcp.json'
+            - '&gt;.mcp.json'
+            - '&gt; .vscode/settings.json'
+            - '&gt;.vscode/settings.json'
+            - '&gt; .vscode\settings.json'
+            - '&gt; .vscode/tasks.json'
+            - '&gt;.vscode/tasks.json'
+            - '&gt; .vscode\tasks.json'
+            - '&gt; .vscode/mcp.json'
+            - '&gt;.vscode/mcp.json'
+            - '&gt; .vscode\mcp.json'
+            - '&gt; .claude/settings.json'
+            - '&gt;.claude/settings.json'
+            - '&gt; ~/.claude/settings.json'
+            - '&gt;~/.claude/settings.json'
+            - '&gt; .claude\settings.json'
+            - '&gt; .claude/settings.local.json'
+            - '&gt;.claude/settings.local.json'
+            - '&gt; ~/.claude/settings.local.json'
+            - '&gt;~/.claude/settings.local.json'
+            - '&gt; .claude\settings.local.json'
+            - '&gt; .cursor/mcp.json'
+            - '&gt;.cursor/mcp.json'
+            - '&gt; ~/.cursor/mcp.json'
+            - '&gt;~/.cursor/mcp.json'
+            - '&gt; .cursor\mcp.json'
+            - '&gt; .cursor/hooks.json'
+            - '&gt;.cursor/hooks.json'
+            - '&gt; ~/.cursor/hooks.json'
+            - '&gt;~/.cursor/hooks.json'
+            - '&gt; .cursor\hooks.json'
+            - '&gt; .codex/config.toml'
+            - '&gt;.codex/config.toml'
+            - '&gt; ~/.codex/config.toml'
+            - '&gt;~/.codex/config.toml'
+            - '&gt; .codex\config.toml'
+            - '&gt; .codex/hooks.json'
+            - '&gt;.codex/hooks.json'
+            - '&gt; ~/.codex/hooks.json'
+            - '&gt;~/.codex/hooks.json'
+            - '&gt; .codex\hooks.json'
+            - '&gt; .gemini/settings.json'
+            - '&gt;.gemini/settings.json'
+            - '&gt; ~/.gemini/settings.json'
+            - '&gt;~/.gemini/settings.json'
+            - '&gt; .gemini\settings.json'
+    # Claude Code's Linux sandbox wrapper rows list masked paths on the command line.
+    # See ai-agent-shell-risky-command; the inner shell row carries the real command.
+    # Two selections joined in the condition, not one map, so Chainsaw can load the rule.
+    filter_claude_sandbox_wrapper:
+        CommandLine|startswith:
+            - 'bwrap --new-session --die-with-parent'
+            - '/bin/sh -c bwrap --new-session --die-with-parent'
+    filter_claude_sandbox_runtime:
+        CommandLine|contains: '--setenv SANDBOX_RUNTIME 1'
+    # Reading and recording text that names these strings is ordinary agent work.
+    # Note the trailing spaces: a bare grep would match .ripgreprc on Claude Code's
+    # sandbox rows.
+    filter_text_tools:
+        CommandLine|contains:
+            - 'grep '
+            - '--grep='
+            - ' rg '
+            - '''rg '
+            - '"rg '
+            - 'git commit'
+            - 'git log'
+            - 'git diff'
+            - 'git show'
+    filter_text_tools_start:
+        CommandLine|startswith: 'rg '
+    condition: (((1 of agent_* or (copilot_parent and not filter_ms_copilot_app)) and (mcp_add or write_redirect or (config_path and (write_form or write_start)))) or (install_folder and mcp_add)) and not (filter_claude_sandbox_wrapper and filter_claude_sandbox_runtime) and not 1 of filter_text_tools*
+falsepositives:
+    - A developer asked the agent to add an MCP server or edit its settings;
+      this is the same event as a hijack, so ask the developer
+    - A package that registers its own MCP server when installed
+    - Copying a config file somewhere else, such as cp .mcp.json /tmp/backup
+    - Copying a template over a config file during project setup
+    - A heredoc or echo whose text names a listed path and a write command, or
+      an mcp add
+    - A read piped into tee, such as cat .mcp.json | tee /tmp/x
+    - A copy to a name that starts with the config's name, such as cat .mcp.json
+      &gt; .mcp.json.bak
+    - A hook or script from the agent's own configuration that keeps its
+      settings in step
+    - Tune by allowlisting an exact command per repository rather than by
+      dropping a branch
+level: medium</code></pre>
+            <h3>A new config file</h3>
+            <p>
+                This rule is a drop detector. It fires when a process creates one of these files under its final name,
+                which is what node, python or a shell redirect does and what a malicious package would do. It filters
+                git, it filters VS Code and Cursor under their own folders, and it leaves out noisy files. It does not
+                filter <code>node</code> or the agent binaries: an open public rule that filters them would drop worms
+                that run under node. It needs a Sysmon config that includes these paths. A hit is usually a new file.
+                Silence means nothing, because this rule does not see Claude Code's normal writes, an overwrite on
+                Linux, or a file that arrives by git.
+            </p>
+            <pre><code>title: AI Coding Agent Config File Created Outside Git and Editors
+id: a84e5b17-92c6-4d03-8e2f-7b31c6d4f058
+status: experimental
+description: &gt;
+    A process other than git created one of the files that decide what an AI
+    coding agent runs or may do without asking. Malicious packages in the AntV
+    and Miasma waves were reported writing these files to add a hook that runs
+    on the next session, and a hijacked agent can do the same with a script.
+    This rule sees a new file
+    written straight to its final name, usually by node, bun, python or a
+    shell redirect, and by agents that write in place (Codex apply_patch and
+    the Cursor CLI, read in shipped code). It does not see Claude Code's
+    normal writes: in a local strace capture of Claude Code 2.1.314 on Linux,
+    Write, Edit and claude mcp add all wrote &lt;name&gt;.tmp.&lt;pid&gt;.&lt;hex&gt; and renamed
+    it onto the name, so a create event carries the temp name, not the final
+    one. Shipped code has an in-place fallback after a failed rename, not seen
+    in a capture. The match is on the end of the name on purpose: matching the temp name would
+    fire on every normal save, and no event can tell a hijacked save from a
+    normal one. The same goes for sed -i, for Gemini CLI builds from 2026-09-30
+    on, and for mv, since Sysmon has no rename event. Overwriting a file that
+    already exists is not expected on Linux (inferred from Sysmon for Linux's
+    source, not run). On Windows Microsoft documents overwrites but not which
+    open modes count. So a hit is usually a new file, and silence means nothing.
+    Sysmon's manifest excludes FileCreate by default, so these paths need
+    including in its config (a reading of the manifest, not tested). git is filtered, so a file
+    that arrives in a clone or pull is not seen; that is the normal way a
+    repository delivers them, and worms that push commits through an API write
+    nothing here. VS Code and Cursor are filtered for files under .vscode and
+    .cursor, because a person makes those there, which also hides an IDE agent
+    writing those paths. Files under node_modules are skipped because packages
+    ship them. The noisy files .claude.json, .vscode/settings.json and
+    *.code-workspace are left to the KQL hunt. No event carries file content,
+    so this cannot say which hook or server was added. Sigma's taxonomy gives
+    no file_event mapping for macOS.
+references:
+    - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+    - https://github.com/microsoft/SysmonCommon/blob/main/manifest.xml
+    - https://github.com/microsoft/SysmonForLinux/blob/main/ebpfKern/sysmonFileOpen.c
+    - https://github.com/microsoft/SysmonForLinux/blob/main/sysmonforlinux.c#L104-L146
+    - https://github.com/SigmaHQ/sigma-specification/blob/main/specification/sigma-appendix-taxonomy.md
+    - https://code.claude.com/docs/en/settings
+    - https://snyk.io/blog/mini-shai-hulud-antv-npm-supply-chain-attack/
+    - https://research.jfrog.com/post/shai-hulud-miasma-redhat-cloud-services/
+    - https://github.com/google-gemini/gemini-cli/blob/b633c0703417eff3f6db8b684515e2b26a824e82/packages/core/src/services/fileSystemService.ts#L47-L125
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-30
+tags:
+    - attack.persistence
+    - attack.t1546
+    - attack.initial-access
+    - attack.t1195.002
+logsource:
+    category: file_event
+detection:
+    selection:
+        TargetFilename|endswith:
+            - '/.claude/settings.json'
+            - '\.claude\settings.json'
+            - '/.claude/settings.local.json'
+            - '\.claude\settings.local.json'
+            - '/.mcp.json'
+            - '\.mcp.json'
+            - '/.vscode/tasks.json'
+            - '\.vscode\tasks.json'
+            - '/.vscode/mcp.json'
+            - '\.vscode\mcp.json'
+            - '/.cursor/mcp.json'
+            - '\.cursor\mcp.json'
+            - '/.cursor/hooks.json'
+            - '\.cursor\hooks.json'
+            - '/.cursor/permissions.json'
+            - '\.cursor\permissions.json'
+            - '/.cursor/cli-config.json'
+            - '\.cursor\cli-config.json'
+            - '/.codex/config.toml'
+            - '\.codex\config.toml'
+            - '/.codex/hooks.json'
+            - '\.codex\hooks.json'
+            - '/.gemini/settings.json'
+            - '\.gemini\settings.json'
+            - '/.kiro/settings/mcp.json'
+            - '\.kiro\settings\mcp.json'
+            - '/.devin/hooks.v1.json'
+            - '\.devin\hooks.v1.json'
+            - '/.devin/mcp_config.json'
+            - '\.devin\mcp_config.json'
+            - '/.copilot/mcp-config.json'
+            - '\.copilot\mcp-config.json'
+            - '/.copilot/settings.json'
+            - '\.copilot\settings.json'
+            - '/.agents/mcp_config.json'
+            - '\.agents\mcp_config.json'
+            - '/.agents/hooks.json'
+            - '\.agents\hooks.json'
+            - '/.roo/mcp.json'
+            - '\.roo\mcp.json'
+            - '/cline_mcp_settings.json'
+            - '\cline_mcp_settings.json'
+    filter_git:
+        Image|endswith:
+            - '/git'
+            - '\git.exe'
+    filter_packages:
+        TargetFilename|contains:
+            - '/node_modules/'
+            - '\node_modules\'
+    filter_editor_image:
+        - Image|endswith:
+              - '\Code.exe'
+              - '\Code - Insiders.exe'
+              - '/code'
+              - '/code-insiders'
+              - '\Cursor.exe'
+              - '/cursor'
+        - Image|contains: 'Code Helper'
+    filter_editor_folder:
+        TargetFilename|contains:
+            - '/.vscode/'
+            - '\.vscode\'
+            - '/.cursor/'
+            - '\.cursor\'
+    condition: selection and not filter_git and not filter_packages and not (filter_editor_image and filter_editor_folder)
+falsepositives:
+    - First-time setup by a person or an installer, such as a shell redirect or
+      a tool writing its own settings
+    - A project scaffolder, tar or unzip laying down a template that holds these
+      files
+    - Dotfile tools and backup restores
+    - An agent that writes in place, such as Codex, making one of these files
+      when asked
+    - An agent installed through npm running under node on a first run
+level: medium</code></pre>
+            <h3>Hunting every write</h3>
+            <p>
+                The hunt is the only one of the three that can see Claude Code's Write or Edit tool, or any agent
+                editing a file that already exists. It reads
+                <code>DeviceFileEvents</code>, folds case and separators, strips Claude Code's temp suffix so a temp
+                row and its rename point at one file, and labels the writer. Runtimes and shells sort first. Every
+                normal save is also a row, so it is a hunt to run by hand, and it has never met real rows: the
+                action types <code>FileModified</code> and <code>FileRenamed</code> are not on any Microsoft page we
+                found. Check them in your own tenant first.
+            </p>
+            <pre><code>// A file that decides what an AI coding agent runs or may do without asking was created, changed or renamed, and the row names which process did it
+// Source writeup: https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+// This is a hunt, not an alert. Every normal save of these files is a row. What it adds to
+// the pack's two Sigma rules is the view they cannot have: DeviceFileEvents is the one
+// sensor here that puts renames, changes and the writer's command line on one row, so it
+// is the only detection in the pack that can see Claude Code's Write or Edit tool, or any
+// agent editing a file that already exists. Rows
+// sort with runtimes, shells and unknown writers first, because a hook or MCP server added
+// by node or a shell is what a malicious package looks like. Agent rows come next, then
+// editors and git.
+// Writer is a label from the process that made the change: agent, editor, runtime, shell,
+// git-or-package-tool or other. It cannot tell an agent from a person in an IDE: VS Code
+// saves run in the main process, read in VS Code source, so a Copilot edit and a keystroke
+// save look the same (inferred). An agent installed through npm is a runtime row, because
+// the process is node.
+// Claude Code writes &lt;name&gt;.tmp.&lt;pid&gt;.&lt;hex&gt; and renames it onto the name, seen in a local
+// strace capture of Claude Code 2.1.314 on Linux; with its sandbox on, the temp file may
+// sit in a .cc-writes folder (read in shipped code, not run). Path strips both, so a temp
+// row and its rename are one target and one save can give two rows. Stage says which it is.
+// FolderPath is treated as maybe holding the file name, because Microsoft's description
+// says folder and rows may differ. Set IncludeNoisy to true to add .claude.json, which
+// Claude Code rewrites on every run, .vscode/settings.json and *.code-workspace.
+// No event carries file content, so a row says a file changed and who changed it, never
+// which key. A file that arrives by git shows git as the writer, and a commit pushed
+// through an API shows nothing. Not tested on real rows: the tenant available here has no
+// coding agents. FileModified and FileRenamed appear on no Microsoft page found, the
+// mapping of an overwrite or a rename onto an existing name is not documented, and
+// Microsoft says collection of some file events is limited, so one write is not promised
+// a row. Coverage of these paths on Linux and macOS is unknown. So the query keeps every
+// ActionType rather than naming the three.
+// False positive: every normal save of these files in an editor, which is most rows on a
+//   developer machine; start from runtime, shell and other rows.
+// False positive: Claude Code writing .claude/settings.local.json after a person approves a
+//   permission, shown as an agent row.
+// False positive: tool updates and first runs that write their own settings, such as an
+//   agent installed through npm, shown as a runtime row.
+// False positive: dotfile sync and backup restores.
+// False positive: git writing these files on a clone, pull or checkout, which is the
+//   normal way a repository delivers them; the last in the sort order.
+let Lookback = 7d;
+let IncludeNoisy = false;
+// Lower case, with / as the separator: the query folds both before matching
+let ConfigFiles = @"/(\.claude/settings(\.local)?\.json|\.mcp\.json|\.vscode/(tasks|mcp)\.json|\.cursor/(mcp|hooks|permissions|cli-config)\.json|\.codex/(config\.toml|hooks\.json)|\.gemini/settings\.json|\.kiro/settings/mcp\.json|\.devin/(hooks\.v1|mcp_config)\.json|\.copilot/(mcp-config|settings)\.json|\.agents/(mcp_config|hooks)\.json|\.roo/mcp\.json|cline_mcp_settings\.json)$";
+let HookAndSkillFolders = @"/(\.github/hooks|\.clinerules/hooks|\.cline/hooks|\.continue/mcpservers|\.claude/skills|\.kiro/hooks|\.kiro/agents)/";
+let NoisyFiles = @"(/\.claude\.json|/\.vscode/settings\.json|\.code-workspace)$";
+let AgentNames = dynamic(["claude", "claude.exe", "codex", "codex.exe", "copilot", "copilot.exe",
+    "kilo", "kilo.exe", "qchat", "qchat.exe", "devin", "devin.exe"]);
+let EditorNames = dynamic(["code", "code.exe", "code - insiders.exe", "code-insiders",
+    "code helper", "code helper (plugin)", "cursor", "cursor.exe",
+    "windsurf", "windsurf.exe", "kiro", "kiro.exe", "zed", "zed.exe", "vim", "nvim", "nano",
+    "notepad.exe"]);
+let RuntimeNames = dynamic(["node", "node.exe", "bun", "bun.exe", "deno", "deno.exe", "python",
+    "python3", "python.exe", "ruby", "perl"]);
+let ShellNames = dynamic(["sh", "dash", "bash", "bash.exe", "zsh", "fish", "pwsh", "pwsh.exe",
+    "powershell.exe", "cmd.exe", "sed", "tee", "cp", "mv", "jq"]);
+let PackageNames = dynamic(["git", "git.exe", "npm", "pnpm", "yarn", "tar", "unzip"]);
+DeviceFileEvents
+| where Timestamp &gt; ago(Lookback)
+| where FileName has_any ("json", "toml", "code-workspace")
+    or FolderPath has_any ("hooks", "skills", "agents", "mcpServers")
+| extend Written = replace_string(tolower(iff(FolderPath endswith FileName, FolderPath,
+    strcat(trim_end(@"[/\\]", FolderPath), "/", FileName))), @"\", "/")
+| extend Path = replace_string(replace_regex(Written, @"\.tmp\.([0-9]+\.)?[0-9a-f]+$", ""), "/.cc-writes/", "/")
+| extend Target = case(Path matches regex ConfigFiles, "config",
+    Path matches regex HookAndSkillFolders, "hook-or-skill-folder",
+    IncludeNoisy and Path matches regex NoisyFiles, "noisy",
+    "")
+| where isnotempty(Target)
+| extend Stage = iff(Written != Path, "temp-file", ActionType)
+| extend Writer = case(
+    InitiatingProcessFileName in~ (AgentNames)
+        or InitiatingProcessFolderPath contains "/.local/share/claude/versions/"
+        or InitiatingProcessFolderPath has "cursor-agent", "agent",
+    InitiatingProcessFileName in~ (EditorNames), "editor",
+    InitiatingProcessFileName in~ (RuntimeNames), "runtime",
+    InitiatingProcessFileName in~ (ShellNames), "shell",
+    InitiatingProcessFileName in~ (PackageNames), "git-or-package-tool",
+    "other")
+| extend Rank = case(Writer in ("runtime", "shell", "other"), 1, Writer == "agent", 2,
+    Writer == "editor", 3, 4)
+| project Timestamp, Writer, Target, Path, Stage, ActionType, DeviceName, DeviceId, ReportId,
+          InitiatingProcessAccountName, InitiatingProcessFileName, InitiatingProcessFolderPath,
+          InitiatingProcessCommandLine, InitiatingProcessParentFileName, PreviousFolderPath,
+          PreviousFileName, SHA1, FileSize, Rank
+| sort by Rank asc, Timestamp desc</code></pre>
+
             <h2>What this does not cover</h2>
             <ul>
                 <li><strong>Cursor and Devin beyond shipped code:</strong> the Cursor CLI and IDE agent strings and
@@ -1260,12 +1860,14 @@ union CredentialReads, Pairs
                     for Detection 3's terminal source, and the opt-in custom terminal tool of Copilot's agent host,
                     which none of its sources sees (see Detection 3).</li>
                 <li><strong>File reads:</strong> there is no file-access rule (see Honest limitations).</li>
-                <li><strong>Config writes and MCP abuse:</strong> auto-approve written into
-                    <code>.vscode/settings.json</code> (Copilot, CVE-2025-53773, the 2025 behaviour; in VS Code
-                    1.143.1 a workspace settings file cannot set <code>chat.tools.global.autoApprove</code>, read in
-                    VS Code source, though the user settings file can), a new MCP server entry (Cursor,
-                    CVE-2025-54135) or an approved one swapped for another command (Cursor, CVE-2025-54136). These
-                    are candidates for later rules.</li>
+                <li><strong>Which key changed:</strong> Detection 4 sees a config file change, not its content, so
+                    it cannot tell an auto-approve setting (Copilot, CVE-2025-53773, the 2025 behaviour) or a new MCP
+                    server (Cursor, CVE-2025-54135) from a harmless edit. An approved MCP entry swapped for another
+                    command (Cursor, CVE-2025-54136) is the same, and it can arrive by git, which the new-file
+                    rule filters.</li>
+                <li><strong>Other ways to see a config change:</strong> a Sysmon rule on temp names, Defender's
+                    <code>AgentsInfo</code> table and auditd path rules are not shipped here. Temp names match every
+                    normal save, no tenant we can reach holds local agents, and an auditd rule would be untested.</li>
                 <li><strong>Agent-native telemetry:</strong> no detection here reads an agent's own logs, which are
                     the better signal where you can turn them on: Claude Code's OpenTelemetry export (with
                     <code>OTEL_LOG_TOOL_DETAILS=1</code> for the Bash command text) and its <code>PreToolUse</code>
@@ -1314,12 +1916,22 @@ union CredentialReads, Pairs
     by InitiatingProcessFileName, Ext = tolower(extract(@"\.([^.\\/]+)$", 1, FileName))
 | sort by Events desc</code></pre>
             <p>
-                The KQL hunt has been parse-checked with the Kusto language service but has never run against a
-                Defender XDR tenant, and the Claims Ledger marks its claims as not executed. None of the three
+                Detection 4 says that a file changed and which process changed it, never which key. Its command rule
+                does not see an agent's own Write or Edit tool, its new-file rule does not see Claude Code's normal
+                writes, and only its hunt can see those, so a tenant without Defender for Endpoint has no view of
+                them. In VS Code an agent's edit and a person's save look the same (inferred). Reports disagree on
+                whether the Mini Shai-Hulud family writes these files on the first host or only pushes commits through
+                an API, so on that host a file rule may see nothing. Its write shapes come from local strace captures
+                of Claude Code 2.1.314 and npm 12.2.0 on Linux, plus shipped code for other agents; Windows and macOS
+                were not captured.
+            </p>
+            <p>
+                The KQL hunts have been parse-checked with the Kusto language service but have never run against a
+                Defender XDR tenant, and the Claims Ledger marks their claims as not executed. None of the
                 detections has been run against a sensor capture on any OS (Detection 2's Claude Code sandbox rows
                 come from a local strace capture on Linux, not a sensor), and on Windows the process names, the
                 Git Bash process tree and the quoted path PowerShell records for a native program come from source
-                code, public issue reports and inference. Both Sigma rules pass their claims on synthetic events
+                code, public issue reports and inference. The Sigma rules pass their claims on synthetic events
                 built from the cited sources, which proves the rule logic, not your sensor's field names or formats.
                 They are <code>experimental</code>: tune them against your own logs and read each file's
                 false-positive notes before alerting on them.
@@ -1353,11 +1965,19 @@ union CredentialReads, Pairs
                 <li><a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceevents-table" target="_blank" rel="noopener">Microsoft Learn - DeviceEvents table</a> (ActionType values are listed only in the Defender portal's built-in schema reference)</li>
                 <li><a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon" target="_blank" rel="noopener">Microsoft Sysinternals - Sysmon</a></li>
                 <li><a href="https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/" target="_blank" rel="noopener">Embrace The Red - GitHub Copilot remote code execution via prompt injection (CVE-2025-53773)</a></li>
-                <li><a href="https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm" target="_blank" rel="noopener">Cursor - GHSA-4cxx-hrm3-49rm (CVE-2025-54135)</a></li>
                 <li><a href="https://research.checkpoint.com/2025/cursor-vulnerability-mcpoison/" target="_blank" rel="noopener">Check Point Research - MCPoison (CVE-2025-54136)</a></li>
                 <li><a href="https://attack.mitre.org/techniques/T1059/" target="_blank" rel="noopener">MITRE ATT&amp;CK - T1059 Command and Scripting Interpreter</a>, <a href="https://attack.mitre.org/techniques/T1698/" target="_blank" rel="noopener">T1698 Indirect Prompt Injection</a>, <a href="https://attack.mitre.org/techniques/T1552/001/" target="_blank" rel="noopener">T1552.001 Credentials In Files</a> and <a href="https://attack.mitre.org/techniques/T1105/" target="_blank" rel="noopener">T1105 Ingress Tool Transfer</a></li>
                 <li><a href="https://github.com/umbrasec-labs/detections" target="_blank" rel="noopener">UMBRASEC - Claims Ledger (detections)</a></li>
                 <li><a href="roo-code-auto-approve-bypass">UMBRASEC - When the Allowlist Isn't a Boundary</a></li>
+                <li><a href="https://www.mend.io/blog/shai-hulud-sap-cap-supply-chain-attack-claude-code/" target="_blank" rel="noopener">Mend - Mini Shai-Hulud SAP wave and its Claude Code and VS Code persistence</a></li>
+                <li><a href="https://snyk.io/blog/tanstack-npm-packages-compromised/" target="_blank" rel="noopener">Snyk - TanStack npm packages compromised</a></li>
+                <li><a href="https://osv.dev/vulnerability/MAL-2026-13370" target="_blank" rel="noopener">OSV - MAL-2026-13370, llm-interceptor</a></li>
+                <li><a href="https://github.com/cursor/cursor/security/advisories/GHSA-24mc-g4xr-4395" target="_blank" rel="noopener">Cursor - GHSA-24mc-g4xr-4395 (CVE-2025-54136)</a></li>
+                <li><a href="https://code.claude.com/docs/en/permissions" target="_blank" rel="noopener">Claude Code - Permissions</a></li>
+                <li><a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener">Claude Code - Settings</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon" target="_blank" rel="noopener">Microsoft - Sysmon</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicefileevents-table" target="_blank" rel="noopener">Microsoft - DeviceFileEvents table</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/defender-endpoint/aggregated-reporting" target="_blank" rel="noopener">Microsoft - Aggregated reporting in Defender for Endpoint</a></li>
             </ul>
         </div>
 

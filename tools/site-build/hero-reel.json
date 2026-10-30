@@ -248,6 +248,69 @@
         "where ProcessCommandLine contains Marker",
         "..."
       ]
+    },
+    {
+      "file": "rules/cross-platform/ai-agent-config-changed-by-command.yml",
+      "technique": "T1546",
+      "tactic": "Persistence",
+      "claim": "catches/claude-wrapper-sed-settings",
+      "event_keys": [
+        "_synthetic",
+        "Image",
+        "CommandLine"
+      ],
+      "rule_lines": [
+        "...",
+        "config_path:",
+        "CommandLine|contains:",
+        "- '.claude/settings'",
+        "...",
+        "write_form:",
+        "CommandLine|contains:",
+        "...",
+        "- '''sed -i'",
+        "..."
+      ]
+    },
+    {
+      "file": "rules/cross-platform/ai-agent-config-new-file.yml",
+      "technique": "T1195.002",
+      "tactic": "Initial Access",
+      "claim": "catches/new-file-by-node",
+      "rule_lines": [
+        "selection:",
+        "TargetFilename|endswith:",
+        "...",
+        "- '/.mcp.json'",
+        "...",
+        "filter_git:",
+        "Image|endswith:",
+        "- '/git'",
+        "- '\\git.exe'",
+        "..."
+      ]
+    },
+    {
+      "file": "queries/kql/ai-agent-config-file-writes.kql",
+      "technique": "T1546",
+      "tactic": "Persistence",
+      "claim": "catches/runtime-adds-mcp-server",
+      "event_keys": [
+        "_synthetic",
+        "ActionType",
+        "FileName",
+        "FolderPath",
+        "InitiatingProcessFileName"
+      ],
+      "rule_lines": [
+        "...",
+        "DeviceFileEvents",
+        "...",
+        "| extend Target = case(Path matches regex ConfigFiles, \"config\",",
+        "...",
+        "InitiatingProcessFileName in~ (RuntimeNames), \"runtime\",",
+        "..."
+      ]
     }
   ]
 }

@@ -174,7 +174,7 @@
             <div class="tr-head">
                 <div class="tr-kicker font-mono">Technique <span aria-hidden="true">→</span> trace <span aria-hidden="true">→</span> rule</div>
                 <div class="tr-ctrl">
-                    <div class="tr-now font-mono"><!-- AUTO:reelhead START --><span class="tr-now-id" data-tr-now>T1558.003</span><span class="tr-count"> · <span data-tr-i>01</span> / 26</span><!-- AUTO:reelhead END --><span class="tr-prog" aria-hidden="true"></span></div>
+                    <div class="tr-now font-mono"><!-- AUTO:reelhead START --><span class="tr-now-id" data-tr-now>T1558.003</span><span class="tr-count"> · <span data-tr-i>01</span> / 29</span><!-- AUTO:reelhead END --><span class="tr-prog" aria-hidden="true"></span></div>
                     <button type="button" class="tr-pause" data-tr-pause aria-label="Pause the examples" aria-pressed="false">
                         <svg class="tr-ico-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6"/><rect x="7.1" y="2" width="2.4" height="8" rx="0.6"/></svg>
                         <svg class="tr-ico-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2.2v7.6L9.8 6z"/></svg>
@@ -190,7 +190,7 @@
                     <path class="tr-wire-draw" d="M1 0V100" pathLength="1"/>
                 </svg>
                 <!-- AUTO:reel START -->
-                <!-- reel source: 3dcc241b4173e1b2 -->
+                <!-- reel source: 2ac8609685011959 -->
                 <!-- rules/windows/kerberoasting-rc4-service-ticket.yml -->
                 <div class="tr-ex is-active" data-tr-ex data-tr-id="T1558.003">
                     <div class="tr-panel tr-tech">
@@ -1088,6 +1088,116 @@
                         <div class="tr-foot font-mono"><span class="tr-path">queries/kql/</span>all-agent-shells-risky-command.kql</div>
                     </div>
                 </div>
+
+                <!-- rules/cross-platform/ai-agent-config-changed-by-command.yml -->
+                <div class="tr-ex" data-tr-ex data-tr-id="T1546">
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1546</div>
+                        <div class="tr-name">Event Triggered Execution</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Persistence</span></div>
+                        <div class="tr-tag font-mono">tag: attack.t1546</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic event · Claims Ledger</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">Image</span>: <span class="s">/usr/bin/zsh</span></div>
+                            <div class="ln"><span class="k">CommandLine</span>: <span class="s">...&amp;&amp; eval </span><span class="hl"><span class="s">'sed -i</span></span><span class="s"> s/old/new/ </span><span class="hl"><span class="s">.claude/settings</span></span><span class="s">.json' &lt; ...</span></div>
+                            <div class="ln c-dim">... +1 more event, each caught alone</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/claude-wrapper-sed-settings</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Rule</span><span class="tr-lvl tr-lvl-medium font-mono">level: medium</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim">...</div>
+                            <div class="ln"><span class="k">config_path</span>:</div>
+                            <div class="ln">    <span class="k">CommandLine|contains</span>:</div>
+                            <div class="ln">        <span class="d">-</span> <span class="hl"><span class="s">'.claude/settings'</span></span></div>
+                            <div class="ln c-dim">        ...</div>
+                            <div class="ln"><span class="k">write_form</span>:</div>
+                            <div class="ln">    <span class="k">CommandLine|contains</span>:</div>
+                            <div class="ln c-dim">        ...</div>
+                            <div class="ln">        <span class="d">-</span> <span class="hl"><span class="s">'''sed -i'</span></span></div>
+                            <div class="ln c-dim">        ...</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">rules/cross-platform/</span>ai-agent-config-changed-by-command.yml</div>
+                    </div>
+                </div>
+
+                <!-- rules/cross-platform/ai-agent-config-new-file.yml -->
+                <div class="tr-ex" data-tr-ex data-tr-id="T1195.002">
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1195.002</div>
+                        <div class="tr-name">Compromise Software Supply Chain</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Initial Access</span></div>
+                        <div class="tr-tag font-mono">tag: attack.t1195.002</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic event · Claims Ledger</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">Image</span>: <span class="s">/usr/bin/node</span></div>
+                            <div class="ln"><span class="k">TargetFilename</span>: <span class="s">/home/dev/app</span><span class="hl"><span class="s">/.mcp.json</span></span></div>
+                            <div class="ln c-dim">... +4 more events, each caught alone</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/new-file-by-node</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Rule</span><span class="tr-lvl tr-lvl-medium font-mono">level: medium</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln"><span class="k">selection</span>:</div>
+                            <div class="ln">    <span class="k">TargetFilename|endswith</span>:</div>
+                            <div class="ln c-dim">        ...</div>
+                            <div class="ln">        <span class="d">-</span> <span class="hl"><span class="s">'/.mcp.json'</span></span></div>
+                            <div class="ln c-dim">        ...</div>
+                            <div class="ln"><span class="k">filter_git</span>:</div>
+                            <div class="ln">    <span class="k">Image|endswith</span>:</div>
+                            <div class="ln">        <span class="d">-</span> <span class="s">'/git'</span></div>
+                            <div class="ln">        <span class="d">-</span> <span class="s">'\git.exe'</span></div>
+                            <div class="ln c-dim">...</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">rules/cross-platform/</span>ai-agent-config-new-file.yml</div>
+                    </div>
+                </div>
+
+                <!-- queries/kql/ai-agent-config-file-writes.kql -->
+                <div class="tr-ex" data-tr-ex data-tr-id="T1546">
+                    <div class="tr-panel tr-tech">
+                        <div class="tr-label"><span>Technique</span><span class="tr-meta">MITRE ATT&amp;CK</span></div>
+                        <div class="tr-id font-mono">T1546</div>
+                        <div class="tr-name">Event Triggered Execution</div>
+                        <div class="tr-tactic"><span class="tr-pill font-mono">Persistence</span></div>
+                        <div class="tr-tag font-mono">hunting query</div>
+                    </div>
+                    <div class="tr-panel tr-trace">
+                        <div class="tr-label"><span>Trace</span><span class="tr-meta">synthetic row · not executed</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim"><span class="k">_synthetic</span>: true</div>
+                            <div class="ln"><span class="k">ActionType</span>: <span class="s">FileCreated</span></div>
+                            <div class="ln"><span class="k">FileName</span>: <span class="s">.mcp.json</span></div>
+                            <div class="ln"><span class="k">FolderPath</span>: <span class="s">/home/dev/app/.mcp.json</span></div>
+                            <div class="ln"><span class="k">InitiatingProcessFileName</span>: <span class="s">node</span></div>
+                            <div class="ln c-dim">... +1 more row in the table</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-ok tr-ok-pending"></span><span class="tr-expect">expect: match</span><span class="tr-sep"> · </span><span class="tr-claim">catches/runtime-adds-mcp-server</span></div>
+                    </div>
+                    <div class="tr-panel tr-rule">
+                        <div class="tr-label"><span>Query</span><span class="tr-lvl tr-lvl-kql font-mono">KQL</span></div>
+                        <div class="tr-code font-mono">
+                            <div class="ln c-dim">...</div>
+                            <div class="ln">DeviceFileEvents</div>
+                            <div class="ln c-dim">...</div>
+                            <div class="ln"><span class="d">|</span> <span class="k">extend</span> Target = case(Path matches regex ConfigFiles, <span class="s">"config"</span>,</div>
+                            <div class="ln c-dim">    ...</div>
+                            <div class="ln">    InitiatingProcessFileName in~ (RuntimeNames), <span class="s">"runtime"</span>,</div>
+                            <div class="ln c-dim">    ...</div>
+                        </div>
+                        <div class="tr-foot font-mono"><span class="tr-path">queries/kql/</span>ai-agent-config-file-writes.kql</div>
+                    </div>
+                </div>
                 <!-- AUTO:reel END -->
             </div>
 
@@ -1131,11 +1241,11 @@
                             </div>
                         </div>
                         <div class="md:col-span-7 text-[#959c95] mt-2 md:mt-0">
-                            An AI coding agent runs commands with a developer's access, so whoever steers it borrows that access. Malware has launched agent CLIs with their permission prompts off, and planted text has turned auto-approve into a hole. This article ships three detections for it and says plainly which agents they see and which they cannot.
+                            An AI coding agent runs commands with a developer's access, so whoever steers it borrows that access. Malware has launched agent CLIs with their permission prompts off, and planted text has turned auto-approve into a hole. This article ships four detections for it and says plainly which agents they see and which they cannot.
                             <div class="mt-3 flex items-center gap-x-3 text-xs font-mono">
                                 <span class="text-[#f25623]">Oct 2026</span>
                                 <span class="text-[#7d837d]">·</span>
-                                <span class="text-[#7d837d]">~20 min read</span>
+                                <span class="text-[#7d837d]">~25 min read</span>
                                 <span class="row-chev ml-auto">Read →</span>
                             </div>
                         </div>
@@ -1250,7 +1360,7 @@
                             <div class="font-semibold text-xl">sigma-pack</div>
                             <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2a2a2a] text-[#f56e0f] border border-[#525252]">EARLY</span>
                         </div>
-                        <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, the LiteLLM 1.107.0 release-compromise stealer (ahead of its writeup), N-central post-exploitation, the Metabase reset-password SQL injection and request bursts, php2shell upload-progress probes, hijacked AI coding agents, and ransomware recovery inhibition, Defender tampering, admin-share archiving, rclone transfers and remote access tools installed as a service from the SafePay and INC Ransom writeups, plus six KQL queries for OAuth consent phishing, the app-credential persistence that can follow it, Metabase bulk extraction and risky commands in AI coding agent shells and the VS Code terminal, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
+                        <p class="text-sm text-[#959c95]">The Sigma rules and KQL queries from the research writeups, shipped as runnable files - Sigma rules for Kerberoasting, the LiteLLM command injection, the LiteLLM 1.107.0 release-compromise stealer (ahead of its writeup), N-central post-exploitation, the Metabase reset-password SQL injection and request bursts, php2shell upload-progress probes, hijacked AI coding agents, and ransomware recovery inhibition, Defender tampering, admin-share archiving, rclone transfers and remote access tools installed as a service from the SafePay and INC Ransom writeups, plus seven KQL queries for OAuth consent phishing, the app-credential persistence that can follow it, Metabase bulk extraction, risky commands in AI coding agent shells and the VS Code terminal, and writes to agent config files, each mapped to its ATT&amp;CK technique. Grows one writeup at a time.</p>
                         <a href="https://github.com/umbrasec-labs/umbrasec.dev/tree/master/tools/sigma-pack" class="mt-6 inline-block text-sm text-[#f25623] hover:text-[#f56e0f]">View on GitHub →</a>
                     </div>
 

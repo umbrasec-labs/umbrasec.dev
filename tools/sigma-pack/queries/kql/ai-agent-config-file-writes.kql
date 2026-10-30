@@ -1,0 +1,86 @@
+// UMBRASEC sigma-pack - AI coding agent config files written, with the writer named (T1546 / T1195.002)
+// A file that decides what an AI coding agent runs or may do without asking was created, changed or renamed, and the row names which process did it
+// Source writeup: https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+// This is a hunt, not an alert. Every normal save of these files is a row. What it adds to
+// the pack's two Sigma rules is the view they cannot have: DeviceFileEvents is the one
+// sensor here that puts renames, changes and the writer's command line on one row, so it
+// is the only detection in the pack that can see Claude Code's Write or Edit tool, or any
+// agent editing a file that already exists. Rows
+// sort with runtimes, shells and unknown writers first, because a hook or MCP server added
+// by node or a shell is what a malicious package looks like. Agent rows come next, then
+// editors and git.
+// Writer is a label from the process that made the change: agent, editor, runtime, shell,
+// git-or-package-tool or other. It cannot tell an agent from a person in an IDE: VS Code
+// saves run in the main process, read in VS Code source, so a Copilot edit and a keystroke
+// save look the same (inferred). An agent installed through npm is a runtime row, because
+// the process is node.
+// Claude Code writes <name>.tmp.<pid>.<hex> and renames it onto the name, seen in a local
+// strace capture of Claude Code 2.1.314 on Linux; with its sandbox on, the temp file may
+// sit in a .cc-writes folder (read in shipped code, not run). Path strips both, so a temp
+// row and its rename are one target and one save can give two rows. Stage says which it is.
+// FolderPath is treated as maybe holding the file name, because Microsoft's description
+// says folder and rows may differ. Set IncludeNoisy to true to add .claude.json, which
+// Claude Code rewrites on every run, .vscode/settings.json and *.code-workspace.
+// No event carries file content, so a row says a file changed and who changed it, never
+// which key. A file that arrives by git shows git as the writer, and a commit pushed
+// through an API shows nothing. Not tested on real rows: the tenant available here has no
+// coding agents. FileModified and FileRenamed appear on no Microsoft page found, the
+// mapping of an overwrite or a rename onto an existing name is not documented, and
+// Microsoft says collection of some file events is limited, so one write is not promised
+// a row. Coverage of these paths on Linux and macOS is unknown. So the query keeps every
+// ActionType rather than naming the three.
+// False positive: every normal save of these files in an editor, which is most rows on a
+//   developer machine; start from runtime, shell and other rows.
+// False positive: Claude Code writing .claude/settings.local.json after a person approves a
+//   permission, shown as an agent row.
+// False positive: tool updates and first runs that write their own settings, such as an
+//   agent installed through npm, shown as a runtime row.
+// False positive: dotfile sync and backup restores.
+// False positive: git writing these files on a clone, pull or checkout, which is the
+//   normal way a repository delivers them; the last in the sort order.
+let Lookback = 7d;
+let IncludeNoisy = false;
+// Lower case, with / as the separator: the query folds both before matching
+let ConfigFiles = @"/(\.claude/settings(\.local)?\.json|\.mcp\.json|\.vscode/(tasks|mcp)\.json|\.cursor/(mcp|hooks|permissions|cli-config)\.json|\.codex/(config\.toml|hooks\.json)|\.gemini/settings\.json|\.kiro/settings/mcp\.json|\.devin/(hooks\.v1|mcp_config)\.json|\.copilot/(mcp-config|settings)\.json|\.agents/(mcp_config|hooks)\.json|\.roo/mcp\.json|cline_mcp_settings\.json)$";
+let HookAndSkillFolders = @"/(\.github/hooks|\.clinerules/hooks|\.cline/hooks|\.continue/mcpservers|\.claude/skills|\.kiro/hooks|\.kiro/agents)/";
+let NoisyFiles = @"(/\.claude\.json|/\.vscode/settings\.json|\.code-workspace)$";
+let AgentNames = dynamic(["claude", "claude.exe", "codex", "codex.exe", "copilot", "copilot.exe",
+    "kilo", "kilo.exe", "qchat", "qchat.exe", "devin", "devin.exe"]);
+let EditorNames = dynamic(["code", "code.exe", "code - insiders.exe", "code-insiders",
+    "code helper", "code helper (plugin)", "cursor", "cursor.exe",
+    "windsurf", "windsurf.exe", "kiro", "kiro.exe", "zed", "zed.exe", "vim", "nvim", "nano",
+    "notepad.exe"]);
+let RuntimeNames = dynamic(["node", "node.exe", "bun", "bun.exe", "deno", "deno.exe", "python",
+    "python3", "python.exe", "ruby", "perl"]);
+let ShellNames = dynamic(["sh", "dash", "bash", "bash.exe", "zsh", "fish", "pwsh", "pwsh.exe",
+    "powershell.exe", "cmd.exe", "sed", "tee", "cp", "mv", "jq"]);
+let PackageNames = dynamic(["git", "git.exe", "npm", "pnpm", "yarn", "tar", "unzip"]);
+DeviceFileEvents
+| where Timestamp > ago(Lookback)
+| where FileName has_any ("json", "toml", "code-workspace")
+    or FolderPath has_any ("hooks", "skills", "agents", "mcpServers")
+| extend Written = replace_string(tolower(iff(FolderPath endswith FileName, FolderPath,
+    strcat(trim_end(@"[/\\]", FolderPath), "/", FileName))), @"\", "/")
+| extend Path = replace_string(replace_regex(Written, @"\.tmp\.([0-9]+\.)?[0-9a-f]+$", ""), "/.cc-writes/", "/")
+| extend Target = case(Path matches regex ConfigFiles, "config",
+    Path matches regex HookAndSkillFolders, "hook-or-skill-folder",
+    IncludeNoisy and Path matches regex NoisyFiles, "noisy",
+    "")
+| where isnotempty(Target)
+| extend Stage = iff(Written != Path, "temp-file", ActionType)
+| extend Writer = case(
+    InitiatingProcessFileName in~ (AgentNames)
+        or InitiatingProcessFolderPath contains "/.local/share/claude/versions/"
+        or InitiatingProcessFolderPath has "cursor-agent", "agent",
+    InitiatingProcessFileName in~ (EditorNames), "editor",
+    InitiatingProcessFileName in~ (RuntimeNames), "runtime",
+    InitiatingProcessFileName in~ (ShellNames), "shell",
+    InitiatingProcessFileName in~ (PackageNames), "git-or-package-tool",
+    "other")
+| extend Rank = case(Writer in ("runtime", "shell", "other"), 1, Writer == "agent", 2,
+    Writer == "editor", 3, 4)
+| project Timestamp, Writer, Target, Path, Stage, ActionType, DeviceName, DeviceId, ReportId,
+          InitiatingProcessAccountName, InitiatingProcessFileName, InitiatingProcessFolderPath,
+          InitiatingProcessCommandLine, InitiatingProcessParentFileName, PreviousFolderPath,
+          PreviousFileName, SHA1, FileSize, Rank
+| sort by Rank asc, Timestamp desc
