@@ -79,8 +79,8 @@
     {
       "cveID": "CVE-2026-110447",
       "vendorProject": "Collabora",
-      "product": "Collabora Online \u2013 Built-in CODE Server",
-      "vulnerabilityName": "Collabora Online \u2013 Built-in CODE Server OS Command Injection Vulnerability",
+      "product": "Collabora Online - Built-in CODE Server",
+      "vulnerabilityName": "Collabora Online - Built-in CODE Server OS Command Injection Vulnerability",
       "dateAdded": "2026-10-23",
       "knownRansomwareCampaignUse": "Unknown"
     }

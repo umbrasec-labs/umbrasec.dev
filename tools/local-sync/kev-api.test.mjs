@@ -39,6 +39,14 @@ const UPSTREAM = {
   })),
 };
 
+test("trim swaps CISA en and em dashes for hyphens", () => {
+  const out = trim({ catalogVersion: "1", count: 1, vulnerabilities: [
+    { cveID: "CVE-2026-1", vendorProject: "V", product: "Online \u2013 Built-in", vulnerabilityName: "A \u2014 B", dateAdded: "2026-10-01" },
+  ] });
+  assert.equal(out.vulnerabilities[0].product, "Online - Built-in");
+  assert.equal(out.vulnerabilities[0].vulnerabilityName, "A - B");
+});
+
 function installCache(hit) {
   const puts = [], matches = [];
   globalThis.caches = {

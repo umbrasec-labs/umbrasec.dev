@@ -35,6 +35,9 @@ const FALLBACK_TTL = 300;       // seconds a snapshot fallback is cached during 
 const UPSTREAM_TIMEOUT_MS = 8000;
 const USER_AGENT = "umbrasec-kev-api (+https://umbrasec.dev/api/kev)";
 
+// CISA text can carry en and em dashes; the site uses plain hyphens only.
+const plain = (v) => (typeof v === "string" ? v.replace(/[\u2013\u2014]/g, "-") : v);
+
 function headers(source, overrides) {
   return {
     "Content-Type": "application/json; charset=utf-8",
@@ -64,7 +67,7 @@ export function trim(raw) {
     dateReleased: raw.dateReleased ?? null,
     synced: new Date().toISOString().slice(0, 10),
     count: typeof raw.count === "number" ? raw.count : vulns.length,
-    vulnerabilities: newest.map((v) => Object.fromEntries(KEEP.map((k) => [k, v[k] ?? ""]))),
+    vulnerabilities: newest.map((v) => Object.fromEntries(KEEP.map((k) => [k, plain(v[k] ?? "")]))),
   };
 }
 
