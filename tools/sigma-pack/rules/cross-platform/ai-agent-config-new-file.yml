@@ -1,0 +1,133 @@
+title: AI Coding Agent Config File Created Outside Git and Editors
+id: a84e5b17-92c6-4d03-8e2f-7b31c6d4f058
+status: experimental
+description: >
+    A process other than git created one of the files that decide what an AI
+    coding agent runs or may do without asking. Malicious packages in the AntV
+    and Miasma waves were reported writing these files to add a hook that runs
+    on the next session, and a hijacked agent can do the same with a script.
+    This rule sees a new file
+    written straight to its final name, usually by node, bun, python or a
+    shell redirect, and by agents that write in place (Codex apply_patch and
+    the Cursor CLI, read in shipped code). It does not see Claude Code's
+    normal writes: in a local strace capture of Claude Code 2.1.314 on Linux,
+    Write, Edit and claude mcp add all wrote <name>.tmp.<pid>.<hex> and renamed
+    it onto the name, so a create event carries the temp name, not the final
+    one. Shipped code has an in-place fallback after a failed rename, not seen
+    in a capture. The match is on the end of the name on purpose: matching the temp name would
+    fire on every normal save, and no event can tell a hijacked save from a
+    normal one. The same goes for sed -i, for Gemini CLI builds from 2026-09-30
+    on, and for mv, since Sysmon has no rename event. Overwriting a file that
+    already exists is not expected on Linux (inferred from Sysmon for Linux's
+    source, not run). On Windows Microsoft documents overwrites but not which
+    open modes count. So a hit is usually a new file, and silence means nothing.
+    Sysmon's manifest excludes FileCreate by default, so these paths need
+    including in its config (a reading of the manifest, not tested). git is filtered, so a file
+    that arrives in a clone or pull is not seen; that is the normal way a
+    repository delivers them, and worms that push commits through an API write
+    nothing here. VS Code and Cursor are filtered for files under .vscode and
+    .cursor, because a person makes those there, which also hides an IDE agent
+    writing those paths. Files under node_modules are skipped because packages
+    ship them. The noisy files .claude.json, .vscode/settings.json and
+    *.code-workspace are left to the KQL hunt. No event carries file content,
+    so this cannot say which hook or server was added. Sigma's taxonomy gives
+    no file_event mapping for macOS.
+references:
+    - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+    - https://github.com/microsoft/SysmonCommon/blob/main/manifest.xml
+    - https://github.com/microsoft/SysmonForLinux/blob/main/ebpfKern/sysmonFileOpen.c
+    - https://github.com/microsoft/SysmonForLinux/blob/main/sysmonforlinux.c#L104-L146
+    - https://github.com/SigmaHQ/sigma-specification/blob/main/specification/sigma-appendix-taxonomy.md
+    - https://code.claude.com/docs/en/settings
+    - https://snyk.io/blog/mini-shai-hulud-antv-npm-supply-chain-attack/
+    - https://research.jfrog.com/post/shai-hulud-miasma-redhat-cloud-services/
+    - https://github.com/google-gemini/gemini-cli/blob/b633c0703417eff3f6db8b684515e2b26a824e82/packages/core/src/services/fileSystemService.ts#L47-L125
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-30
+tags:
+    - attack.persistence
+    - attack.t1546
+    - attack.initial-access
+    - attack.t1195.002
+logsource:
+    category: file_event
+detection:
+    selection:
+        TargetFilename|endswith:
+            - '/.claude/settings.json'
+            - '\.claude\settings.json'
+            - '/.claude/settings.local.json'
+            - '\.claude\settings.local.json'
+            - '/.mcp.json'
+            - '\.mcp.json'
+            - '/.vscode/tasks.json'
+            - '\.vscode\tasks.json'
+            - '/.vscode/mcp.json'
+            - '\.vscode\mcp.json'
+            - '/.cursor/mcp.json'
+            - '\.cursor\mcp.json'
+            - '/.cursor/hooks.json'
+            - '\.cursor\hooks.json'
+            - '/.cursor/permissions.json'
+            - '\.cursor\permissions.json'
+            - '/.cursor/cli-config.json'
+            - '\.cursor\cli-config.json'
+            - '/.codex/config.toml'
+            - '\.codex\config.toml'
+            - '/.codex/hooks.json'
+            - '\.codex\hooks.json'
+            - '/.gemini/settings.json'
+            - '\.gemini\settings.json'
+            - '/.kiro/settings/mcp.json'
+            - '\.kiro\settings\mcp.json'
+            - '/.devin/hooks.v1.json'
+            - '\.devin\hooks.v1.json'
+            - '/.devin/mcp_config.json'
+            - '\.devin\mcp_config.json'
+            - '/.copilot/mcp-config.json'
+            - '\.copilot\mcp-config.json'
+            - '/.copilot/settings.json'
+            - '\.copilot\settings.json'
+            - '/.agents/mcp_config.json'
+            - '\.agents\mcp_config.json'
+            - '/.agents/hooks.json'
+            - '\.agents\hooks.json'
+            - '/.roo/mcp.json'
+            - '\.roo\mcp.json'
+            - '/cline_mcp_settings.json'
+            - '\cline_mcp_settings.json'
+    filter_git:
+        Image|endswith:
+            - '/git'
+            - '\git.exe'
+    filter_packages:
+        TargetFilename|contains:
+            - '/node_modules/'
+            - '\node_modules\'
+    filter_editor_image:
+        - Image|endswith:
+              - '\Code.exe'
+              - '\Code - Insiders.exe'
+              - '/code'
+              - '/code-insiders'
+              - '\Cursor.exe'
+              - '/cursor'
+        - Image|contains: 'Code Helper'
+    filter_editor_folder:
+        TargetFilename|contains:
+            - '/.vscode/'
+            - '\.vscode\'
+            - '/.cursor/'
+            - '\.cursor\'
+    condition: selection and not filter_git and not filter_packages and not (filter_editor_image and filter_editor_folder)
+falsepositives:
+    - First-time setup by a person or an installer, such as a shell redirect or
+      a tool writing its own settings
+    - A project scaffolder, tar or unzip laying down a template that holds these
+      files
+    - Dotfile tools and backup restores
+    - An agent that writes in place, such as Codex, making one of these files
+      when asked
+    - An agent installed through npm running under node on a first run
+level: medium

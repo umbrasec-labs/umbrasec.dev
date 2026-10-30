@@ -1,0 +1,282 @@
+title: AI Coding Agent Changes Its Own Config by Command
+id: 6d1f0c2e-3a47-4b8e-9f15-2c7e8a90b1d3
+status: experimental
+description: >
+    A shell started by an AI coding agent changed a file that decides what the
+    agent runs or what it may do without asking, or a coding agent's mcp add
+    command ran under an agent shell or from inside a package's folder under
+    node_modules. A changed config file outlives the session: hooks and MCP
+    servers run again later, and hooks in .claude/settings.json or a server in
+    .mcp.json reach more than one agent, by the vendors' docs. The agent is recognised with the same
+    selections as ai-agent-shell-risky-command, so the same agents are covered
+    and missed, and that rule explains each string. The command rows are the
+    only view of this the Sigma pack has for an existing file: Sysmon has no
+    rename event, so sed -i and mv onto a config file raise no file event with
+    the final name. What counts as a change: a config path on the same line as
+    sed -i (and the -Ei, -ri and --in-place spellings), tee, mv, cp, or
+    PowerShell's Set-Content, Add-Content, Out-File, Copy-Item or Move-Item; or
+    a redirect with the path straight after the > sign, relative or starting
+    ~/, for the eleven paths most used for this. The write word must follow a
+    space, a quote or a slash, so forms such as true;mv, or a line break before
+    the word, are not seen. Sigma cannot link the write word to the path, so a read piped into
+    tee fires, and it cannot end a match at the end of the path, so a copy to
+    .mcp.json.bak fires. A redirect with a quoted path, a ./ prefix, the >|
+    form, or a full path such as /home/dev/.mcp.json is not seen. Python, node
+    and jq one-liners do not count on their own, because an agent reading its
+    config looks the same. A line with grep, rg, git commit, git log, git diff
+    or git show is dropped, because those search or record text that names
+    these strings, so a hijacked command chained after one is not seen on that
+    row. An mcp add from a package install is seen by CurrentDirectory, the
+    only trace of the install on that row: in a local trace (npm 12.2.0 on
+    Linux, strace, with a stub claude) the script ran in
+    node_modules/<package>, and the parent command line was node setup.js or
+    /bin/sh -c with no install text. That a sensor records that folder is
+    inferred; only the chdir was seen. Sigma has no grandparent to look further
+    up. A sensor without CurrentDirectory does not see this branch, nor does a
+    script that sets its own working directory, nor a file: dependency, which
+    runs in its source folder. npm 12.2.0 blocked that script until it was
+    approved. Not seen: an agent's own Write or Edit tool, which is its default
+    route and starts no process; an mcp add typed inside a session; a config
+    path built from variables or reached by cd first; a file that arrives by
+    git or an API commit; and which key changed, since no event carries file
+    content.
+references:
+    - https://code.claude.com/docs/en/mcp
+    - https://code.claude.com/docs/en/hooks
+    - https://code.claude.com/docs/en/permissions
+    - https://learn.chatgpt.com/docs/config-file/config-reference
+    - https://code.visualstudio.com/docs/agent-customization/mcp-servers
+    - https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm
+    - https://osv.dev/vulnerability/MAL-2026-13370
+    - https://www.mend.io/blog/shai-hulud-sap-cap-supply-chain-attack-claude-code/
+    - https://forever.security/blog/hijacking-ai-agents-via-downloads-folder
+    - https://umbrasec.dev/research/detecting-hijacked-ai-coding-agents.html
+author: UMBRASEC
+date: 2026-10-30
+tags:
+    - attack.persistence
+    - attack.t1546
+    - attack.execution
+    - attack.t1698
+logsource:
+    category: process_creation
+detection:
+    # The agent_ and copilot selections and the filter_ selections are the same
+    # as ai-agent-shell-risky-command; --check keeps them equal.
+    agent_parent:
+        - ParentImage|endswith:
+              - '\claude.exe'
+              - '/codex'
+              - '\codex.exe'
+              - '/bin/kilo'
+              - '\bin\kilo.exe'
+              - '/qchat'
+              - '\qchat.exe'
+        - ParentImage|contains:
+              - '/.local/share/claude/versions/'
+              - '/cursor-agent/'
+              - '\cursor-agent\'
+    agent_wrapper:
+        CommandLine|contains:
+            - 'shell-snapshots/snapshot-'
+            - 'shell-snapshots\snapshot-'
+            - 'shopt -u promptvars nullglob extglob nocaseglob dotglob'
+            - '[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false);'
+            - '__copilotCommandFinished'
+            - 'CURSOR_STATE_INPUT_FILE'
+            - 'WINDSURF_STATE_MISSING=0'
+    agent_cursor_wrapper_parent:
+        ParentCommandLine|contains:
+            - 'dump_bash_state'
+            - 'builtin eval -- "$snap"'
+            - 'builtin unalias -m ''\*'' 2>/dev/null || true'
+    agent_exthost:
+        ParentImage|endswith:
+            - '\Code.exe'
+            - '/Code Helper (Plugin)'
+        ParentCommandLine|contains: '--inspect-port=0'
+    copilot_parent:
+        ParentImage|endswith:
+            - '/copilot'
+            - '\copilot.exe'
+    filter_ms_copilot_app:
+        ParentImage|contains: '\WindowsApps\'
+    install_folder:
+        CurrentDirectory|contains:
+            - '/node_modules/'
+            - '\node_modules\'
+    mcp_add:
+        CommandLine|contains:
+            - ' mcp add '
+            - ' mcp add-json '
+            - ' mcp import '
+            - '--add-mcp'
+    config_path:
+        CommandLine|contains:
+            - '.claude/settings'
+            - '.claude\settings'
+            - '.claude.json'
+            - '.mcp.json'
+            - '.vscode/settings.json'
+            - '.vscode\settings.json'
+            - '.vscode/tasks.json'
+            - '.vscode\tasks.json'
+            - '.vscode/mcp.json'
+            - '.vscode\mcp.json'
+            - '.cursor/mcp.json'
+            - '.cursor\mcp.json'
+            - '.cursor/hooks.json'
+            - '.cursor\hooks.json'
+            - '.cursor/permissions.json'
+            - '.cursor\permissions.json'
+            - '.cursor/cli-config.json'
+            - '.cursor\cli-config.json'
+            - '.codex/config.toml'
+            - '.codex\config.toml'
+            - '.codex/hooks.json'
+            - '.codex\hooks.json'
+            - '.gemini/settings.json'
+            - '.gemini\settings.json'
+            - '.kiro/settings/mcp.json'
+            - '.kiro\settings\mcp.json'
+            - '.devin/hooks.v1.json'
+            - '.devin\hooks.v1.json'
+            - '.devin/mcp_config.json'
+            - '.devin\mcp_config.json'
+            - '.copilot/mcp-config.json'
+            - '.copilot\mcp-config.json'
+            - '.copilot/settings.json'
+            - '.copilot\settings.json'
+            - '.agents/mcp_config.json'
+            - '.agents\mcp_config.json'
+            - '.agents/hooks.json'
+            - '.agents\hooks.json'
+            - '.roo/mcp.json'
+            - '.roo\mcp.json'
+            - 'cline_mcp_settings.json'
+    # Three selections, not one map, so Chainsaw can load the rule: it refuses a
+    # map that names CommandLine twice.
+    write_form:
+        CommandLine|contains:
+            - ' sed -i'
+            - '''sed -i'
+            - '"sed -i'
+            - '/sed -i'
+            - 'sed -Ei'
+            - 'sed -E -i'
+            - 'sed -ri'
+            - 'sed -r -i'
+            - 'sed --in-place'
+            - ' tee '
+            - '|tee '
+            - '''tee '
+            - '"tee '
+            - ' mv '
+            - '''mv '
+            - '"mv '
+            - '/mv '
+            - ' cp '
+            - '''cp '
+            - '"cp '
+            - '/cp '
+            - 'Set-Content'
+            - 'Add-Content'
+            - 'Out-File'
+            - 'Copy-Item'
+            - 'Move-Item'
+    write_start:
+        CommandLine|startswith:
+            - 'mv '
+            - 'cp '
+            - 'tee '
+            - 'sed -i'
+    write_redirect:
+        CommandLine|contains:
+            - '> .mcp.json'
+            - '>.mcp.json'
+            - '> .vscode/settings.json'
+            - '>.vscode/settings.json'
+            - '> .vscode\settings.json'
+            - '> .vscode/tasks.json'
+            - '>.vscode/tasks.json'
+            - '> .vscode\tasks.json'
+            - '> .vscode/mcp.json'
+            - '>.vscode/mcp.json'
+            - '> .vscode\mcp.json'
+            - '> .claude/settings.json'
+            - '>.claude/settings.json'
+            - '> ~/.claude/settings.json'
+            - '>~/.claude/settings.json'
+            - '> .claude\settings.json'
+            - '> .claude/settings.local.json'
+            - '>.claude/settings.local.json'
+            - '> ~/.claude/settings.local.json'
+            - '>~/.claude/settings.local.json'
+            - '> .claude\settings.local.json'
+            - '> .cursor/mcp.json'
+            - '>.cursor/mcp.json'
+            - '> ~/.cursor/mcp.json'
+            - '>~/.cursor/mcp.json'
+            - '> .cursor\mcp.json'
+            - '> .cursor/hooks.json'
+            - '>.cursor/hooks.json'
+            - '> ~/.cursor/hooks.json'
+            - '>~/.cursor/hooks.json'
+            - '> .cursor\hooks.json'
+            - '> .codex/config.toml'
+            - '>.codex/config.toml'
+            - '> ~/.codex/config.toml'
+            - '>~/.codex/config.toml'
+            - '> .codex\config.toml'
+            - '> .codex/hooks.json'
+            - '>.codex/hooks.json'
+            - '> ~/.codex/hooks.json'
+            - '>~/.codex/hooks.json'
+            - '> .codex\hooks.json'
+            - '> .gemini/settings.json'
+            - '>.gemini/settings.json'
+            - '> ~/.gemini/settings.json'
+            - '>~/.gemini/settings.json'
+            - '> .gemini\settings.json'
+    # Claude Code's Linux sandbox wrapper rows list masked paths on the command line.
+    # See ai-agent-shell-risky-command; the inner shell row carries the real command.
+    # Two selections joined in the condition, not one map, so Chainsaw can load the rule.
+    filter_claude_sandbox_wrapper:
+        CommandLine|startswith:
+            - 'bwrap --new-session --die-with-parent'
+            - '/bin/sh -c bwrap --new-session --die-with-parent'
+    filter_claude_sandbox_runtime:
+        CommandLine|contains: '--setenv SANDBOX_RUNTIME 1'
+    # Reading and recording text that names these strings is ordinary agent work.
+    # Note the trailing spaces: a bare grep would match .ripgreprc on Claude Code's
+    # sandbox rows.
+    filter_text_tools:
+        CommandLine|contains:
+            - 'grep '
+            - '--grep='
+            - ' rg '
+            - '''rg '
+            - '"rg '
+            - 'git commit'
+            - 'git log'
+            - 'git diff'
+            - 'git show'
+    filter_text_tools_start:
+        CommandLine|startswith: 'rg '
+    condition: (((1 of agent_* or (copilot_parent and not filter_ms_copilot_app)) and (mcp_add or write_redirect or (config_path and (write_form or write_start)))) or (install_folder and mcp_add)) and not (filter_claude_sandbox_wrapper and filter_claude_sandbox_runtime) and not 1 of filter_text_tools*
+falsepositives:
+    - A developer asked the agent to add an MCP server or edit its settings;
+      this is the same event as a hijack, so ask the developer
+    - A package that registers its own MCP server when installed
+    - Copying a config file somewhere else, such as cp .mcp.json /tmp/backup
+    - Copying a template over a config file during project setup
+    - A heredoc or echo whose text names a listed path and a write command, or
+      an mcp add
+    - A read piped into tee, such as cat .mcp.json | tee /tmp/x
+    - A copy to a name that starts with the config's name, such as cat .mcp.json
+      > .mcp.json.bak
+    - A hook or script from the agent's own configuration that keeps its
+      settings in step
+    - Tune by allowlisting an exact command per repository rather than by
+      dropping a branch
+level: medium

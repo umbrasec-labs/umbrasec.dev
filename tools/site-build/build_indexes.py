@@ -29,8 +29,10 @@ Usage:
 The --check mode writes nothing; it just fails if the committed files don't match
 what the manifest would produce. That's what the pre-commit hook runs. It also
 fails when a site page's meta description is missing or longer than 160
-characters (decoded text), and when a sigma-pack rule's detection map (or one
-list item of it) names the same field twice, which Chainsaw cannot load. The
+characters (decoded text), when a sigma-pack rule's detection map (or one list
+item of it) names the same field twice, which Chainsaw cannot load, and when
+ai-agent-config-changed-by-command stops recognising agents the same way as
+ai-agent-shell-risky-command. The
 homepage trace-to-rule reel is generated (hero_reel.py), so a rule or claim
 edit shows up as drift in index.html.
 """
@@ -317,6 +319,47 @@ def find_sigma_problems(rows):
 # It sees block-style, unquoted keys only; quoted keys and flow-style maps
 # ({a: 1, b: 2}) are not checked (none in the pack; see the README).
 _DET_KEY_RE = re.compile(r"^(?P<indent> *)(?P<dash>- +)?(?P<key>[A-Za-z0-9_.-]+(?:\|[A-Za-z0-9_|]+)?)\s*:(?:\s|$)")
+
+
+# ai-agent-config-changed-by-command copies how ai-agent-shell-risky-command
+# recognises an agent. A new agent string has to reach both, so these selections
+# must stay equal, line for line.
+SHARED_RULE = "rules/cross-platform/ai-agent-shell-risky-command.yml"
+SHARED_COPY = "rules/cross-platform/ai-agent-config-changed-by-command.yml"
+SHARED_PREFIXES = ("agent_", "copilot_", "filter_ms_", "filter_claude_")
+SHARED_CONDITION = (
+    "1 of agent_* or (copilot_parent and not filter_ms_copilot_app)",
+    "not (filter_claude_sandbox_wrapper and filter_claude_sandbox_runtime)",
+)
+
+
+def _selection_blocks(path):
+    """{selection name: its lines}, comments left out, for one rule's detection block."""
+    blocks, current, in_det = {}, None, False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith((" ", "-")) and line.strip():
+            in_det = line.startswith("detection:")
+            continue
+        if not in_det or not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = re.match(r"^    ([A-Za-z0-9_]+):", line)
+        if m:
+            current = m.group(1)
+            blocks[current] = []
+        blocks[current].append(line)
+    return blocks
+
+
+def shared_selection_drift():
+    """What differs between the two rules' agent selections and condition clauses."""
+    a = _selection_blocks(SIGMA_DIR / SHARED_RULE)
+    b = _selection_blocks(SIGMA_DIR / SHARED_COPY)
+    names = sorted(n for n in set(a) | set(b) if n.startswith(SHARED_PREFIXES))
+    drift = [n for n in names if a.get(n) != b.get(n)]
+    for clause in SHARED_CONDITION:
+        if not all(clause in " ".join(blocks.get("condition", [])) for blocks in (a, b)):
+            drift.append(f"condition clause: {clause}")
+    return drift
 
 
 def repeated_field_problems():
@@ -691,6 +734,7 @@ def build(check: bool, list_drift: bool = False) -> int:
     orphans = find_orphans(articles)
     sigma_unlisted, sigma_missing = find_sigma_problems(sigma_rows)
     repeated_fields = repeated_field_problems()
+    shared_drift = shared_selection_drift()
     # every page needs the skip link and the <main> landmark it targets; a new
     # page copied from an old template would silently drop them
     no_main = [rel for rel in site_pages() + ["404.html"]
@@ -719,6 +763,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in sigma_missing:
                 print(f"  - {rel}")
             print("\nFix the path in tools/sigma-pack/README.md, or remove the row.")
+            problems = True
+        if shared_drift:
+            print(f"site-build: SIGMA - {SHARED_COPY} differs from {SHARED_RULE} in:")
+            for name in shared_drift:
+                print(f"  - {name}")
+            print("\nCopy the selection across, so both rules know the same agents.")
             problems = True
         if repeated_fields:
             print("site-build: SIGMA - a detection map names one field twice (Chainsaw will not load the rule):")
@@ -788,6 +838,9 @@ def build(check: bool, list_drift: bool = False) -> int:
             for rel in items:
                 print(f"  - {rel}")
             print(f"{fix} in tools/sigma-pack/README.md; the hook will fail while this stands.")
+    if shared_drift:
+        print(f"site-build: WARNING - {SHARED_COPY} differs from {SHARED_RULE} in: {', '.join(shared_drift)}")
+        print("Copy the selection across; the hook will fail while this stands.")
     if repeated_fields:
         print("site-build: WARNING - a detection map names one field twice (Chainsaw will not load the rule):")
         for rel, n, field in repeated_fields:
