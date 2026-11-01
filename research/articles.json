@@ -2,6 +2,23 @@
   "_comment": "Single source of truth for all research articles. Add one entry per article (newest first), then run: python3 tools/site-build/build_indexes.py. The generator rewrites the homepage featured trio, the research index cards + count, feed.xml, the sitemap research entries, the command palette, and every article's prev/next nav. Raw text only: use literal & and \" - the generator escapes per output format. Categories: threat | detection | ai | tooling. Optional \"updated\" (YYYY-MM-DD): set it whenever you add a dated \"Updated\" note to an article; the sitemap lastmod uses it instead of date.",
   "articles": [
     {
+      "slug": "binance-hot-wallet-theft-2026",
+      "title": "Binance's $6.3B Theft: Nobody Stole a Key",
+      "nav_title": "Binance's $6.3B Theft: Nobody Stole a Key",
+      "category": "threat",
+      "date": "2026-11-01",
+      "read_min": 12,
+      "home_blurb": "On 29 October about $6.3 billion left Binance's hot wallets on ten blockchains in roughly half an hour, the largest theft on record. Binance says no private key leaked. The money moved because Binance's own systems were made to sign for it, including 50 EIP-7702 authorisations that turned an Ethereum hot wallet into the attacker's tool. The timeline, how the delegation worked, and four things a defender can watch.",
+      "card_blurb": "The 29 October 2026 Binance hot wallet theft: about $6.3 billion from ten chains in about 30 minutes, attributed by the FBI to North Korea's TraderTraitor, with no private key leak. The dated timeline, how 50 EIP-7702 authorisations made the Ethereum hot wallet run an attacker sweeper, the laptop-to-container path Binance has described, a read-only delegation check, signer policy, and a Kubernetes audit rule for signing workloads.",
+      "feed_desc": "On 29 October 2026 about $6.3 billion (TRM $6.36B, Elliptic $6.43B) left Binance hot wallets on ten blockchains, starting around 20:05 UTC, the largest theft on record. The FBI attributed it to North Korea's TraderTraitor on 31 October. Binance says it may have started with a compromised DevOps engineer's laptop that gave the attacker a service container, later found additional points of breach, and has no evidence of a private key leak. On Ethereum the attacker used 50 EIP-7702 authorisations, signed in advance with the hot wallet's own key across 50 nonces, to delegate the wallet to a sweeper contract that drained it and kept sweeping for three hours. The UTC timeline, how EIP-7702 delegation works, the inference that Binance's own signer signed, a read-only eth_getCode delegation check tested on live chain data, signer policy that refuses authorisations, batches and raw digests, a Sigma rule for interactive access into Kubernetes signing workloads, and honest limitations before the post-mortem.",
+      "palette": {
+        "label": "Binance's $6.3B Theft: Nobody Stole a Key",
+        "hint": "Binance + EIP-7702",
+        "icon": "fa-wallet",
+        "keywords": "binance hack hot wallet theft 6.3 billion october 2026 eip-7702 delegation set code authorization list type 4 sweeper tradertraitor north korea dprk lazarus fbi trm labs elliptic chainalysis bitget bybit signing infrastructure signer policy devops laptop service container kubernetes audit exec eth_getCode crypto exchange t1657 t1609"
+      }
+    },
+    {
       "slug": "detecting-hijacked-ai-coding-agents",
       "title": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "nav_title": "What a Hijacked AI Coding Agent Leaves in Your Logs",
