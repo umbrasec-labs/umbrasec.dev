@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance's $6.3B Theft: Nobody Stole a Key - UMBRASEC</title>
+    <meta name="description" content="Binance lost about $6.3B on 29 October 2026 with no key stolen. How EIP-7702 made a hot wallet run attacker code, and what defenders can watch.">
+    <link rel="canonical" href="https://umbrasec.dev/research/binance-hot-wallet-theft-2026">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="UMBRASEC">
+    <meta property="og:url" content="https://umbrasec.dev/research/binance-hot-wallet-theft-2026">
+    <meta property="og:title" content="Binance's $6.3B Theft: Nobody Stole a Key - UMBRASEC">
+    <meta property="og:description" content="The largest theft on record left ten blockchains in about 30 minutes, and Binance says no private key leaked. What is known, how an EIP-7702 delegation turned a hot wallet against its owner, and four things a defender can watch.">
+    <meta property="og:image" content="https://umbrasec.dev/assets/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="UMBRASEC - Trace the technique. Forge the rule.">
+    <meta property="article:published_time" content="2026-11-01">
+    <meta property="article:author" content="UMBRASEC">
+    <meta property="article:section" content="Threat Analysis">
+    <meta property="article:tag" content="Binance">
+    <meta property="article:tag" content="EIP-7702">
+    <meta property="article:tag" content="TraderTraitor">
+    <meta property="article:tag" content="Hot Wallet">
+    <meta property="article:tag" content="Signing Infrastructure">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Binance's $6.3B Theft: Nobody Stole a Key - UMBRASEC">
+    <meta name="twitter:description" content="$6.3B left Binance hot wallets on ten chains in about 30 minutes, with no key leak. How an EIP-7702 delegation worked, the dated timeline, and what defenders can watch.">
+    <meta name="twitter:image" content="https://umbrasec.dev/assets/og.png">
+    <link rel="alternate" type="application/rss+xml" title="UMBRASEC Research" href="https://umbrasec.dev/feed.xml">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Binance's $6.3B Theft: Nobody Stole a Key",
+      "description": "On 29 October 2026 about $6.3 billion left Binance hot wallets on ten blockchains in about 30 minutes, attributed by the FBI to North Korea's TraderTraitor. Binance says no private key leaked. The dated timeline, how an EIP-7702 delegation made the Ethereum hot wallet run attacker code, the path Binance has described, and four things a defender can watch.",
+      "datePublished": "2026-11-01",
+      "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
+      "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
+      "image": "https://umbrasec.dev/assets/og.png",
+      "mainEntityOfPage": "https://umbrasec.dev/research/binance-hot-wallet-theft-2026",
+      "about": "The October 2026 Binance hot wallet theft, EIP-7702 delegation abuse, and monitoring of exchange signing infrastructure",
+      "keywords": "Binance, hot wallet, EIP-7702, delegation, authorization list, set code transaction, sweeper contract, TraderTraitor, North Korea, DPRK, FBI, TRM Labs, Elliptic, Chainalysis, signing infrastructure, DevOps laptop, service container, Kubernetes audit, eth_getCode, Bitget, Bybit, T1657, T1609"
+    }
+    </script>
+    <script src="../assets/vendor/tailwindcss-3.4.17.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');</style>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon-v2.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/umbra-icon-v2.png">
+    <link rel="apple-touch-icon" href="../assets/umbra-icon-v2.png">
+    <meta name="theme-color" content="#171717">
+    <link rel="stylesheet" href="../assets/umbra.css">
+</head>
+<body class="bg-[#171717] text-[#ccd0cf]" data-base="../" data-reading>
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Navbar -->
+    <nav aria-label="Site" class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur-lg">
+        <div class="max-w-[1280px] mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="../" class="brand flex items-center gap-x-2.5">
+                    <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                        <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                    </div>
+                    <div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                        <span class="font-mono text-xs text-[#959c95] ml-1.5">2026</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                    <a href="../guide/" class="nav-link">Guide</a>
+                    <a href="./" class="nav-link">Research</a>
+                    <a href="../tools/" class="nav-link">Open Source</a>
+                    <a href="../about" class="nav-link">About</a>
+                    <a href="../#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="flex items-center gap-x-3">
+                    <button data-cmdk type="button"
+                            class="hidden md:flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#525252] hover:bg-[#222222] transition-colors"
+                            title="Open command palette">
+                        <span data-kbd>Ctrl K</span>
+                        <span class="text-[#959c95]">Search</span>
+                    </button>
+                    <a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener"
+                       class="nav-icon w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#222222]" title="GitHub">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main">
+
+    <!-- Article -->
+    <article class="max-w-[1280px] mx-auto px-8 py-16">
+        <!-- breadcrumb -->
+        <div class="font-mono text-xs text-[#7d837d] mb-8">
+            <a href="../" class="hover:text-[#f25623]">home</a> /
+            <a href="./" class="hover:text-[#f25623]">research</a> /
+            <span class="text-[#959c95]">binance-hot-wallet-theft-2026</span>
+        </div>
+
+        <header class="prose mx-auto">
+            <div class="flex items-center gap-x-3 mb-6 text-xs font-mono">
+                <span class="text-[#88a57d]">THREAT ANALYSIS</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">Nov 1, 2026</span>
+                <span class="text-[#7d837d]">·</span>
+                <span class="text-[#959c95]">~12 min</span>
+            </div>
+            <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
+                Binance's $6.3B Theft: Nobody Stole a Key
+            </h1>
+            <p class="text-xl text-[#959c95] leading-snug">
+                On 29 October 2026 about $6.3 billion left Binance's hot wallets on ten blockchains in roughly half an
+                hour. It is the largest theft on record, about four times the Bybit heist of 2025. Binance says it has
+                found no evidence that a wallet private key leaked. That one sentence is the whole lesson: the money
+                moved because Binance's own systems were made to sign for it.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Crypto Theft</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">EIP-7702</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">Signing Infrastructure</span>
+                <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-[#222222] border border-[#525252] text-[#959c95]">North Korea</span>
+            </div>
+        </header>
+
+        <div class="prose mx-auto mt-10 article-body">
+            <aside class="toc-rail" data-toc aria-label="On this page"></aside>
+
+            <div class="callout">
+                <p class="text-sm"><strong>TL;DR for defenders.</strong> Known as of <strong>1 November 2026</strong>;
+                Binance has not published its post-mortem yet. Around <strong>20:05 UTC on 29 October</strong>, roughly
+                <strong>$6.3-6.4 billion</strong> left Binance hot wallets on ten chains. The <strong>FBI</strong>
+                attributed it to North Korea's <strong>TraderTraitor</strong> on 31 October. Binance says the incident
+                <strong>may have started with a compromised DevOps engineer's laptop</strong> that gave the attacker a
+                service container, that it later found <strong>additional points of breach</strong>, and that it has no
+                evidence of a private key leak. On Ethereum the attacker used <strong>50 EIP-7702 authorisations</strong>,
+                each validly signed with the hot wallet's own key, to make the wallet run an attacker contract. If you run
+                a hot wallet: <strong>alert the moment one of your wallets has delegation code</strong> (a script for
+                that is below), make your signer <strong>refuse EIP-7702 authorisations</strong> and anything else it was
+                not built to sign, and block the attacker addresses that TRM and Elliptic have labelled.</p>
+            </div>
+
+            <h2>Nobody stole a key</h2>
+            <p>
+                Exchanges spend a great deal on keeping private keys away from people: hardware security modules,
+                multi-party computation, key shards in different places. All of that answers one question, "can someone
+                take our key?" On 29 October the answer, as far as Binance can tell, was still no. The money left anyway.
+            </p>
+            <p>
+                Every outgoing transaction on every chain carried a valid signature from a Binance wallet. Nothing
+                was forged. Blockchain analytics firm TRM Labs puts it plainly: the most likely explanation is that the
+                attacker could make Binance's signing system sign transactions of its choosing. That moves the
+                defender's question from "is the key safe" to "what can make our signer sign".
+            </p>
+            <p>
+                It is not new. Chainalysis watched the Binance funds mix with those from the Bitget hot wallet theft
+                five weeks earlier, where, TRM reports, the exchange's own withdrawal controls approved the transfers.
+                The FBI tied the same group to Bybit in February 2025, where the signers' own web interface was
+                swapped. Different exchanges, one playbook: reach the
+                machinery that approves money, not the key behind it.
+            </p>
+
+            <h2>What happened, in dates</h2>
+            <p>
+                Times are UTC, from TRM Labs and Elliptic's on-chain reconstructions and from Binance's own statements.
+                The analytics firms differ by a few minutes in places; where they do, the earlier source is named.
+            </p>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>When (UTC)</th><th>Event</th></tr></thead>
+                    <tbody>
+                        <tr><td>28 Oct</td><td>An operator wallet receives three small Tornado Cash withdrawals, at least 36 hours before the theft (TRM)</td></tr>
+                        <tr><td>29 Oct, day</td><td>Attack code deployed and tested on two wallets, then rehearsed on a third; Elliptic puts the sweeper contract's deployment at 15:59, about four hours before the attack</td></tr>
+                        <tr><td><strong>20:05-20:09</strong></td><td>Five Binance wallets on the XRP Ledger send 233.46 million XRP to one attacker address. The theft has started</td></tr>
+                        <tr><td>after 20:10</td><td>Solana and Optimism hot wallets drained</td></tr>
+                        <tr><td><strong>20:20</strong></td><td>The Bitcoin hot wallet sends 18,270 BTC. On Ethereum, one transaction carries 50 EIP-7702 authorisations signed with the key of the hot wallet Elliptic calls "Binance 14"</td></tr>
+                        <tr><td>~20:22</td><td>The Tron hot wallet sends 612.7 million USDT and 46.4 million TRX, within two minutes of the Bitcoin transfer (TRM)</td></tr>
+                        <tr><td><strong>~20:23</strong></td><td>The sweeper empties Binance 14: 167,464 ETH and 63 tokens, including about 1.6 billion USDT, roughly three and a half minutes after the delegation</td></tr>
+                        <tr><td>20:41-23:56</td><td>Repeat sweeps of new deposits into Binance 14 at 20:41, 20:59, 21:04, 21:44, 22:39 and 23:56. The delegation was still in place</td></tr>
+                        <tr><td>21:01, 21:04</td><td>Tether and Circle freeze attacker-held stablecoins; Ripple, World Liberty Financial and the Arbitrum Security Council follow</td></tr>
+                        <tr><td>23:05</td><td>A second wave hits Binance wallets on Avalanche and Polygon</td></tr>
+                        <tr><td>30 Oct 07:37</td><td>Co-CEO Richard Teng: the incident may have started with a compromised DevOps engineer's laptop, which gave access to a service container; no evidence of a private key leak; affected address authorisations revoked</td></tr>
+                        <tr><td>30 Oct 08:47</td><td>Binance: "additional points of breach", "a complex attack"; outflows stopped when withdrawals were paused; about $3 billion frozen</td></tr>
+                        <tr><td><strong>31 Oct</strong></td><td>The FBI attributes the theft to North Korea's TraderTraitor (as reported by Elliptic)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                TRM's per-chain total is about $6.36 billion at transfer-time prices: Ethereum about $3.79 billion,
+                Bitcoin $1.47 billion, Tron $628 million, XRP $296 million, Solana $96 million, and smaller amounts on
+                Arbitrum, Optimism, Base, Avalanche and Polygon. Elliptic counts $6.43 billion; Binance says about $6.3
+                billion. Issuers froze roughly $2.7-3 billion of it, mostly stablecoins. The ether and bitcoin, worth
+                billions more, are beyond anyone's freeze button.
+            </p>
+
+            <h2>How a hot wallet ends up running someone else's code</h2>
+            <p>
+                Most of the chains were drained with ordinary transfers: the hot wallet signed a payment to the attacker,
+                and the chain accepted it because the signature was valid. Ethereum is the interesting one, because there
+                the attacker did something that outlived a single transaction.
+            </p>
+            <p>
+                <a href="https://eips.ethereum.org/EIPS/eip-7702" target="_blank" rel="noopener">EIP-7702</a>, live on
+                Ethereum since the Pectra upgrade in May 2025, lets a plain wallet (an "externally owned account") hand
+                its behaviour to a smart contract. It works like this:
+            </p>
+            <ol>
+                <li>The wallet's key signs a small <strong>authorisation</strong>: "run the code at address X", for a
+                given chain and a given wallet nonce (its transaction count).</li>
+                <li>Anyone can put that authorisation into a <strong>type 4 transaction</strong> and send it. The
+                wallet's owner does not have to be the one who submits it.</li>
+                <li>When it lands, the wallet's code becomes a 23-byte <strong>delegation indicator</strong>,
+                <code>0xef0100</code> followed by address X. From then on, every call to the wallet runs X's code with
+                the wallet's balance and authority.</li>
+                <li>The delegation <strong>stays</strong> until the key signs a new authorisation that replaces or
+                clears it.</li>
+            </ol>
+            <p>
+                The attacker's X was a sweeper contract that accepted instructions only from the attacker's operator
+                wallet. Once it was attached to Binance 14, emptying the wallet needed no further signature from
+                Binance. That is why the sweeps kept coming for more than three hours, catching every new deposit, until
+                Binance revoked the delegation.
+            </p>
+            <p>
+                Why 50 authorisations? An authorisation only works if its nonce equals the wallet's current transaction
+                count. A busy exchange hot wallet's count moves constantly. TRM says the attacker signed authorisations
+                for 50 consecutive nonces in advance, so that one of them was certain to match at the moment the
+                transaction landed. TRM's advice on that shape is worth repeating word for word: a request for many
+                authorisations across a range of nonces "should be treated as an indicator of compromise".
+            </p>
+            <p>
+                Here is the part that matters for defenders. Each of those 50 authorisations had to be signed with
+                Binance 14's own key. If, as Binance says, the key never leaked, then Binance's signing system signed
+                them. Elliptic reports Teng saying the EIP-7702 use "did not pass through our normal approval controls".
+                That is our inference from public facts, not something Binance has stated, but it points at the control
+                that failed: not the key's storage, but what the signer was willing to sign.
+            </p>
+
+            <h2>The path Binance has described</h2>
+            <p>
+                Binance's public account so far is short, and it has already grown once:
+            </p>
+            <ul>
+                <li>The incident "may involve a compromised DevOps engineer's laptop, which allowed an attacker to gain
+                access to a service container" (Binance security update, 30 October).</li>
+                <li>From there the attacker "submitted unauthorized withdrawal transactions". Teng added that the
+                attacker "did not simply use one engineer's permissions" and that it was not "a single 'one-click'
+                action".</li>
+                <li>Hours later Binance said it had "uncovered additional points of breach" and called it "a complex
+                attack".</li>
+            </ul>
+            <p>
+                Read together: an engineer's machine led to a container inside the platform, and something reachable from
+                that container could get withdrawals and authorisations signed across ten chains. What that container
+                ran, how it reached the signer, and what the other breach points were, Binance has not said. We mark
+                everything past that as unknown.
+            </p>
+            <p>
+                The entry point fits the group's record. In the Bybit case, Mandiant traced the first step to a developer
+                at the wallet supplier Safe running a fake stock-trading Docker project, followed by the theft of that
+                developer's cloud session. An engineer's laptop is the cheapest door into production that exists, and
+                TraderTraitor keeps walking through it.
+            </p>
+
+            <h2>What a defender can watch</h2>
+            <p>
+                Four things, in order of how directly they would have mattered here. The first two are for anyone who
+                holds a hot wallet on an Ethereum-compatible chain. The last two depend on your platform looking
+                something like what Binance described.
+            </p>
+
+            <h3>1. Your own wallets gaining delegation code</h3>
+            <p>
+                A hot wallet that never delegates should never have code. If it suddenly does, something signed an
+                EIP-7702 authorisation for it, and the wallet may already be running someone else's contract. This
+                is cheap to check: one <code>eth_getCode</code> call per address against your own node. An empty answer
+                (<code>0x</code>) is a plain wallet; an answer that starts <code>0xef0100</code> is a delegation, and the
+                rest of it is the contract's address. TRM gives the same advice: treat any delegation on a treasury
+                wallet as a trigger for an immediate alert.
+            </p>
+            <pre><code>#!/usr/bin/env python3
+"""Alert if any wallet you list has EIP-7702 delegation code.
+
+Read-only: one eth_getCode call per address against your own node.
+A plain wallet (EOA) has no code. A delegated one has the 23-byte
+indicator 0xef0100 followed by the 20-byte address it now runs.
+
+usage: RPC_URL=https://your-node python3 check_7702.py wallets.txt
+exit:  0 all clean, 2 delegation found, 1 error
+"""
+import json
+import os
+import sys
+import urllib.request
+
+PREFIX = "0xef0100"
+
+
+def get_code(rpc, address):
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "eth_getCode",
+                       "params": [address, "latest"]}).encode()
+    req = urllib.request.Request(rpc, body, {"Content-Type": "application/json",
+                                             "User-Agent": "check_7702/1"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        reply = json.load(r)
+    if "error" in reply:
+        raise RuntimeError(reply["error"])
+    return reply["result"].lower()
+
+
+def classify(code):
+    if code in ("0x", "0x0", ""):
+        return "clean", None
+    if code.startswith(PREFIX) and len(code) == 2 + 46:
+        return "DELEGATED", "0x" + code[len(PREFIX):]
+    return "has-code", None  # a contract, not a plain wallet
+
+
+def main():
+    rpc = os.environ.get("RPC_URL")
+    if not rpc or len(sys.argv) != 2:
+        sys.exit(__doc__)
+    found = False
+    for line in open(sys.argv[1]):
+        addr = line.split("#")[0].strip()
+        if not addr:
+            continue
+        state, target = classify(get_code(rpc, addr))
+        print(f"{addr} {state}" + (f" -&gt; {target}" if target else ""))
+        found = found or state == "DELEGATED"
+    sys.exit(2 if found else 0)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, RuntimeError, ValueError) as e:
+        sys.exit(f"error: {e}")</code></pre>
+            <p>
+                Put one address per line in <code>wallets.txt</code> (a <code>#</code> starts a comment), run it every
+                block or every minute from cron or your monitoring system, and page on exit code 2. It uses only the
+                Python standard library. We ran it on 1 November against a public Ethereum node: a plain wallet came back
+                <code>clean</code>, a token contract <code>has-code</code>, and three wallets taken from recent type 4
+                transactions <code>DELEGATED</code>, each with the address it now runs. Check every chain where you hold
+                a hot wallet and EIP-7702 is live, not only Ethereum mainnet.
+            </p>
+            <p>
+                Be honest about what this buys. It fires after the delegation lands. At Binance the first sweep came
+                about three and a half minutes later, so a one-minute check would not have saved the first sweep. It
+                would have cut short the three hours of repeat sweeps, and it turns "we noticed when the money was gone"
+                into a page with the attacker's contract address in it. Have a pre-approved way to sign a revocation
+                ready, as TRM recommends, or the alert just tells you how fast you are losing.
+            </p>
+
+            <h3>2. A signer that refuses what it was not built to sign</h3>
+            <p>
+                This is the control, not a query. An exchange hot wallet signs a small set of things: transfers to
+                approved destinations, in amounts inside its limits, of transaction types its runbook lists. Everything
+                else should be refused before any key is touched:
+            </p>
+            <ul>
+                <li><strong>EIP-7702 authorisations.</strong> An authorisation is signed over the byte <code>0x05</code>
+                followed by the chain, the contract address and a nonce. A hot wallet that has no reason to delegate
+                should never sign one. Refuse type 4 transactions too.</li>
+                <li><strong>Batches.</strong> Many authorisations, or many signatures across a range of nonces, in one
+                request or one short window. TRM calls this an indicator of compromise; treat it as one and stop.</li>
+                <li><strong>Raw digests.</strong> A signing endpoint that will sign any 32-byte hash it is handed cannot
+                tell a payment from an authorisation, because the hash hides what it is. Policy has to sit where the
+                request is still readable, before it is hashed. If your signer only ever sees hashes, the policy is
+                not in the signer at all.</li>
+            </ul>
+            <p>
+                Teng's own description, a delegation that bypassed normal approval controls, is exactly the gap this
+                closes. Elliptic is our source for that quote and Binance has not published it in writing, so we treat
+                it as reported, not confirmed.
+            </p>
+
+            <h3>3. A person reaching into the signing workload</h3>
+            <p>
+                Binance's path went from a laptop to a service container. If your withdrawal or signing services run on
+                Kubernetes, the API server's audit log records every time a person opens a shell in a pod, attaches to
+                it, port-forwards to it or adds a debug container. In the namespace that holds the signer, that should
+                almost never happen outside an approved change. SigmaHQ already has a generic rule for exec into a
+                container; this version is scoped to signing workloads, adds the other three ways in, and leaves out
+                service accounts:
+            </p>
+            <pre><code>title: Interactive Access Into a Withdrawal or Signing Workload
+id: d4174fd7-7ad4-47ab-93be-f76e57f669b2
+status: experimental
+description: &gt;
+    A person opened a shell, attached, port-forwarded or added a debug
+    container in the namespace that runs your withdrawal or signing service.
+    Binance said its October 2026 theft may have started with a DevOps
+    engineer's laptop that gave the attacker a service container. Put your
+    own signing namespace in selection_ns; service accounts are excluded.
+references:
+    - https://umbrasec.dev/research/binance-hot-wallet-theft-2026
+author: UMBRASEC
+date: 2026-11-01
+tags:
+    - attack.execution
+    - attack.t1609
+logsource:
+    product: kubernetes
+    service: audit
+detection:
+    selection_ns:
+        objectRef.namespace: 'EDIT-ME-signing-namespace'
+        objectRef.resource: 'pods'
+    selection_exec:
+        verb: 'create'
+        objectRef.subresource:
+            - 'exec'
+            - 'attach'
+            - 'portforward'
+    selection_debug:
+        verb: 'patch'
+        objectRef.subresource: 'ephemeralcontainers'
+    filter_service_accounts:
+        user.username|startswith: 'system:serviceaccount:'
+    condition: selection_ns and (selection_exec or selection_debug) and not filter_service_accounts
+falsepositives:
+    - An on-call engineer debugging the signing service during an approved change
+level: high</code></pre>
+            <p>
+                Replace <code>EDIT-ME-signing-namespace</code> with your own namespace (a list works). Until you do, it
+                matches nothing. It is an article snippet, parsed with pySigma but not in our
+                <a href="../tools/sigma-pack/">sigma pack</a>: we will decide on pack rules once Binance's post-mortem
+                says what its platform actually was.
+            </p>
+
+            <h3>4. An engineer's laptop reaching production</h3>
+            <p>
+                The first step in this attack, and in Bybit's, was an engineer's machine. The useful question is not
+                "was a laptop infected" but "what can a laptop reach". Hunt for production credentials, kubeconfigs and
+                cloud sessions used from engineer endpoints outside change windows, and for a session that keeps the
+                engineer's working hours but not their usual places. Mandiant saw exactly that pattern at Safe: the
+                attacker kept to the developer's schedule so the stolen session stayed live. Our
+                <a href="detecting-hijacked-ai-coding-agents">hijacked AI coding agents</a> article covers the same asset,
+                an engineer's access, from another angle.
+            </p>
+
+            <h3>ATT&amp;CK</h3>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
+                    <tbody>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1657/" target="_blank" rel="noopener">T1657</a> Financial Theft</td><td>The drain of hot wallets on ten chains</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1609/" target="_blank" rel="noopener">T1609</a> Container Administration Command</td><td>Inferred, not confirmed: the attacker's access to a service container, which Binance has described only in general terms</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>What to do this week</h2>
+            <ol>
+                <li><strong>Check every hot wallet for delegation code now</strong>, with the script above or your own
+                node, on every EIP-7702 chain you hold funds on. Then schedule it.</li>
+                <li><strong>Ask your signing team one question:</strong> would our signer sign an EIP-7702 authorisation,
+                or a batch of them across 50 nonces, if a service asked it to? If the answer is "yes" or "not sure",
+                that is the finding.</li>
+                <li><strong>Block the attacker addresses</strong> that TRM and Elliptic have labelled, and screen
+                deposits against them. Check the FBI alert for its own list.</li>
+                <li><strong>Keep a revocation ready.</strong> A pre-approved, tested way to sign a clearing authorisation
+                (address zero) and to pause withdrawals. Binance's outflows stopped when it paused withdrawals.</li>
+                <li><strong>Separate the paths.</strong> TRM recommends separating signing infrastructure and approval
+                paths by chain and wallet tier, so one breach does not sign for ten chains at once.</li>
+                <li><strong>Map what an engineer's laptop can reach</strong> in your signing and withdrawal systems, and
+                alert on interactive access to those workloads.</li>
+            </ol>
+
+            <h2>Honest limitations</h2>
+            <p>
+                This is written two to three days after the theft and before Binance's post-mortem. The laptop and
+                service container are Binance's preliminary account, and Binance has since said there were additional
+                points of breach it has not described. How the attacker got from a container to signed withdrawals is
+                not public; where we say Binance's own signer signed, that is our inference from Binance's statement
+                that no key leaked. Teng's quote about approval controls reaches us through Elliptic, not a Binance
+                document. Loss figures differ between Binance, TRM and Elliptic ($6.3 to $6.43 billion) because of
+                pricing and counting choices. We could not read the FBI alert, Hacken's analysis or WIRED's reporting
+                directly and cite none of them for detail. The delegation check ran against live chain data, but it
+                only sees a delegation after it lands. The Kubernetes rule is a pySigma-parsed snippet, not tested
+                against real audit logs, and it only applies if your signing path runs on Kubernetes. We do not know
+                that Binance's does. We will update this article when the post-mortem is published.
+            </p>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://www.binance.com/en/support/announcement/detail/c5a8729a97ac486d963784d96c5642d7" target="_blank" rel="noopener">Binance - security incident update (30 October 2026)</a></li>
+                <li><a href="https://x.com/_RichardTeng/status/2116072080525656150" target="_blank" rel="noopener">Richard Teng - statement on X (30 October 2026)</a></li>
+                <li><a href="https://x.com/binance/status/2116089661408108712" target="_blank" rel="noopener">Binance - investigation update on X (30 October 2026)</a></li>
+                <li><a href="https://www.fbi.gov/investigate/cyber/alerts/2026/north-korea-responsible-for-6-billion-binance-attack" target="_blank" rel="noopener">FBI - North Korea responsible for $6 billion Binance attack (31 October 2026)</a></li>
+                <li><a href="https://www.trmlabs.com/resources/blog/north-korea-steals-usd-6-36-billion-from-binance-in-the-largest-hack-in-history" target="_blank" rel="noopener">TRM Labs - North Korea steals USD 6.36 billion from Binance</a></li>
+                <li><a href="https://www.elliptic.co/insights/binance-largest-hack-in-history/" target="_blank" rel="noopener">Elliptic - the largest theft in history: North Korea likely behind the Binance hack</a></li>
+                <li><a href="https://www.chainalysis.com/blog/binance-exploit-latest-findings-and-response/" target="_blank" rel="noopener">Chainalysis - Binance exploit: latest findings and response</a></li>
+                <li><a href="https://www.elliptic.co/binance-hack-2026-blocklist/" target="_blank" rel="noopener">Elliptic - Binance hack attacker address blocklist</a></li>
+                <li><a href="https://www.trmlabs.com/resources/blog/bitget-loses-usd-3516-million-in-hot-wallet-breach-in-likely-north-korea-attack" target="_blank" rel="noopener">TRM Labs - Bitget hot wallet breach (September 2026)</a></li>
+                <li><a href="https://records.certisyn.com/binance-incident-claims/" target="_blank" rel="noopener">Certisyn - Binance incident claim register (29 public claims checked)</a></li>
+                <li><a href="https://eips.ethereum.org/EIPS/eip-7702" target="_blank" rel="noopener">Ethereum - EIP-7702: Set Code for EOAs</a></li>
+                <li><a href="https://www.ic3.gov/PSA/2025/PSA250226" target="_blank" rel="noopener">FBI - North Korea responsible for $1.5 billion Bybit hack (February 2025)</a></li>
+                <li><a href="https://x.com/safe/status/1897663514975649938" target="_blank" rel="noopener">Safe - investigation update with Mandiant's preliminary findings (March 2025)</a></li>
+                <li><a href="https://github.com/SigmaHQ/sigma/blob/master/rules/application/kubernetes/audit/kubernetes_audit_exec_into_container.yml" target="_blank" rel="noopener">SigmaHQ - Potential Remote Command Execution In Pod Container</a></li>
+                <li><a href="detecting-hijacked-ai-coding-agents">UMBRASEC - What a Hijacked AI Coding Agent Leaves in Your Logs</a></li>
+            </ul>
+
+            <div class="callout mt-10">
+                <p class="text-sm"><strong>Scope note.</strong> Built from Binance's and Richard Teng's statements, the
+                FBI attribution as reported by Elliptic, on-chain reconstructions by TRM Labs, Elliptic and Chainalysis,
+                and the EIP-7702 specification. It contains no attack code; the sweeper contract is described only by
+                what it did. The delegation check is read-only. Wallet names are as the analytics firms label them.
+                UMBRASEC publishes defense, not offense.</p>
+            </div>
+
+        </div>
+
+        <!-- end-of-article: share + nav -->
+        <div class="prose mx-auto mt-16 pt-8 border-t border-[#525252]">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <a href="detecting-hijacked-ai-coding-agents" class="text-sm text-[#f25623] hover:text-[#f56e0f]">← What a Hijacked AI Coding Agent Leaves in Your Logs</a>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-[#7d837d] mr-1">Share</span>
+                    <a class="share-btn" href="https://twitter.com/intent/tweet?text=Binance%27s%20%246.3B%20Theft%3A%20Nobody%20Stole%20a%20Key&url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fbinance-hot-wallet-theft-2026" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fumbrasec.dev%2Fresearch%2Fbinance-hot-wallet-theft-2026" target="_blank" rel="noopener" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+                <a href="./" class="text-sm text-[#f25623] hover:text-[#f56e0f]">All research →</a>
+            </div>
+        </div>
+    </article>
+
+    </main>
+
+    <footer class="border-t border-[#525252] mt-8">
+        <div class="max-w-[1280px] mx-auto px-8 py-14">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+                <div class="col-span-2">
+                    <a href="../" class="brand flex items-center gap-x-2.5 mb-4">
+                        <div class="logo-badge w-7 h-7 rounded bg-gradient-to-br from-[#f25623] to-[#f56e0f] flex items-center justify-center">
+                            <span class="font-bold text-[#171717] text-lg leading-none mt-px">U</span>
+                        </div>
+                        <span class="glitch font-semibold text-2xl tracking-[-0.03em]" data-text="UMBRASEC">UMBRASEC</span>
+                    </a>
+                    <p class="text-sm text-[#959c95] max-w-[300px] leading-relaxed">
+                        Trace the technique. Forge the rule. An independent defensive security project - detection engineering, threat analysis, and open-source tools.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Guide</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../guide/foundation" class="text-[#959c95] hover:text-[#f25623]">Foundation</a></li>
+                        <li><a href="../guide/identity-and-access" class="text-[#959c95] hover:text-[#f25623]">Identity &amp; Access</a></li>
+                        <li><a href="../guide/detection-and-response" class="text-[#959c95] hover:text-[#f25623]">Detection &amp; Response</a></li>
+                        <li><a href="../guide/governance-and-maturity" class="text-[#959c95] hover:text-[#f25623]">Governance &amp; Maturity</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Research</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../research/" class="text-[#959c95] hover:text-[#f25623]">All writeups</a></li>
+                        <li><a href="../feed.xml" class="text-[#959c95] hover:text-[#f25623]">RSS feed</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] tracking-[1.5px] text-[#7d837d] uppercase mb-3">Open Source</div>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="../tools/" class="text-[#959c95] hover:text-[#f25623]">All tools</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/BlueTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Blue Team Mapper</a></li>
+                        <li><a href="https://umbrasec-labs.github.io/RedTeamMapper/" class="text-[#959c95] hover:text-[#f25623]">Red Team Mapper</a></li>
+                        <li><a href="https://github.com/umbrasec-labs/umbrasec.dev" target="_blank" rel="noopener" class="text-[#959c95] hover:text-[#f25623]">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-[#525252] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="font-mono text-xs text-[#959c95]">
+                    © 2026 UMBRASEC · <a href="../about" class="hover:text-[#f25623]">About</a> · <a href="../#contact" class="hover:text-[#f25623]">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/umbra.js" defer></script>
+</body>
+</html>
