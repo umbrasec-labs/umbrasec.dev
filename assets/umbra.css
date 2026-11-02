@@ -1015,6 +1015,7 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
     --t-writeup: #8a86ec;
     --t-gap: #6e7370;
     --line: #3a3a3a;
+    --dim: var(--muted);        /* the site's --dim is 4.1:1 on these panels, under the 4.5 AA floor */
     color: var(--muted);
     font-size: 15px;
     line-height: 1.55;
@@ -1088,6 +1089,8 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
 .exploited td { padding: 9px 14px; border-bottom: 1px solid #2c2c2c; vertical-align: middle; }
 .exploited tr.r { cursor: pointer; }
 .exploited tr.r:hover td { background: #1e1e1e; }
+.exploited td.cve button { all: unset; cursor: pointer; }
+.exploited td.cve button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .exploited td.cve { color: var(--text); white-space: nowrap; font: 12.5px 'JetBrains Mono', monospace; }
 .exploited td.num { font: 12.5px 'JetBrains Mono', monospace; white-space: nowrap; }
 .exploited .e { display: inline-block; width: 44px; height: 6px; background: var(--bg-raised); border-radius: 3px; margin-right: 8px; vertical-align: middle; overflow: hidden; }
