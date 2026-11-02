@@ -19,10 +19,10 @@
     },
     {
       "cve": "CVE-2026-72898",
-      "tier": "rule",
+      "tier": "partial",
       "kev": true,
       "label": "Metabase",
-      "note": "Request line only. A payload in the POST body needs proxy or WAF logs.",
+      "note": "A tripwire, not a guarantee. It reads the request line only, so a payload in the POST body needs proxy or WAF logs, and slow or spread-out attempts miss the burst rule.",
       "rules": [
         "rules/web/metabase-reset-password-sqli.yml",
         "rules/web/metabase-reset-password-burst.yml"
