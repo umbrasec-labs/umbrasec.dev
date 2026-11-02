@@ -568,7 +568,7 @@ def rewrite_footer(text, footer_html, path):
 
 def site_pages():
     """Every standard site page that carries the shared chrome (nav + footer)."""
-    pages = ["index.html", "about.html", "tools/index.html",
+    pages = ["index.html", "about.html", "exploited.html", "tools/index.html",
              "tools/sigma-pack/index.html"]
     for sub in ("guide", "research"):
         pages += sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in (ROOT / sub).glob("*.html"))
@@ -709,6 +709,12 @@ def build(check: bool, list_drift: bool = False) -> int:
     coverage = kev_coverage.load_mapping(COVERAGE_MAP)
     claims_dir = DETECTIONS_CLAIMS if DETECTIONS_CLAIMS.is_dir() else None
     add(COVERAGE_ASSET, lambda t: kev_coverage.render_asset(coverage, articles, claims_dir, json.loads(t)))
+    add("exploited.html",
+        lambda t: replace_region(t, "exploited-cards",
+                                 kev_coverage.render_cards(json.loads(kev_coverage.render_asset(
+                                     coverage, articles, claims_dir,
+                                     json.loads((ROOT / COVERAGE_ASSET).read_text(encoding="utf-8"))))["entries"]),
+                                 ROOT / "exploited.html"))
 
     # per-article prev/next nav
     for i, a in enumerate(articles):
@@ -754,6 +760,7 @@ def build(check: bool, list_drift: bool = False) -> int:
     long_descs = description_problems()
     coverage_issues = kev_coverage.problems(coverage, kev_coverage.named_cves(SIGMA_DIR, RESEARCH_DIR),
                                             SIGMA_DIR, RESEARCH_DIR, articles)
+    no_nav_link = kev_coverage.nav_problems(site_pages() + ["404.html"], ROOT)
 
     if check:
         problems = False
@@ -814,6 +821,12 @@ def build(check: bool, list_drift: bool = False) -> int:
             for token in bad_hashes:
                 print(f"  - '{token}'")
             print("\nReplace the old sha256-... in the Content-Security-Policy lines of _headers with this one.")
+            problems = True
+        if no_nav_link:
+            print("site-build: MISSING - pages with no Exploited now link in the site nav:")
+            for rel in no_nav_link:
+                print(f"  - {rel}")
+            print("\nCopy the link from an existing page, after Open Source.")
             problems = True
         if coverage_issues:
             print("site-build: COVERAGE - tools/site-build/kev-coverage.json does not match the pack and articles:")

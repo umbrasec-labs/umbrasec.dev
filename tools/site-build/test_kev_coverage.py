@@ -184,5 +184,49 @@ class Asset(Fixture):
         self.assertTrue(kc.render_asset([entry()], ARTICLES, None, None).endswith("}\n"))
 
 
+class Cards(Fixture):
+    def entries(self, *mapping):
+        return json.loads(kc.render_asset(list(mapping), ARTICLES, None, None))["entries"]
+
+    def test_card_shows_the_mapped_facts(self):
+        html = kc.render_cards(self.entries(entry(claims=0)))
+        for text in (f'data-cve="{CVE}"', "Acme Widget", "Covers the request line.", "thing.yml", "A post", "T1190", ">Rule<"):
+            self.assertIn(text, html)
+
+    def test_cards_run_rule_then_partial_then_writeup(self):
+        html = kc.render_cards(self.entries(
+            entry(cve="CVE-2026-3", tier="writeup", rules=[], attack=[]),
+            entry(cve="CVE-2026-2", tier="partial"),
+            entry(cve="CVE-2026-1"),
+        ))
+        self.assertLess(html.index("CVE-2026-1"), html.index("CVE-2026-2"))
+        self.assertLess(html.index("CVE-2026-2"), html.index("CVE-2026-3"))
+
+    def test_none_and_non_kev_entries_get_no_card(self):
+        html = kc.render_cards(self.entries(
+            entry(cve="CVE-2026-1", tier="none", rules=[], attack=[], article=None),
+            entry(cve="CVE-2026-2", kev=False),
+        ))
+        self.assertNotIn("data-cve", html)
+
+    def test_card_text_is_escaped(self):
+        self.assertIn("&lt;b&gt;", kc.render_cards(self.entries(entry(note="<b>"))))
+
+    def test_claims_line_only_when_there_are_claims(self):
+        asset = json.loads(kc.render_asset([entry()], ARTICLES, None, {"entries": [{"cve": CVE, "claims": 16}]}))["entries"]
+        self.assertIn("16 tested claims", kc.render_cards(asset))
+        self.assertNotIn("tested claims", kc.render_cards(self.entries(entry())))
+
+
+class Nav(Fixture):
+    def page(self, name, links):
+        (self.research / name).write_text(f'<nav aria-label="Site">{links}</nav><footer><a>Exploited now</a></footer>')
+
+    def test_nav_problems_lists_page_without_link(self):
+        self.page("a.html", '<a href="x">About</a>')
+        self.page("b.html", '<a href="x">Exploited now</a>')
+        self.assertEqual(kc.nav_problems(["a.html", "b.html"], self.research), ["a.html"])
+
+
 if __name__ == "__main__":
     unittest.main()

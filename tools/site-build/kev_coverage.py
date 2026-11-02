@@ -16,6 +16,7 @@ reads, and the Detections shipped cards on /exploited. problems() is what
 The kev flag is checked online by tools/local-sync/sync-exploited.mjs.
 """
 
+import html
 import json
 import re
 from pathlib import Path
@@ -155,3 +156,44 @@ def render_asset(mapping: list, articles: list, claims_dir, committed) -> str:
             "claims": claims,
         })
     return json.dumps({"entries": out}, indent=2) + "\n"
+
+
+TIER_LABELS = {"rule": "Rule", "partial": "Partial rule", "writeup": "Writeup"}
+
+
+def render_cards(entries: list) -> str:
+    """The Detections shipped cards, from assets/kev-coverage.json entries. Static
+    HTML, so they survive no JavaScript and an upstream outage. assets/exploited.js
+    adds the date added and EPSS to each card's meta line."""
+    esc = lambda s: html.escape(str(s), quote=True)
+    cards = []
+    shown = [e for e in entries if e["kev"] and e["tier"] in TIER_LABELS]
+    for e in sorted(shown, key=lambda e: list(TIER_LABELS).index(e["tier"])):
+        meta = []
+        if e["claims"]:
+            meta.append(f'<span>{e["claims"]} tested claims</span>')
+        if e["attack"]:
+            meta.append(f'<span>{esc(" ".join(e["attack"]))}</span>')
+        links = [f'<a class="mono" href="{esc(r["url"])}" target="_blank" rel="noopener">{esc(r["name"])}</a>' for r in e["rules"]]
+        links.append(f'<a href="{esc(e["article"]["url"])}">{esc(e["article"]["title"])}</a>')
+        cards.append(f"""                <article class="card" data-cve="{esc(e["cve"])}">
+                    <div class="top"><span class="cve">{esc(e["cve"])}</span><span class="tag"><span class="sw tier-{e["tier"]}"></span>{TIER_LABELS[e["tier"]]}</span></div>
+                    <div class="prod">{esc(e["label"])}</div>
+                    <p class="note">{esc(e["note"])}</p>
+                    <div class="meta">{"".join(meta)}</div>
+                    <div class="links">{"".join(links)}</div>
+                </article>""")
+    return "\n" + "\n".join(cards) + "\n                "
+
+
+NAV_RE = re.compile(r'<nav aria-label="Site".*?</nav>', re.DOTALL)
+
+
+def nav_problems(pages: list, root: Path) -> list:
+    """Pages whose site nav has no link to /exploited."""
+    found = []
+    for rel in pages:
+        nav = NAV_RE.search((root / rel).read_text(encoding="utf-8"))
+        if not nav or ">Exploited now</a>" not in nav.group(0):
+            found.append(rel)
+    return found
