@@ -1,0 +1,240 @@
+{
+  "_comment": "Hand-kept. What UMBRASEC has against each CVE named in the pack or a research page. Tiers are judgement: see kev_coverage.py.",
+  "entries": [
+    {
+      "cve": "CVE-2026-42271",
+      "tier": "rule",
+      "kev": true,
+      "label": "BerriAI LiteLLM",
+      "note": "Endpoint and process rules, both in the pack.",
+      "rules": [
+        "rules/linux/litellm-proxy-spawns-shell.yml",
+        "rules/web/litellm-mcp-test-endpoint.yml"
+      ],
+      "article": "detecting-litellm-command-injection",
+      "attack": [
+        "T1190",
+        "T1059"
+      ]
+    },
+    {
+      "cve": "CVE-2026-72898",
+      "tier": "partial",
+      "kev": true,
+      "label": "Metabase",
+      "note": "A tripwire, not a guarantee. It reads the request line only, so a payload in the POST body needs proxy or WAF logs, and slow or spread-out attempts miss the burst rule.",
+      "rules": [
+        "rules/web/metabase-reset-password-sqli.yml",
+        "rules/web/metabase-reset-password-burst.yml"
+      ],
+      "article": "mathspace-metabase-internal-tooling",
+      "attack": [
+        "T1190"
+      ]
+    },
+    {
+      "cve": "CVE-2026-109619",
+      "tier": "partial",
+      "kev": true,
+      "label": "PHP Group PHP",
+      "note": "Session-lifecycle case only, and a match means probing, not compromise. The PHP 8.5 fatal-error path is not covered.",
+      "rules": [
+        "rules/web/php-upload-progress-multipart-probe.yml"
+      ],
+      "article": "php2shell-hallucinated-exploits",
+      "attack": [
+        "T1190"
+      ]
+    },
+    {
+      "cve": "CVE-2026-48710",
+      "tier": "writeup",
+      "kev": true,
+      "label": "Kludex Starlette",
+      "note": "Written up as the chain into LiteLLM. No rule for BadHost itself.",
+      "rules": [],
+      "article": "detecting-litellm-command-injection",
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-109618",
+      "tier": "writeup",
+      "kev": true,
+      "label": "PHP Group PHP",
+      "note": "Out-of-memory bug that does not need the field the php2shell rule keys on.",
+      "rules": [],
+      "article": "php2shell-hallucinated-exploits",
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-102764",
+      "tier": "writeup",
+      "kev": true,
+      "label": "BeyondTrust Remote Support",
+      "note": "Hunt table in the writeup: hashes, YARA and behaviour. No pack rule.",
+      "rules": [],
+      "article": "beyondtrust-remote-support-armory-castle",
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-18577",
+      "tier": "writeup",
+      "kev": true,
+      "label": "N-able N-central",
+      "note": "Detection section in the writeup. Nothing CVE-specific in the pack.",
+      "rules": [],
+      "article": "n-able-ncentral-msp-supply-chain",
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-18556",
+      "tier": "writeup",
+      "kev": true,
+      "label": "N-able N-central",
+      "note": "Detection section in the writeup. Nothing CVE-specific in the pack.",
+      "rules": [],
+      "article": "n-able-ncentral-msp-supply-chain",
+      "attack": []
+    },
+    {
+      "cve": "CVE-2023-3519",
+      "tier": "none",
+      "kev": true,
+      "label": "Citrix NetScaler ADC and NetScaler Gateway",
+      "note": "Cited for context in the INC Ransom article, with no detection content for it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2023-48788",
+      "tier": "none",
+      "kev": true,
+      "label": "Fortinet FortiClient EMS",
+      "note": "Cited for context in the INC Ransom article, with no detection content for it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2025-32711",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in owasp-llm-top-10-for-defenders. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2025-53773",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2025-54135",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2025-54136",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2025-8217",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-110202",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-110203",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-110204",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-110205",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-110206",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-115560",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in php2shell-hallucinated-exploits. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    },
+    {
+      "cve": "CVE-2026-20833",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-kerberoasting. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": []
+    }
+  ]
+}

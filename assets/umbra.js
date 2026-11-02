@@ -31,6 +31,7 @@
     { group: "Navigate", label: "Approach", hint: "how this works", icon: "fa-compass", href: "./#approach", keywords: "method principles" },
     { group: "Navigate", label: "Research", hint: "all writeups", icon: "fa-flask", href: "research/", keywords: "articles posts" },
     { group: "Navigate", label: "Open Source", hint: "tools", icon: "fa-code-branch", href: "tools/", keywords: "tools github kev sigma blue team mapper red team mapper kev-watch kev watch umbra-blue skills detections claims ledger" },
+    { group: "Navigate", label: "Exploited now", hint: "KEV vs our detections", icon: "fa-crosshairs", href: "exploited", keywords: "kev cve exploited epss coverage gaps cisa known exploited vulnerabilities dashboard" },
     { group: "Navigate", label: "About", hint: "the project", icon: "fa-circle-info", href: "about" },
     { group: "Navigate", label: "Contact", hint: "get in touch", icon: "fa-envelope", href: "./#contact", keywords: "email" },
     { group: "Guide", label: "Security Guide", hint: "zero to defensible", icon: "fa-route", href: "guide/", keywords: "maturity essential eight iso 27001 nist csf roadmap journey foundation identity detection governance" },
