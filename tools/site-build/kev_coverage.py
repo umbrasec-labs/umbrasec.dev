@@ -23,7 +23,7 @@ from pathlib import Path
 
 CVE_RE = re.compile(r"CVE-\d{4}-\d{4,7}")
 SCRIPT_RE = re.compile(r"<script\b.*?</script>", re.DOTALL | re.IGNORECASE)
-DASH_RE = re.compile("[–—]")
+DASH_RE = re.compile("[\u2013\u2014]")
 
 TIERS = ("rule", "partial", "writeup", "none")
 NEEDS_RULE = ("rule", "partial")

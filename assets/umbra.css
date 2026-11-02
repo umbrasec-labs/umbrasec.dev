@@ -1106,7 +1106,7 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
     .exploited input[type=search] { margin-left: 0; width: 100%; }
 }
 @media (max-width: 600px) {
-    /* Rows stack: CVE and coverage on one line, the product under them. */
+    /* Rows stack: CVE and coverage, then the product, then date and EPSS. */
     .exploited table { display: block; }
     .exploited thead { display: none; }
     .exploited tbody { display: block; }
@@ -1115,6 +1115,9 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
     .exploited tr.r td.cve { grid-area: 1 / 1; }
     .exploited tr.r td:nth-child(5) { grid-area: 1 / 2; }
     .exploited tr.r td.prod { grid-area: 2 / 1 / 2 / 3; }
-    .exploited tr.r td:nth-child(3), .exploited tr.r td:nth-child(4) { display: none; }
+    .exploited tr.r td:nth-child(3) { grid-area: 3 / 1; }
+    .exploited tr.r td:nth-child(4) { grid-area: 3 / 2; text-align: right; }
+    .exploited tr.r td.num { color: var(--dim); }
+    .exploited tr.r .e { display: none; }
     .exploited tr.x, .exploited tr.x td { display: block; }
 }

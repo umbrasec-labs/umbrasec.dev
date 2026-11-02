@@ -12,7 +12,7 @@ export const FALLBACK_TTL = 300;       // seconds a snapshot fallback is cached 
 export const UPSTREAM_TIMEOUT_MS = 8000;
 
 // CISA text can carry en and em dashes; the site uses plain hyphens only.
-export const plain = (v) => (typeof v === "string" ? v.replace(/[–—]/g, "-") : v);
+export const plain = (v) => (typeof v === "string" ? v.replace(/[\u2013\u2014]/g, "-") : v);
 
 export function jsonHeaders(sourceHeader, source, overrides) {
   return {

@@ -94,10 +94,10 @@ class Guards(Fixture):
         self.assertProblem([entry(label="")], "label")
 
     def test_dash_in_label_fails(self):
-        self.assertProblem([entry(label="Acme – Widget")], "dash")
+        self.assertProblem([entry(label="Acme \u2013 Widget")], "dash")
 
     def test_dash_in_note_fails(self):
-        self.assertProblem([entry(note="Covers — most")], "dash")
+        self.assertProblem([entry(note="Covers \u2014 most")], "dash")
 
     def test_rule_tier_needs_a_rule(self):
         self.assertProblem([entry(rules=[], attack=[])], "needs a rule")
