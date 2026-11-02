@@ -999,6 +999,15 @@ a.kev-item:hover .kev-cve { color: var(--ember); text-decoration: underline; tex
 .copy-email.copied { color: var(--sage); border-color: var(--sage); }
 
 
+/* The site nav holds six links: keep them on one line on small tablets. */
+nav[aria-label="Site"] .nav-link { white-space: nowrap; }
+@media (min-width: 768px) and (max-width: 1023px) {
+    nav[aria-label="Site"] > .px-8 { padding-left: 1rem; padding-right: 1rem; }
+    nav[aria-label="Site"] .gap-x-8 { column-gap: .7rem; font-size: .8125rem; }
+    nav[aria-label="Site"] .brand .font-mono,
+    nav[aria-label="Site"] [data-cmdk] span:last-child { display: none; }
+}
+
 /* ---- /exploited ---------------------------------------------------------- */
 .exploited {
     --t-rule: #2baa8e;
@@ -1072,7 +1081,7 @@ a.kev-item:hover .kev-cve { color: var(--ember); text-decoration: underline; tex
 .exploited input[type=search] { font: 13px 'Inter Tight', sans-serif; color: var(--text); background: var(--bg-soft); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px; margin-left: auto; width: 220px; }
 .exploited input[type=search]:focus { outline: 0; border-color: var(--accent); }
 .exploited .tw { border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
-.exploited table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+.exploited table { border-collapse: collapse; width: 100%; font-size: 14px; }
 .exploited th { font: 500 11px 'JetBrains Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); text-align: left; padding: 10px 14px; background: var(--bg-soft); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .exploited th button { all: unset; cursor: pointer; }
 .exploited th button:hover, .exploited th button:focus-visible { color: var(--text); }
@@ -1097,8 +1106,15 @@ a.kev-item:hover .kev-cve { color: var(--ember); text-decoration: underline; tex
     .exploited input[type=search] { margin-left: 0; width: 100%; }
 }
 @media (max-width: 600px) {
-    .exploited table { min-width: 0; }
-    .exploited th:nth-child(3), .exploited td:nth-child(3),
-    .exploited th:nth-child(4), .exploited td:nth-child(4) { display: none; }
-    .exploited td, .exploited th { padding-left: 10px; padding-right: 10px; }
+    /* Rows stack: CVE and coverage on one line, the product under them. */
+    .exploited table { display: block; }
+    .exploited thead { display: none; }
+    .exploited tbody { display: block; }
+    .exploited tr.r { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 9px 12px; border-bottom: 1px solid #2c2c2c; }
+    .exploited tr.r td { padding: 0; border: 0; }
+    .exploited tr.r td.cve { grid-area: 1 / 1; }
+    .exploited tr.r td:nth-child(5) { grid-area: 1 / 2; }
+    .exploited tr.r td.prod { grid-area: 2 / 1 / 2 / 3; }
+    .exploited tr.r td:nth-child(3), .exploited tr.r td:nth-child(4) { display: none; }
+    .exploited tr.x, .exploited tr.x td { display: block; }
 }
