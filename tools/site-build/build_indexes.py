@@ -48,6 +48,7 @@ import sys
 from pathlib import Path
 
 import hero_reel
+import kev_coverage
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "research" / "articles.json"
@@ -618,6 +619,9 @@ def csp_hash_problems():
 # sits next to this one (the workspace); a lone clone leaves it as committed.
 DETECTIONS_CLAIMS = ROOT.parent / "detections" / "claims"
 REEL_MANIFEST = ROOT / "tools" / "site-build" / "hero-reel.json"
+COVERAGE_MAP = ROOT / "tools" / "site-build" / "kev-coverage.json"
+COVERAGE_ASSET = "assets/kev-coverage.json"
+RESEARCH_DIR = ROOT / "research"
 
 
 PRE_RE = re.compile(r"<pre\b.*?</pre>", re.DOTALL)
@@ -699,7 +703,12 @@ def build(check: bool, list_drift: bool = False) -> int:
         m = hero_reel.DIGEST_RE.search((ROOT / "index.html").read_text(encoding="utf-8"))
         reel_stale = not m or m.group(1) != reel_digest
         if not list_drift:
-            print("site-build: note - ../detections/claims not found; the hero reel was not rebuilt.", file=sys.stderr)
+            print("site-build: note - ../detections/claims not found; the hero reel was not rebuilt and KEV coverage keeps its committed claim counts.", file=sys.stderr)
+
+    # /exploited: the CVE coverage mapping, with claim counts from the ledger
+    coverage = kev_coverage.load_mapping(COVERAGE_MAP)
+    claims_dir = DETECTIONS_CLAIMS if DETECTIONS_CLAIMS.is_dir() else None
+    add(COVERAGE_ASSET, lambda t: kev_coverage.render_asset(coverage, articles, claims_dir, json.loads(t)))
 
     # per-article prev/next nav
     for i, a in enumerate(articles):
@@ -743,6 +752,8 @@ def build(check: bool, list_drift: bool = False) -> int:
     bad_hashes = csp_hash_problems()
     html_links = html_link_problems()
     long_descs = description_problems()
+    coverage_issues = kev_coverage.problems(coverage, kev_coverage.named_cves(SIGMA_DIR, RESEARCH_DIR),
+                                            SIGMA_DIR, RESEARCH_DIR, articles)
 
     if check:
         problems = False
@@ -804,6 +815,12 @@ def build(check: bool, list_drift: bool = False) -> int:
                 print(f"  - '{token}'")
             print("\nReplace the old sha256-... in the Content-Security-Policy lines of _headers with this one.")
             problems = True
+        if coverage_issues:
+            print("site-build: COVERAGE - tools/site-build/kev-coverage.json does not match the pack and articles:")
+            for issue in coverage_issues:
+                print(f"  - {issue}")
+            print("\nFix the entry. Tiers are a judgement call: see tools/site-build/kev_coverage.py.")
+            problems = True
         if changes:
             print("site-build: DRIFT - these files are out of sync with research/articles.json:")
             for path, _ in changes:
@@ -846,6 +863,11 @@ def build(check: bool, list_drift: bool = False) -> int:
         for rel, n, field in repeated_fields:
             print(f"  - {rel}:{n}: {field}")
         print("Split it; the hook will fail while this stands.")
+    if coverage_issues:
+        print("site-build: WARNING - kev-coverage.json does not match the pack and articles:")
+        for issue in coverage_issues:
+            print(f"  - {issue}")
+        print("Fix the entry; the hook will fail while this stands.")
     if reel_stale:
         print("site-build: WARNING - the homepage reel is older than the sigma-pack; regenerate it in the workspace.")
     return 0

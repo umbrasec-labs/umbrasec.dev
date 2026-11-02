@@ -141,6 +141,160 @@
       },
       "attack": [],
       "claims": 0
+    },
+    {
+      "cve": "CVE-2023-3519",
+      "tier": "none",
+      "kev": true,
+      "label": "Citrix NetScaler ADC and NetScaler Gateway",
+      "note": "Cited for context in the INC Ransom article, with no detection content for it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2023-48788",
+      "tier": "none",
+      "kev": true,
+      "label": "Fortinet FortiClient EMS",
+      "note": "Cited for context in the INC Ransom article, with no detection content for it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2025-32711",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in owasp-llm-top-10-for-defenders. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2025-53773",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2025-54135",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2025-54136",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2025-8217",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-hijacked-ai-coding-agents. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-110202",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-110203",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-110204",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-110205",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-110206",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in roo-code-auto-approve-bypass. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-115560",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in php2shell-hallucinated-exploits. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
+    },
+    {
+      "cve": "CVE-2026-20833",
+      "tier": "none",
+      "kev": false,
+      "label": "Not in KEV",
+      "note": "Named in detecting-kerberoasting. Not in KEV, so it does not appear on the page. Set a real tier if CISA adds it.",
+      "rules": [],
+      "article": null,
+      "attack": [],
+      "claims": 0
     }
   ]
 }

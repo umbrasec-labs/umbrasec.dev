@@ -144,3 +144,21 @@ detections repo, so the reel is rebuilt and checked only where that checkout
 sits next to this one, as in the workspace (it also needs PyYAML); a lone clone
 leaves it as committed. KQL claims are not executed yet (no Kusto engine in
 CI), and their examples say so.
+
+## KEV coverage
+
+`kev-coverage.json` is hand-kept: one entry per CVE named in a pack rule, a pack
+query or a research page, with a tier (`rule`, `partial`, `writeup`, `none`). The
+tier is a judgement, because a rule that merely mentions a CVE is not coverage.
+The generator turns it into `assets/kev-coverage.json`, which `/api/exploited`
+reads, and the Detections shipped cards on `/exploited`. Claim counts come from
+`../detections/claims`, so a claims edit drifts those files the way it drifts the
+hero reel.
+
+`--check` fails on a CVE with no entry, a tier without the rule or article behind
+it, a rule or article that no longer names the CVE, and an ATT&CK id missing from
+the rule's tags. Tests: `python3 -m unittest discover -s tools/site-build -p 'test_*.py'`.
+
+The `kev` flag can only be checked online: `node tools/local-sync/sync-exploited.mjs`
+reports any mapped CVE that has joined or left KEV. Run it when refreshing the KEV
+snapshot.
