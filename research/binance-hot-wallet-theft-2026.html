@@ -16,6 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Trace the technique. Forge the rule.">
     <meta property="article:published_time" content="2026-11-01">
+    <meta property="article:modified_time" content="2026-11-04">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="Threat Analysis">
     <meta property="article:tag" content="Binance">
@@ -35,6 +36,7 @@
       "headline": "Binance's $6.3B Theft: Nobody Stole a Key",
       "description": "On 29 October 2026 about $6.3 billion left Binance hot wallets on ten blockchains in about 30 minutes, attributed by the FBI to North Korea's TraderTraitor. Binance says no private key leaked. The dated timeline, how an EIP-7702 delegation made the Ethereum hot wallet run attacker code, the path Binance has described, and four things a defender can watch.",
       "datePublished": "2026-11-01",
+      "dateModified": "2026-11-04",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -109,7 +111,7 @@
                 <span class="text-[#7d837d]">·</span>
                 <span class="text-[#959c95]">Nov 1, 2026</span>
                 <span class="text-[#7d837d]">·</span>
-                <span class="text-[#959c95]">~12 min</span>
+                <span class="text-[#959c95]">~19 min</span>
             </div>
             <h1 class="text-5xl font-semibold tracking-[-0.04em] leading-[1.05] mb-6 text-[#ccd0cf]">
                 Binance's $6.3B Theft: Nobody Stole a Key
@@ -119,6 +121,14 @@
                 hour. It is the largest theft on record, about four times the Bybit heist of 2025. Binance says it has
                 found no evidence that a wallet private key leaked. That one sentence is the whole lesson: the money
                 moved because Binance's own systems were made to sign for it.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-11-04: Binance published its initial findings on 3 November. The attack began months
+                earlier with engineers' machines: a tampered Homebrew install in June and a malicious coding assignment
+                from a recruitment approach in September. An internal AI tool was then used to reach two more engineers,
+                and a container deployment token led to Binance's wallet signing service. The timeline, the path, the
+                Kubernetes rule, the ATT&amp;CK table, What to do this week and Honest limitations now reflect that. One
+                correction: pausing withdrawals did not stop the Ethereum sweeps.
             </p>
 
             <div class="flex flex-wrap gap-2 mt-6">
@@ -133,17 +143,21 @@
             <aside class="toc-rail" data-toc aria-label="On this page"></aside>
 
             <div class="callout">
-                <p class="text-sm"><strong>TL;DR for defenders.</strong> Known as of <strong>1 November 2026</strong>;
-                Binance has not published its post-mortem yet. Around <strong>20:05 UTC on 29 October</strong>, roughly
-                <strong>$6.3-6.4 billion</strong> left Binance hot wallets on ten chains. The <strong>FBI</strong>
-                attributed it to North Korea's <strong>TraderTraitor</strong> on 31 October. Binance says the incident
-                <strong>may have started with a compromised DevOps engineer's laptop</strong> that gave the attacker a
-                service container, that it later found <strong>additional points of breach</strong>, and that it has no
-                evidence of a private key leak. On Ethereum the attacker used <strong>50 EIP-7702 authorisations</strong>,
-                each validly signed with the hot wallet's own key, to make the wallet run an attacker contract. If you run
-                a hot wallet: <strong>alert the moment one of your wallets has delegation code</strong> (a script for
-                that is below), make your signer <strong>refuse EIP-7702 authorisations</strong> and anything else it was
-                not built to sign, and block the attacker addresses that TRM and Elliptic have labelled.</p>
+                <p class="text-sm"><strong>TL;DR for defenders.</strong> Known as of <strong>4 November 2026</strong>,
+                after Binance's initial findings of 3 November (a full report is still to come). Around
+                <strong>20:05 UTC on 29 October</strong>, roughly <strong>$6.3-6.4 billion</strong> left Binance hot
+                wallets on ten chains. The <strong>FBI</strong> attributed it to North Korea's
+                <strong>TraderTraitor</strong> on 31 October. Binance describes a <strong>months-long campaign against
+                its wallet engineers</strong>: a <strong>malicious coding assignment</strong> from a recruitment approach
+                infected one engineer's work computer, an <strong>internal AI tool</strong> was used from it to take over
+                two more, and a <strong>container deployment token</strong> found on one of them let the attacker deploy a
+                container that reached the <strong>internal wallet signing service</strong>. No private key leaked. On
+                Ethereum the attacker used <strong>50 EIP-7702 authorisations</strong>, each validly signed with the hot
+                wallet's own key, to make the wallet run an attacker contract, and pausing withdrawals did not stop it. If
+                you run a hot wallet: <strong>alert the moment one of your wallets has delegation code</strong> (a script
+                for that is below), make your signer <strong>refuse EIP-7702 authorisations</strong> and anything else it
+                was not built to sign, <strong>keep a tested revocation ready</strong>, and keep take-home coding tasks
+                off the machines that can reach your signer.</p>
             </div>
 
             <h2>Nobody stole a key</h2>
@@ -169,25 +183,32 @@
             <h2>What happened, in dates</h2>
             <p>
                 Times are UTC, from TRM Labs and Elliptic's on-chain reconstructions and from Binance's own statements.
-                The analytics firms differ by a few minutes in places; where they do, the earlier source is named.
+                The analytics firms differ by a few minutes in places; where they do, the earlier source is named. The
+                rows before 28 October come from Binance's initial findings of 3 November, as reported by the press.
             </p>
             <div class="table-wrap">
                 <table class="data">
                     <thead><tr><th>When (UTC)</th><th>Event</th></tr></thead>
                     <tbody>
+                        <tr><td>Jun 2026</td><td>A wallet DevOps engineer installs a tampered Homebrew package while trying to install an AI coding tool. Binance detects it, replaces the device and rotates credentials, but the attacker has already learned the engineer's role and colleagues</td></tr>
+                        <tr><td>Sep 2026</td><td>A second wallet engineer is approached through a legitimate recruitment platform by someone posing as a project director. After two video interviews he is told to download a coding "assignment" onto his work computer. Its setup code swaps the developer tool pyenv for a malicious version; Binance's endpoint tools do not detect it</td></tr>
+                        <tr><td><strong>20 Oct</strong></td><td>From that computer the attacker uses an internal AI tool to take control of two more wallet engineers' computers, the June engineer's and a third. One holds a container deployment token</td></tr>
                         <tr><td>28 Oct</td><td>An operator wallet receives three small Tornado Cash withdrawals, at least 36 hours before the theft (TRM)</td></tr>
+                        <tr><td>29 Oct</td><td>With the stolen credentials the attacker deploys a container and runs a script that reaches Binance's internal wallet signing service, and uses it to start transactions outside the normal withdrawal process</td></tr>
                         <tr><td>29 Oct, day</td><td>Attack code deployed and tested on two wallets, then rehearsed on a third; Elliptic puts the sweeper contract's deployment at 15:59, about four hours before the attack</td></tr>
                         <tr><td><strong>20:05-20:09</strong></td><td>Five Binance wallets on the XRP Ledger send 233.46 million XRP to one attacker address. The theft has started</td></tr>
                         <tr><td>after 20:10</td><td>Solana and Optimism hot wallets drained</td></tr>
                         <tr><td><strong>20:20</strong></td><td>The Bitcoin hot wallet sends 18,270 BTC. On Ethereum, one transaction carries 50 EIP-7702 authorisations signed with the key of the hot wallet Elliptic calls "Binance 14"</td></tr>
                         <tr><td>~20:22</td><td>The Tron hot wallet sends 612.7 million USDT and 46.4 million TRX, within two minutes of the Bitcoin transfer (TRM)</td></tr>
                         <tr><td><strong>~20:23</strong></td><td>The sweeper empties Binance 14: 167,464 ETH and 63 tokens, including about 1.6 billion USDT, roughly three and a half minutes after the delegation</td></tr>
-                        <tr><td>20:41-23:56</td><td>Repeat sweeps of new deposits into Binance 14 at 20:41, 20:59, 21:04, 21:44, 22:39 and 23:56. The delegation was still in place</td></tr>
+                        <tr><td>20:41-23:56</td><td>Repeat sweeps of new deposits into Binance 14 at 20:41, 20:59, 21:04, 21:44, 22:39 and 23:56. The delegation was still in place. Binance says the last one, 2,961.9 ETH, finalised at 23:56</td></tr>
                         <tr><td>21:01, 21:04</td><td>Tether and Circle freeze attacker-held stablecoins; Ripple, World Liberty Financial and the Arbitrum Security Council follow</td></tr>
                         <tr><td>23:05</td><td>A second wave hits Binance wallets on Avalanche and Polygon</td></tr>
+                        <tr><td><strong>30 Oct 00:10</strong></td><td>Binance clears the delegation on Binance 14. Its MPC wallet needed a purpose-built procedure: no single key could sign the revocation at once</td></tr>
                         <tr><td>30 Oct 07:37</td><td>Co-CEO Richard Teng: the incident may have started with a compromised DevOps engineer's laptop, which gave access to a service container; no evidence of a private key leak; affected address authorisations revoked</td></tr>
-                        <tr><td>30 Oct 08:47</td><td>Binance: "additional points of breach", "a complex attack"; outflows stopped when withdrawals were paused; about $3 billion frozen</td></tr>
-                        <tr><td><strong>31 Oct</strong></td><td>The FBI attributes the theft to North Korea's TraderTraitor (as reported by Elliptic)</td></tr>
+                        <tr><td>30 Oct 08:47</td><td>Binance: "additional points of breach", "a complex attack"; outflows stopped when withdrawals were paused; about $3 billion frozen. Its 3 November findings add that the Ethereum delegation kept sweeping after the pause, until it was cleared</td></tr>
+                        <tr><td><strong>31 Oct</strong></td><td>The FBI attributes the theft to North Korea's TraderTraitor (as reported by Elliptic). Binance says it has replaced 98% of the affected token assets</td></tr>
+                        <tr><td><strong>3 Nov</strong></td><td>Binance publishes its initial findings: about $6.34 billion affected, about $2.85 billion frozen or intercepted, the AI tool and wallet systems rebuilt, independent firms engaged, investigation ongoing</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -238,34 +259,65 @@
                 Here is the part that matters for defenders. Each of those 50 authorisations had to be signed with
                 Binance 14's own key. If, as Binance says, the key never leaked, then Binance's signing system signed
                 them. Elliptic reports Teng saying the EIP-7702 use "did not pass through our normal approval controls".
-                That is our inference from public facts, not something Binance has stated, but it points at the control
-                that failed: not the key's storage, but what the signer was willing to sign.
+                When this article first ran, that was our inference. Binance's initial findings now say it outright, as
+                the press reports them: the attacker reached the internal wallet signing service and used it to start
+                transactions outside the normal withdrawal process, including the EIP-7702 permissions. The control
+                that failed was not the key's storage, but what the signer was willing to sign and who could ask it.
+            </p>
+            <p>
+                The delegation also explains why pausing withdrawals was not enough. The authorisation already sat
+                on-chain, outside Binance's withdrawal system, so the sweeper kept working until a new authorisation
+                cleared it. Binance's wallets use multi-party computation, so no single key could sign that clearing
+                authorisation on the spot; Binance had to build a procedure for it, and the delegation stayed until 00:10
+                UTC on 30 October, about four hours after it landed.
             </p>
 
             <h2>The path Binance has described</h2>
             <p>
-                Binance's public account so far is short, and it has already grown once:
+                On 30 October Binance said the incident "may involve a compromised DevOps engineer's laptop, which
+                allowed an attacker to gain access to a service container", and hours later that it had "uncovered
+                additional points of breach". Its initial findings of 3 November fill in most of that. We have them
+                from press reports (The Block, Security Affairs, crypto.news), which agree with each other; Binance's
+                own text is an article on X that we could not open. As reported, the path ran in five steps:
             </p>
-            <ul>
-                <li>The incident "may involve a compromised DevOps engineer's laptop, which allowed an attacker to gain
-                access to a service container" (Binance security update, 30 October).</li>
-                <li>From there the attacker "submitted unauthorized withdrawal transactions". Teng added that the
-                attacker "did not simply use one engineer's permissions" and that it was not "a single 'one-click'
-                action".</li>
-                <li>Hours later Binance said it had "uncovered additional points of breach" and called it "a complex
-                attack".</li>
-            </ul>
+            <ol>
+                <li><strong>Reconnaissance through a failed first attempt (June).</strong> A wallet DevOps engineer
+                ("Engineer A") installed a tampered Homebrew package while trying to install an AI coding tool. Binance
+                caught it, replaced the device and rotated credentials. The attacker still came away knowing who worked
+                on wallet infrastructure.</li>
+                <li><strong>A coding assignment from a job approach (September).</strong> Another engineer
+                ("Engineer B") was approached through a legitimate recruitment platform by someone posing as a project
+                director, had a video interview with a supposed HR representative and a second, in a chat app, with the
+                supposed CEO of a company that does not exist, and was then told to download an assignment repository
+                onto his work computer. Its setup code replaced pyenv, a Python version manager, with a malicious
+                version that hid its activity and talked to an attacker server. Binance's endpoint tools did not detect
+                it.</li>
+                <li><strong>An internal AI tool used to move sideways (20 October).</strong> From Engineer B's computer
+                the attacker used an internal AI tool to take control of Engineer A's computer and that of a third
+                engineer. Binance says it found no vulnerability in the AI model itself: the attacker went through an
+                internal application with the compromised user's permissions. What the tool is, and what it was allowed
+                to do on other people's machines, Binance has not said.</li>
+                <li><strong>A container deployment token on a laptop.</strong> Engineer A's computer held a token that
+                could deploy containers.</li>
+                <li><strong>A container next to the signer (29 October).</strong> With the stolen credentials the
+                attacker deployed a container and ran a script in it that reached the internal wallet signing service.
+                From there it signed transfers on ten chains and the EIP-7702 authorisations on Ethereum.</li>
+            </ol>
             <p>
-                Read together: an engineer's machine led to a container inside the platform, and something reachable from
-                that container could get withdrawals and authorisations signed across ten chains. What that container
-                ran, how it reached the signer, and what the other breach points were, Binance has not said. We mark
-                everything past that as unknown.
+                Binance says it has closed the entry points, rebuilt the affected wallet environment and the internal AI
+                tool, replaced the compromised devices, revoked the credentials and tokens involved, and engaged
+                independent firms to review the incident. It is holding back some technical detail while the
+                investigation continues. Still unknown: how the June compromise connects to September, what the AI tool
+                could do, what the script did, and why the signing service accepted requests from a freshly deployed
+                container.
             </p>
             <p>
                 The entry point fits the group's record. In the Bybit case, Mandiant traced the first step to a developer
                 at the wallet supplier Safe running a fake stock-trading Docker project, followed by the theft of that
-                developer's cloud session. An engineer's laptop is the cheapest door into production that exists, and
-                TraderTraitor keeps walking through it.
+                developer's cloud session. Fake job interviews with a coding test are a long-running North Korean
+                pattern. An engineer's laptop is the cheapest door into production that exists, and TraderTraitor keeps
+                walking through it. What is new here is the middle step: an internal AI tool that could act on other
+                engineers' machines became the lateral movement path.
             </p>
 
             <h2>What a defender can watch</h2>
@@ -381,69 +433,134 @@ if __name__ == "__main__":
                 it as reported, not confirmed.
             </p>
 
-            <h3>3. A person reaching into the signing workload</h3>
+            <h3>3. A person or a stolen token reaching into the signing workload</h3>
             <p>
-                Binance's path went from a laptop to a service container. If your withdrawal or signing services run on
-                Kubernetes, the API server's audit log records every time a person opens a shell in a pod, attaches to
-                it, port-forwards to it or adds a debug container. In the namespace that holds the signer, that should
-                almost never happen outside an approved change. SigmaHQ already has a generic rule for exec into a
-                container; this version is scoped to signing workloads, adds the other three ways in, and leaves out
-                service accounts:
+                Binance's path ended with a deployed container next to its signing service, started with a deployment
+                token taken from an engineer's computer. If your withdrawal or signing services run on Kubernetes, the API
+                server's audit log records both kinds of reach: a person opening a shell in a pod, attaching to it,
+                port-forwarding to it or adding a debug container, and any identity creating or changing a workload. In
+                the namespace that holds the signer, the first should almost never happen outside an approved change, and
+                the second should only ever come from your deployment pipeline. SigmaHQ already has a generic rule for
+                exec into a container; this version is scoped to signing workloads, adds the other ways in, and adds
+                workload changes by anyone other than your named deploy identity:
             </p>
-            <pre><code>title: Interactive Access Into a Withdrawal or Signing Workload
+            <pre><code>title: Interactive Access or Unexpected Deployment in a Signing Namespace
 id: d4174fd7-7ad4-47ab-93be-f76e57f669b2
 status: experimental
 description: &gt;
-    A person opened a shell, attached, port-forwarded or added a debug
-    container in the namespace that runs your withdrawal or signing service.
-    Binance said its October 2026 theft may have started with a DevOps
-    engineer's laptop that gave the attacker a service container. Put your
-    own signing namespace in selection_ns; service accounts are excluded.
+    In the namespace that runs your withdrawal or signing service, a person
+    opened a shell, attached, port-forwarded or added a debug container, or
+    an identity other than your deploy pipeline created or changed a
+    workload. Binance's October 2026 theft ended with a container deployed
+    with a token taken from an engineer's computer, next to its wallet
+    signing service. Put your signing namespace in selection_ns and your
+    pipeline's identity in filter_deployer.
 references:
     - https://umbrasec.dev/research/binance-hot-wallet-theft-2026
 author: UMBRASEC
 date: 2026-11-01
+modified: 2026-11-04
 tags:
     - attack.execution
     - attack.t1609
+    - attack.t1610
 logsource:
     product: kubernetes
     service: audit
 detection:
     selection_ns:
         objectRef.namespace: 'EDIT-ME-signing-namespace'
-        objectRef.resource: 'pods'
     selection_exec:
+        objectRef.resource: 'pods'
         verb: 'create'
         objectRef.subresource:
             - 'exec'
             - 'attach'
             - 'portforward'
     selection_debug:
+        objectRef.resource: 'pods'
         verb: 'patch'
         objectRef.subresource: 'ephemeralcontainers'
     filter_service_accounts:
         user.username|startswith: 'system:serviceaccount:'
-    condition: selection_ns and (selection_exec or selection_debug) and not filter_service_accounts
+    selection_workload:
+        verb:
+            - 'create'
+            - 'update'
+            - 'patch'
+        objectRef.resource:
+            - 'pods'
+            - 'deployments'
+            - 'replicasets'
+            - 'statefulsets'
+            - 'daemonsets'
+            - 'jobs'
+            - 'cronjobs'
+        objectRef.subresource: null
+    filter_deployer:
+        user.username: 'EDIT-ME-deploy-identity'
+    filter_control_plane:
+        user.username|startswith:
+            - 'system:serviceaccount:kube-system:'
+            - 'system:node:'
+            - 'system:kube-'
+    condition: selection_ns and (((selection_exec or selection_debug) and not filter_service_accounts) or (selection_workload and not filter_deployer and not filter_control_plane))
 falsepositives:
     - An on-call engineer debugging the signing service during an approved change
+    - A second deploy tool or operator that changes workloads in the namespace; add its identity to filter_deployer
 level: high</code></pre>
             <p>
                 Replace <code>EDIT-ME-signing-namespace</code> with your own namespace (a list works). Until you do, it
-                matches nothing. It is an article snippet, parsed with pySigma but not in our
-                <a href="../tools/sigma-pack/">sigma pack</a>: we will decide on pack rules once Binance's post-mortem
-                says what its platform actually was.
+                matches nothing. Then put your pipeline's user name in <code>filter_deployer</code> before you turn it on,
+                or every normal release will fire it. The control-plane filter keeps out the controllers that create pods
+                and replica sets on a deployment's behalf, and the kubelet. The workload part only looks at the main
+                object, so status updates and scaling do not count.
+            </p>
+            <p>
+                One blind spot matters here: if the stolen token is your deploy pipeline's own, this rule sees a normal
+                deployment. Binance has not said whose token it was. Check where that identity's requests come from, too:
+                a deployment from an engineer's address instead of your CI runners is the same event seen from the
+                network side (<code>sourceIPs</code> in the same audit record). It is an article snippet, parsed with
+                pySigma but not in our <a href="../tools/sigma-pack/">sigma pack</a>; we have not tested it against real
+                audit logs. Updated 2026-11-04: the first version covered only interactive access; deployments by
+                anyone other than your pipeline were added after Binance's initial findings.
             </p>
 
             <h3>4. An engineer's laptop reaching production</h3>
             <p>
                 The first step in this attack, and in Bybit's, was an engineer's machine. The useful question is not
-                "was a laptop infected" but "what can a laptop reach". Hunt for production credentials, kubeconfigs and
-                cloud sessions used from engineer endpoints outside change windows, and for a session that keeps the
-                engineer's working hours but not their usual places. Mandiant saw exactly that pattern at Safe: the
-                attacker kept to the developer's schedule so the stolen session stayed live. Our
-                <a href="detecting-hijacked-ai-coding-agents">hijacked AI coding agents</a> article covers the same asset,
-                an engineer's access, from another angle.
+                "was a laptop infected" but "what can a laptop reach". At Binance the answer was a container deployment
+                token, sitting on a laptop, that could put code next to the signer. Hunt for production credentials,
+                deploy tokens, kubeconfigs and cloud sessions used from engineer endpoints outside change windows, and
+                for a session that keeps the engineer's working hours but not their usual places. Mandiant saw exactly
+                that pattern at Safe: the attacker kept to the developer's schedule so the stolen session stayed live.
+            </p>
+            <p>
+                Both of Binance's ways in were developer tooling. Three things are worth a look on the machines of anyone
+                who works on wallets or signing:
+            </p>
+            <ul>
+                <li><strong>Outside code run on work machines.</strong> A take-home assignment or an "interview
+                project" should never be cloned and set up on a machine that holds production access. If your EDR can
+                see it, look for repositories cloned into download or temp folders whose setup step (an install script,
+                <code>npm install</code>, <code>pip install</code>, <code>make</code>) starts a shell or a network
+                connection.</li>
+                <li><strong>Tool managers changed by something else.</strong> The September malware replaced pyenv. Its
+                shims live in the user's <code>~/.pyenv</code> folder and run every time the engineer types
+                <code>python</code>, which makes them a quiet place to persist. A file write to <code>~/.pyenv/shims</code>
+                or <code>~/.pyenv/libexec</code> by anything other than pyenv itself, or by a process running from a
+                freshly cloned repository, is worth an alert. The same goes for Homebrew installed from anywhere but
+                brew.sh.</li>
+                <li><strong>Internal AI tools that can act on other people's machines.</strong> Binance's lateral
+                movement went through an internal AI tool with the compromised user's permissions. If one of your tools
+                can run commands or change files on a colleague's device, it is a remote administration tool. Give it an
+                inventory entry, a log of every action and who asked for it, and alert when one user's requests start
+                touching machines they have never touched before.</li>
+            </ul>
+            <p>
+                These are hunting leads, not tested rules: Binance has not published the indicators, and we have not run
+                them in a lab. Our <a href="detecting-hijacked-ai-coding-agents">hijacked AI coding agents</a> article
+                covers the same asset, an engineer's access, from another angle.
             </p>
 
             <h3>ATT&amp;CK</h3>
@@ -452,10 +569,20 @@ level: high</code></pre>
                     <thead><tr><th>Technique</th><th>Stage here</th></tr></thead>
                     <tbody>
                         <tr><td><a href="https://attack.mitre.org/techniques/T1657/" target="_blank" rel="noopener">T1657</a> Financial Theft</td><td>The drain of hot wallets on ten chains</td></tr>
-                        <tr><td><a href="https://attack.mitre.org/techniques/T1609/" target="_blank" rel="noopener">T1609</a> Container Administration Command</td><td>Inferred, not confirmed: the attacker's access to a service container, which Binance has described only in general terms</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1566/003/" target="_blank" rel="noopener">T1566.003</a> Spearphishing via Service</td><td>The approach to Engineer B through a recruitment platform, as reported</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1204/002/" target="_blank" rel="noopener">T1204.002</a> User Execution: Malicious File</td><td>Engineer B running the assignment repository's setup on his work computer, as reported</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1554/" target="_blank" rel="noopener">T1554</a> Compromise Host Software Binary</td><td>pyenv replaced with a malicious version, as reported</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1552/001/" target="_blank" rel="noopener">T1552.001</a> Unsecured Credentials: Credentials In Files</td><td>Inferred: the container deployment token found on Engineer A's computer. Binance has not said how it was stored</td></tr>
+                        <tr><td><a href="https://attack.mitre.org/techniques/T1610/" target="_blank" rel="noopener">T1610</a> Deploy Container</td><td>The container deployed on 29 October to reach the wallet signing service, as reported</td></tr>
                     </tbody>
                 </table>
             </div>
+            <p>
+                We leave the internal AI tool step unmapped. No technique fits well until Binance says what the tool
+                could do on other machines. Updated 2026-11-04: an earlier version mapped T1609 Container Administration
+                Command as an inferred stage; Binance now says the container was deployed, so T1610 replaces it. The
+                Kubernetes rule above still carries T1609 for the interactive part it watches.
+            </p>
 
             <h2>What to do this week</h2>
             <ol>
@@ -467,26 +594,37 @@ level: high</code></pre>
                 <li><strong>Block the attacker addresses</strong> that TRM and Elliptic have labelled, and screen
                 deposits against them. Check the FBI alert for its own list.</li>
                 <li><strong>Keep a revocation ready.</strong> A pre-approved, tested way to sign a clearing authorisation
-                (address zero) and to pause withdrawals. Binance's outflows stopped when it paused withdrawals.</li>
+                (address zero), and a way to pause withdrawals. Pausing withdrawals is not enough on its own: at Binance
+                the delegation was already on-chain and kept sweeping until it was cleared, and an MPC wallet needed a
+                special procedure to sign the clearing authorisation. Rehearse that procedure for your own wallets
+                before you need it.</li>
                 <li><strong>Separate the paths.</strong> TRM recommends separating signing infrastructure and approval
                 paths by chain and wallet tier, so one breach does not sign for ten chains at once.</li>
-                <li><strong>Map what an engineer's laptop can reach</strong> in your signing and withdrawal systems, and
-                alert on interactive access to those workloads.</li>
+                <li><strong>Map what an engineer's laptop can reach</strong> in your signing and withdrawal systems.
+                Move deploy tokens off laptops, and alert on interactive access to those workloads and on deployments
+                that do not come from your pipeline.</li>
+                <li><strong>Tell your wallet and platform engineers</strong> that interview assignments and other outside
+                code never run on work machines, and give them somewhere else to run them.</li>
+                <li><strong>List your internal AI tools that can act on other people's machines</strong>, and check
+                that each logs what it did and on whose request.</li>
             </ol>
 
             <h2>Honest limitations</h2>
             <p>
-                This is written two to three days after the theft and before Binance's post-mortem. The laptop and
-                service container are Binance's preliminary account, and Binance has since said there were additional
-                points of breach it has not described. How the attacker got from a container to signed withdrawals is
-                not public; where we say Binance's own signer signed, that is our inference from Binance's statement
-                that no key leaked. Teng's quote about approval controls reaches us through Elliptic, not a Binance
-                document. Loss figures differ between Binance, TRM and Elliptic ($6.3 to $6.43 billion) because of
-                pricing and counting choices. We could not read the FBI alert, Hacken's analysis or WIRED's reporting
-                directly and cite none of them for detail. The delegation check ran against live chain data, but it
-                only sees a delegation after it lands. The Kubernetes rule is a pySigma-parsed snippet, not tested
-                against real audit logs, and it only applies if your signing path runs on Kubernetes. We do not know
-                that Binance's does. We will update this article when the post-mortem is published.
+                This was first written two to three days after the theft and updated on 4 November after Binance's
+                initial findings. Those findings are preliminary; Binance is holding back some technical detail and has
+                independent firms reviewing the incident. Binance published them as an article on X that we could not
+                open, so everything we attribute to the initial findings comes from press reports (The Block, Security
+                Affairs, crypto.news) that agree with each other, not from Binance's own text. What the internal AI tool
+                is, what it could do on other machines, whose container deployment token was taken, and what the script
+                in the container did are not public. Teng's quote about approval controls reaches us through Elliptic,
+                not a Binance document. Loss figures differ between Binance, TRM and Elliptic ($6.3 to $6.43 billion)
+                because of pricing and counting choices. We could not read the FBI alert, Hacken's analysis or WIRED's
+                reporting directly and cite none of them for detail. The delegation check ran against live chain data,
+                but it only sees a delegation after it lands. The Kubernetes rule is a pySigma-parsed snippet, run only
+                against synthetic audit events, and it only applies if your signing path runs on Kubernetes; Binance
+                has not said that its does. The laptop hunting leads in section 4 are untested. We will update this
+                article again when Binance publishes its full report.
             </p>
 
             <h2>References</h2>
@@ -494,6 +632,10 @@ level: high</code></pre>
                 <li><a href="https://www.binance.com/en/support/announcement/detail/c5a8729a97ac486d963784d96c5642d7" target="_blank" rel="noopener">Binance - security incident update (30 October 2026)</a></li>
                 <li><a href="https://x.com/_RichardTeng/status/2116072080525656150" target="_blank" rel="noopener">Richard Teng - statement on X (30 October 2026)</a></li>
                 <li><a href="https://x.com/binance/status/2116089661408108712" target="_blank" rel="noopener">Binance - investigation update on X (30 October 2026)</a></li>
+                <li><a href="https://x.com/binance/status/2117626126214504729" target="_blank" rel="noopener">Binance - 29 October Binance Security Incident: Initial Findings and Response Update, on X (3 November 2026; not opened, see Honest limitations)</a></li>
+                <li><a href="https://www.theblock.co/news/business/2026-11-03-binance-hack-incident-report-north-korea-fake-job-interview-ai-tool-432406" target="_blank" rel="noopener">The Block - Binance says hackers used fake job interview, internal AI tool in $6.3 billion breach (3 November 2026)</a></li>
+                <li><a href="https://securityaffairs.com/202369/cyber-crime/binance-hack-how-fake-job-interviews-and-ai-abuse-led-to-a-6-34-billion-attack.html" target="_blank" rel="noopener">Security Affairs - Binance hack: how fake job interviews and AI abuse led to a $6.34 billion attack (3 November 2026)</a></li>
+                <li><a href="https://crypto.news/binance-hack-fake-interviews-ai-tool-signing-service/" target="_blank" rel="noopener">crypto.news - Binance details fake interview route into $6.34B hack (3 November 2026)</a></li>
                 <li><a href="https://www.fbi.gov/investigate/cyber/alerts/2026/north-korea-responsible-for-6-billion-binance-attack" target="_blank" rel="noopener">FBI - North Korea responsible for $6 billion Binance attack (31 October 2026)</a></li>
                 <li><a href="https://www.trmlabs.com/resources/blog/north-korea-steals-usd-6-36-billion-from-binance-in-the-largest-hack-in-history" target="_blank" rel="noopener">TRM Labs - North Korea steals USD 6.36 billion from Binance</a></li>
                 <li><a href="https://www.elliptic.co/insights/binance-largest-hack-in-history/" target="_blank" rel="noopener">Elliptic - the largest theft in history: North Korea likely behind the Binance hack</a></li>
@@ -509,8 +651,8 @@ level: high</code></pre>
             </ul>
 
             <div class="callout mt-10">
-                <p class="text-sm"><strong>Scope note.</strong> Built from Binance's and Richard Teng's statements, the
-                FBI attribution as reported by Elliptic, on-chain reconstructions by TRM Labs, Elliptic and Chainalysis,
+                <p class="text-sm"><strong>Scope note.</strong> Built from Binance's and Richard Teng's statements, press
+                reports of Binance's initial findings of 3 November, the FBI attribution as reported by Elliptic, on-chain reconstructions by TRM Labs, Elliptic and Chainalysis,
                 and the EIP-7702 specification. It contains no attack code; the sweeper contract is described only by
                 what it did. The delegation check is read-only. Wallet names are as the analytics firms label them.
                 UMBRASEC publishes defense, not offense.</p>
