@@ -51,6 +51,9 @@ BRAND_VIDEO_CLAIMS=<predicate.json> python3 tools/brand-video/render.py stills -
 # the film: master and site copy (both with sound), poster, facts.json (about 5 minutes)
 BRAND_VIDEO_CLAIMS=<predicate.json> python3 tools/brand-video/render.py film --out <dir>
 
+# new sound only: swap the soundtrack of the films in <dir>, picture untouched
+python3 tools/brand-video/render.py sound --out <dir>
+
 # figures on screen that changed since the last render (exit 1 if any)
 BRAND_VIDEO_CLAIMS=<predicate.json> python3 tools/brand-video/render.py drift
 ```
@@ -76,7 +79,7 @@ and a re-render is a choice (each one adds about 11 MB to the repo).
 | `compose.py` | one frame: background, sections, the dot, HUD, grain, motion blur |
 | `sound.py` | the synth, mastering to -11.1 dBFS RMS under a -1 dBFS ceiling |
 | `encode.py` | GStreamer: H.264 master and site copy in one pass, poster, probe |
-| `render.py` | `stills`, `film` and `drift` |
+| `render.py` | `stills`, `film`, `sound` and `drift` |
 | `fonts.py` | downloads the fonts and writes the private fontconfig |
 
 This folder is not deployed (it is in the TRIM list of `tools/local-deploy/stage.sh`).

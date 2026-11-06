@@ -123,6 +123,23 @@ def film(out: Path) -> dict:
     return f
 
 
+def resound(out: Path) -> list[Path]:
+    """New sound for the last render: the master and site copy in `out` keep
+    their picture (no figures change) and get a fresh soundtrack."""
+    l, r = sound.master(*sound.synth(tl.EVENTS, tl.DURATION))
+    wav = out / "brand-15s.wav"
+    sound.write_wav(wav, l, r)
+    done = []
+    for name, bps in (("umbrasec-brand-15s.mp4", encode.MASTER_AUDIO_BPS),
+                      ("brand-15s.mp4", encode.SITE_AUDIO_BPS)):
+        src, tmp = out / name, out / f"{name}.tmp"
+        encode.resound(src, wav, tmp, bps)
+        tmp.replace(src)
+        done.append(src)
+    wav.unlink()
+    return done
+
+
 def drift() -> list[str]:
     """Figures on screen that no longer match the repos."""
     then = json.loads(FACTS.read_text())
@@ -140,10 +157,15 @@ def main(argv=None) -> int:
     st.add_argument("--out", required=True, type=Path)
     fm = sub.add_parser("film", help="render the film, sound, poster and facts.json")
     fm.add_argument("--out", required=True, type=Path)
+    sd = sub.add_parser("sound", help="swap only the soundtrack of the films in --out")
+    sd.add_argument("--out", required=True, type=Path)
     sub.add_parser("drift", help="list figures that changed since the last render")
     args = p.parse_args(argv)
     if args.cmd == "film":
         print(json.dumps(film(args.out), indent=2))
+    if args.cmd == "sound":
+        for path in resound(args.out):
+            print(path)
     if args.cmd == "drift":
         changed = drift()
         print("\n".join(changed) if changed else

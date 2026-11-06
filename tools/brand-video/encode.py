@@ -52,6 +52,22 @@ def film(frames: Iterable[bytes], wav: Path, master: Path, site: Path) -> None:
         raise RuntimeError(f"gst-launch failed ({code}): {err[-800:]}")
 
 
+def resound(src: Path, wav: Path, dst: Path, audio_bps: int) -> None:
+    """Copy src's picture untouched and give it a new AAC track from wav."""
+    q = shlex.quote
+    pipeline = (
+        f"filesrc location={q(str(src))} ! qtdemux name=d "
+        f"d.video_0 ! queue ! h264parse ! mux. "
+        f"filesrc location={q(str(wav))} ! wavparse ! audioconvert ! audioresample ! "
+        f"voaacenc bitrate={audio_bps} ! queue ! mux. "
+        f"mp4mux name=mux faststart=true ! filesink location={q(str(dst))}")
+    r = subprocess.run(["gst-launch-1.0", "-q", "-e", *shlex.split(pipeline)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if r.returncode != 0:
+        raise RuntimeError(f"gst-launch failed ({r.returncode}): "
+                           f"{r.stderr.decode(errors='replace')[-800:]}")
+
+
 POSTER_MAX = 200_000   # bytes
 
 
