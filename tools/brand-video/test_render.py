@@ -84,5 +84,35 @@ class RenderTest(unittest.TestCase):
         self.assertEqual(s2_papers.chip_target(self.c), (x + w / 2, y + h / 2))
 
 
+    def test_publish_layout_fits(self):
+        import s4_publish
+        lay = s4_publish.layout(self.c)
+        b, p = lay["browser"], lay["pack"]
+        for w in b["widths"]:
+            self.assertLessEqual(w, b["inner"])
+        for w in p["widths"]:
+            self.assertLessEqual(w, p["width"])
+        for box in (b, p):
+            self.assertLess(box["bottom"], tl.H - draw.cq(5))
+            self.assertGreater(box["top"], draw.cq(5))
+        self.assertEqual([t for t, _ in p["tiles"]], list(self.c.tiles))
+        self.assertEqual(p["lit"], self.c.tiles.index(self.c.technique))
+
+    def test_publish_excerpt_marks_its_cuts(self):
+        import s4_publish
+        lines = s4_publish.mini_lines(self.c)
+        rule = list(self.c.rule_lines)
+        last = None
+        for ln in lines:
+            if ln.strip() == "...":
+                last = None
+                continue
+            self.assertIn(ln, rule)
+            i = rule.index(ln)
+            if last is not None:
+                self.assertEqual(i, last + 1, f"cut before {ln!r} is not marked")
+            last = i
+
+
 if __name__ == "__main__":
     unittest.main()

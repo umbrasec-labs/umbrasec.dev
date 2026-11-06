@@ -113,7 +113,7 @@ class ContentTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             site = Path(tmp) / "site"
             shutil.copytree(SITE, site, ignore=shutil.ignore_patterns(
-                "node_modules", ".git", ".superpowers", ".cache", "out"))
+                "node_modules", ".git", ".superpowers", ".cache", "out", ".claude", ".mcp.json"))
             art = site / "research" / ARTICLE.name
             art.write_text(art.read_text(encoding="utf-8")
                            .replace("inventory secrets", "list secrets"),
@@ -192,6 +192,15 @@ class ContentTest(unittest.TestCase):
         with mock.patch.object(content, "RULE_LINES", unmarked):
             with self.assertRaises(content.FactError):
                 content.load(SITE, DETECTIONS)
+
+    def test_article_eyebrow_is_the_articles_own(self):
+        self.assertIn(self.c.article_eyebrow.upper(), page_text(ARTICLE).upper())
+
+    def test_load_refuses_a_changed_eyebrow(self):
+        with mock.patch.object(content, "ARTICLE_EYEBROW", "Research · AI"):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
 
 if __name__ == "__main__":
     unittest.main()

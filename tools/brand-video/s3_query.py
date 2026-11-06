@@ -40,7 +40,7 @@ CLAIMS_IN = (8.2, 8.5)
 TYPE_DUR = 0.09                      # a rule line types out in about three frames
 STEP_MOVE = 0.09                     # the dot's step down the gutter
 TO_TRACE = (7.75, 8.0)               # the dot crosses to the event
-OUT = (9.95, 10.3)                   # stand-in exit until the publish section takes the rule
+OUT = (9.95, 10.3)                   # event, claims, wire and MATCH leave as the rule folds
 DOT_GUTTER, DOT_WIRE = d.cq(0.6), d.cq(0.75)
 CRED = ".aws/credentials"
 AGENT = "/.local/share/claude/versions/"
@@ -383,7 +383,9 @@ def draw(ctx, t: float, c) -> None:
     confirm = _flash(t, tl.T_CONFIRM, 0.35)
     d.backlight(ctx, 0.46 * W, 0.52 * H, 0.13 * min(tl.prog(t, 6.0, 6.5), _out(t)))
     _shell(ctx, L["trace"], trace_at, edge=d.LINE)
-    _shell(ctx, L["rule"], rule_at, edge=d.LINE_HI)
+    if t < tl.FOLD[0]:   # from FOLD the publish section folds the panel itself
+        _shell(ctx, L["rule"], rule_at, edge=d.LINE_HI)
+    rule_at = rule_at[:2] + (rule_at[2] * (1 - tl.prog(t, tl.FOLD[0], tl.FOLD[0] + 0.15)),)
     _shell(ctx, L["claims"], claims_at, edge=d.SAGE, edge_a=0.45 + 0.55 * confirm,
            fill=d.SAGE, fill_a=0.06 + 0.08 * confirm)
     d.soft_glow(ctx, lambda g: _bloom(g, t, L, poses, confirm), alpha=0.9)

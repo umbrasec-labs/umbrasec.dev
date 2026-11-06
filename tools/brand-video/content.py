@@ -45,6 +45,7 @@ class Content:
     claims_executed: int
     claims_passed: int
     article_title: str
+    article_eyebrow: str
     article_url: str
     pack_sigma: int
     pack_kql: int
@@ -53,6 +54,8 @@ class Content:
 
 ARTICLE = "research/detecting-hijacked-ai-coding-agents.html"
 ARTICLE_TITLE = "What a Hijacked AI Coding Agent Leaves in Your Logs"
+# the article header's category label, shown above its title in the film
+ARTICLE_EYEBROW = "AI & LLM Security"
 ARTICLE_URL = "umbrasec.dev/research/detecting-hijacked-ai-coding-agents"
 RULE = "tools/sigma-pack/rules/cross-platform/ai-agent-shell-risky-command.yml"
 CLAIM = "catches/claude-parent-credential-read"
@@ -178,6 +181,8 @@ def load(site: Path, detections: Path) -> Content:
         _need(quote.endswith(".") and re.match(r" [A-Z]|$", art_text[end:end + 2]),
               f"quote stops before its sentence ends: {quote!r}")
     _need(ARTICLE_TITLE in art_text, f"article title changed: {ARTICLE_TITLE!r}")
+    _need(ARTICLE_EYEBROW.upper() in art_text.upper(),
+          f"article category label changed: {ARTICLE_EYEBROW!r}")
     art_raw = article.read_text(encoding="utf-8")
     for cve in AGENT_CVES:
         _need(cve in art_raw, f"{cve} is not in {ARTICLE}")
@@ -243,6 +248,7 @@ def load(site: Path, detections: Path) -> Content:
         sources=SOURCES, technique=TECHNIQUE, technique_name=TECHNIQUE_NAME,
         trace_lines=TRACE_LINES, rule_lines=RULE_LINES, rule_path=RULE,
         claim_name=CLAIM, claims_executed=executed, claims_passed=passed,
-        article_title=ARTICLE_TITLE, article_url=ARTICLE_URL,
+        article_title=ARTICLE_TITLE, article_eyebrow=ARTICLE_EYEBROW,
+        article_url=ARTICLE_URL,
         pack_sigma=sigma, pack_kql=kql, tiles=tiles,
     )
