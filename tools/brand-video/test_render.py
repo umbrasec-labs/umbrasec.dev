@@ -114,5 +114,42 @@ class RenderTest(unittest.TestCase):
             last = i
 
 
+    def test_loop_seam(self):
+        # the last frame and the first are both plain charcoal, so the loop does not jump
+        bg = luminance(draw.BG)
+        for t in (449 / 30, 0.0):
+            self.assertAlmostEqual(mean_luminance(compose.frame(t, self.c)), bg, delta=3, msg=t)
+
+    def test_end_card_stop_sits_after_the_second_line(self):
+        import s5_end
+        lay = s5_end.layout()
+        x, y, size = lay["stop"]
+        self.assertGreater(x - size / 2, lay["l2_right"])
+        self.assertLess(x - size / 2 - lay["l2_right"], draw.cq(0.6))
+        self.assertLess(abs(y + size / 2 - lay["l2_base"]), 1.0)   # sits on the baseline
+        # the letters drawn one by one end where the whole line ends
+        last = s5_end.L2[-1]
+        lw = draw.measure(last, family=draw.DISPLAY, px=s5_end.LINE_PX, weight=600,
+                          tracking=s5_end.LINE_TRACK)[0]
+        self.assertAlmostEqual(lay["xs"][-1] + lw, lay["l2_right"], delta=draw.cq(0.3))
+        x0, y0, s0, _ = s5_end.dot(tl.T_LAND, self.c)
+        self.assertAlmostEqual(x0, x, delta=0.5)
+        self.assertAlmostEqual(y0, y, delta=0.5)
+
+
+def luminance(rgb):
+    r, g, b = (v * 255 for v in rgb[:3])
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def mean_luminance(surface):
+    data = bytes(surface.get_data())
+    n, total = 0, 0.0
+    for i in range(0, len(data), 64):          # every 16th pixel is plenty
+        total += 0.2126 * data[i + 2] + 0.7152 * data[i + 1] + 0.0722 * data[i]
+        n += 1
+    return total / n
+
+
 if __name__ == "__main__":
     unittest.main()

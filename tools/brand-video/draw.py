@@ -113,6 +113,18 @@ def measure(s: str, *, family: str, px: float, weight: int = 400,
     return w, h
 
 
+def char_xs(s: str, *, family: str, px: float, weight: int = 400,
+            tracking: float = 0.0) -> tuple[float, ...]:
+    """Where each character of s starts when the whole string is laid out
+    (kerning included), for animating its letters one by one."""
+    layout = _layout(_SCRATCH, s, family, px, weight, tracking)
+    out, bi = [], 0
+    for ch in s:
+        out.append(layout.index_to_pos(bi).x / Pango.SCALE)
+        bi += len(ch.encode())
+    return tuple(out)
+
+
 def metrics(family: str, px: float, weight: int = 400) -> tuple[float, float]:
     """(ascent, descent) in pixels."""
     _, h, base = _extent(_layout(_SCRATCH, "Hg", family, px, weight, 0.0))

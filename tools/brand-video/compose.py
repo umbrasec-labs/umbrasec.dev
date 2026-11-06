@@ -17,6 +17,7 @@ import s1_research
 import s2_papers
 import s3_query
 import s4_publish
+import s5_end
 import timeline as tl
 
 SCENES = (
@@ -24,6 +25,7 @@ SCENES = (
     (2.95, 6.45, s2_papers),
     (5.85, 10.55, s3_query),
     (9.9, 12.55, s4_publish),
+    (12.45, 15.0, s5_end),
 )
 SAMPLES = 6        # motion blur: sub-frames in the FAST windows
 SHUTTER = 0.5      # the shutter is open for half a frame (180 degrees)
