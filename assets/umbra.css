@@ -1205,11 +1205,11 @@ html.intro-flying .hero-headline { visibility: hidden; }
    framed box. Chosen by the screen's size and shape, not the device, so a
    foldable takes the phone layout folded and the box unfolded, and a turn
    or unfold mid-film just reflows (the title landing measures the stage at
-   the handoff). Tablets keep the box. */
+   the handoff). Tablets keep the box. The stage keeps its rounded frame
+   everywhere, like the film card in #approach. */
 @media (orientation: portrait) and (max-width: 600px) {
     /* edge to edge across the width, the buttons under it */
     .intro { padding: 0; }
-    .intro-stage { border-width: 1px 0; border-radius: 0; }
     .intro-controls { padding: 0 12px; }
     .intro-btn { padding: 12px 14px; }
 }
@@ -1221,8 +1221,7 @@ html.intro-flying .hero-headline { visibility: hidden; }
         width: min(100%, calc(100vh * 16 / 9));
         width: min(100%, calc(100svh * 16 / 9));   /* phone toolbars */
     }
-    .intro-stage { border: 0; border-radius: 0; box-shadow: none; }
-    .intro-controls { position: absolute; right: 12px; bottom: 12px; margin: 0; }
+    .intro-controls { position: absolute; right: 16px; bottom: 16px; margin: 0; }
     .intro-btn { padding: 12px 14px; }
 }
 @media (forced-colors: active) {
