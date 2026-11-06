@@ -14,3 +14,7 @@ node_modules/
 
 # Pages Git build output (tools/local-deploy/stage.sh dist)
 dist/
+
+# Brand film renderer: downloaded fonts, fontconfig cache, renders
+tools/brand-video/.cache/
+tools/brand-video/out/

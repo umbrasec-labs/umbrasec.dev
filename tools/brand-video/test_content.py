@@ -1,0 +1,237 @@
+"""Every fact the film shows must match the repos it comes from.
+
+Run from the umbrasec.dev root:
+    BRAND_VIDEO_CLAIMS=<fresh predicate.json> \
+    python3 -m unittest discover -s tools/brand-video -p 'test_*.py'
+"""
+import html
+import json
+import os
+import re
+import shutil
+import tempfile
+import unittest
+from dataclasses import replace
+from pathlib import Path
+from unittest import mock
+
+import content
+
+SITE = Path(__file__).resolve().parents[2]
+DETECTIONS = SITE.parent / "detections"
+ARTICLE = SITE / "research" / "detecting-hijacked-ai-coding-agents.html"
+AGENT_CVES = ("CVE-2025-8217", "CVE-2025-53773", "CVE-2025-54135",
+              "CVE-2025-54136", "CVE-2026-110202")
+
+
+def page_text(path):
+    raw = path.read_text(encoding="utf-8")
+    raw = re.sub(r"<script.*?</script>|<style.*?</style>", "", raw, flags=re.S)
+    return squash(html.unescape(re.sub(r"<[^>]+>", "", raw)))
+
+
+def squash(s):
+    return re.sub(r"\s+", " ", s).strip()
+
+
+class ContentTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.c = content.load(SITE, DETECTIONS)
+
+    def test_quotes_are_word_for_word(self):
+        text = page_text(ARTICLE)
+        self.assertEqual(len(self.c.sources), 3)
+        for s in self.c.sources:
+            self.assertTrue(s.mark)
+            self.assertIn(squash(s.before + s.mark + s.after), text)
+
+    def test_cves_are_on_the_site(self):
+        self.assertEqual(self.c.agent_cves, AGENT_CVES)
+        article = ARTICLE.read_text(encoding="utf-8")
+        for cve in AGENT_CVES:
+            self.assertIn(cve, article)
+        research = " ".join(p.read_text(encoding="utf-8")
+                            for p in (SITE / "research").glob("*.html"))
+        for cve in ("CVE-2026-102764", "CVE-2026-42271"):
+            self.assertIn(cve, research)
+            self.assertIn(cve, self.c.signals)
+
+    def test_tiles_follow_the_hero_reel(self):
+        index = (SITE / "index.html").read_text(encoding="utf-8")
+        ids = tuple(re.findall(r'data-tr-id="([^"]+)"', index))
+        self.assertEqual(self.c.tiles, ids)
+        self.assertEqual(len(self.c.tiles), self.c.pack_sigma + self.c.pack_kql)
+        self.assertEqual(len(self.c.tiles), 29)
+
+    def test_pack_counts(self):
+        self.assertEqual((self.c.pack_sigma, self.c.pack_kql), (22, 7))
+
+    def test_kev_total(self):
+        data = json.loads((SITE / "assets" / "exploited-latest.json")
+                          .read_text(encoding="utf-8"))
+        self.assertEqual(self.c.kev_total, data["total"])
+        self.assertIn(f"KEV {data['total']:,}", self.c.signals)
+
+    def test_rule_lines_exist(self):
+        rule_raw = (SITE / self.c.rule_path).read_text(encoding="utf-8")
+        rule = squash(rule_raw)
+        checked = 0
+        for line in self.c.rule_lines:
+            s = line.strip()
+            if s == "..." or s.startswith("condition:") or s.startswith("and ("):
+                continue
+            s = s.removeprefix("- ")
+            self.assertIn(squash(s), rule, s)
+            checked += 1
+        self.assertGreaterEqual(checked, 10)
+        self.assertEqual(self.c.rule_lines[0],
+                         "title: AI Coding Agent Shell Runs a Risky Command")
+        self.assertIn("- attack.t1552.001", [l.strip() for l in self.c.rule_lines])
+        self.assertEqual(self.c.rule_lines[-1], "level: high")
+        cond = re.search(r"^\s*condition:\s*(.+)$", rule_raw, flags=re.M).group(1)
+        self.assertTrue(cond.startswith("(1 of agent_* or "))
+        self.assertIn(") and (1 of risk_* or ", cond)
+        self.assertIn(") and not (", cond)
+
+    def test_trace_matches_reel(self):
+        index = page_text(SITE / "index.html")
+        for s in ("/home/dev/.local/share/claude/versions/2.1.310",
+                  "/usr/bin/bash -c 'cat ~/.aws/credentials'",
+                  "catches/claude-parent-credential-read"):
+            self.assertIn(s, index)
+        joined = " ".join(self.c.trace_lines)
+        self.assertIn("/home/dev/.local/share/claude/versions/2.1.310", joined)
+        self.assertIn("/usr/bin/bash -c 'cat ~/.aws/credentials'", joined)
+        self.assertEqual(self.c.claim_name, "catches/claude-parent-credential-read")
+
+    def test_claims_all_pass(self):
+        self.assertGreater(self.c.claims_passed, 0)
+        self.assertEqual(self.c.claims_executed, self.c.claims_passed)
+
+    def test_mismatch_refuses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            site = Path(tmp) / "site"
+            shutil.copytree(SITE, site, ignore=shutil.ignore_patterns(
+                "node_modules", ".git", ".superpowers", ".cache", "out", ".claude", ".mcp.json"))
+            art = site / "research" / ARTICLE.name
+            art.write_text(art.read_text(encoding="utf-8")
+                           .replace("inventory secrets", "list secrets"),
+                           encoding="utf-8")
+            with self.assertRaises(content.FactError):
+                content.load(site, DETECTIONS)
+
+    def test_stale_claims_refuse(self):
+        claims = Path(os.environ.get("BRAND_VIDEO_CLAIMS",
+                                     DETECTIONS / "out" / "predicate.json"))
+        data = json.loads(claims.read_text(encoding="utf-8"))
+        data["generated_at"] = "2026-01-01T00:00:00Z"
+        with tempfile.TemporaryDirectory() as tmp:
+            old = Path(tmp) / "predicate.json"
+            old.write_text(json.dumps(data), encoding="utf-8")
+            saved = os.environ.get("BRAND_VIDEO_CLAIMS")
+            os.environ["BRAND_VIDEO_CLAIMS"] = str(old)
+            try:
+                with self.assertRaises(content.FactError):
+                    content.load(SITE, DETECTIONS)
+            finally:
+                if saved is None:
+                    os.environ.pop("BRAND_VIDEO_CLAIMS")
+                else:
+                    os.environ["BRAND_VIDEO_CLAIMS"] = saved
+
+    def test_case_cards_say_whose_words(self):
+        # the page text is the write-up's own account of each case, so a card
+        # is headed as a case, never as the source's own words
+        for s in self.c.sources:
+            self.assertRegex(s.label, r"^Case [123] · ")
+
+    def test_quotes_end_where_the_sentence_ends(self):
+        # a quote cut mid-sentence can drop what qualifies it, like the
+        # Amazon Q instruction never running
+        text = page_text(ARTICLE)
+        for s in self.c.sources:
+            q = squash(s.before + s.mark + s.after)
+            end = text.index(q) + len(q)
+            self.assertTrue(q.endswith("."), q)
+            self.assertRegex(text[end:end + 2], r"^ [A-Z]", q)
+
+    def test_rule_excerpt_marks_cuts_like_the_hero_reel(self):
+        index = (SITE / "index.html").read_text(encoding="utf-8")
+        start = index.index('data-tr-id="T1552.001"')
+        panel = index[index.index("tr-panel tr-rule", start):]
+        panel = panel[:panel.index("tr-foot")]
+        reel = [squash(html.unescape(re.sub(r"<[^>]+>", "", ln)))
+                for ln in re.findall(r'<div class="ln[^"]*">(.*?)</div>', panel)]
+        self.assertGreater(len(reel), 5)
+        film = [ln.strip() for ln in self.c.rule_lines]
+        a = film.index("agent_parent:")
+        self.assertEqual(film[a:a + len(reel)], reel)
+
+    def test_rule_excerpt_marks_left_out_tags(self):
+        rule = (SITE / content.RULE).read_text(encoding="utf-8")
+        block = re.search(r"^tags:\n((?:[ \t]+- .*\n)+)", rule, flags=re.M).group(1)
+        tags = re.findall(r"- (\S+)", block)
+        film = [ln.strip() for ln in self.c.rule_lines]
+        shown = film[film.index("tags:") + 1:film.index("detection:")]
+        i = tags.index("attack.t1552.001")
+        want = ((["..."] if i > 0 else []) + ["- attack.t1552.001"]
+                + (["..."] if i < len(tags) - 1 else []))
+        self.assertEqual(shown, want)
+
+    def test_load_refuses_a_cut_quote(self):
+        cut = (content.SOURCES[0],
+               replace(content.SOURCES[1], after=""),
+               content.SOURCES[2])
+        with mock.patch.object(content, "SOURCES", cut):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def test_load_refuses_an_unmarked_cut(self):
+        unmarked = tuple(ln for ln in content.RULE_LINES if ln.strip() != "...")
+        with mock.patch.object(content, "RULE_LINES", unmarked):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def test_article_eyebrow_is_the_articles_own(self):
+        self.assertIn(self.c.article_eyebrow.upper(), page_text(ARTICLE).upper())
+
+    def test_load_refuses_a_changed_eyebrow(self):
+        with mock.patch.object(content, "ARTICLE_EYEBROW", "Research · AI"):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def _refuses_sources(self, sources):
+        with mock.patch.object(content, "SOURCES", tuple(sources)):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def test_load_refuses_swapped_case_cves(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((s1, replace(s2, label=s3.label.replace("3", "2")),
+                               replace(s3, label=s2.label.replace("2", "3"))))
+
+    def test_load_refuses_a_product_on_the_wrong_case(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((s1, replace(s2, title="Roo Code"), s3))
+
+    def test_load_refuses_a_wrong_case_title(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, title="Malicious extension versions"), s2, s3))
+
+    def test_load_refuses_a_wrong_case_date(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, label=s1.label.replace("2025", "2024")), s2, s3))
+
+    def test_load_refuses_a_wrong_case_name(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, label=s1.label.replace("Nx", "Npm")), s2, s3))
+
+    def test_load_refuses_a_changed_technique_name(self):
+        with mock.patch.object(content, "TECHNIQUE_NAME", "Unsecured Credentials"):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+
+if __name__ == "__main__":
+    unittest.main()

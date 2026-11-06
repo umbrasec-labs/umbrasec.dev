@@ -665,6 +665,50 @@
     else window.addEventListener("load", arm);
   })();
 
+  /* ── Home: the brand film (plays only while in view) ──────────── */
+  (function brandFilm() {
+    const root = $("[data-film]");
+    if (!root) return;
+    const video = $("[data-film-video]", root);
+    const btn = $("[data-film-toggle]", root);
+    if (!video) return;
+    // read live: a visitor can turn reduced motion on while the page is open
+    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    // reduced motion or Save-Data: it never starts by itself, the button plays it
+    let user = rm.matches || saveData, seen = false;
+
+    function sync() {
+      if (btn) btn.setAttribute("aria-pressed", user ? "true" : "false");
+      if (seen && !user && !document.hidden) {
+        const p = video.play();
+        // blocked (iOS Low Power Mode, no H.264): the poster stays and the
+        // button says play; an AbortError is only a pause that came first
+        if (p && p.catch) p.catch((e) => {
+          if (e && (e.name === "NotAllowedError" || e.name === "NotSupportedError")) {
+            user = true;
+            if (btn) btn.setAttribute("aria-pressed", "true");
+          }
+        });
+      } else {
+        video.pause();
+      }
+    }
+    rm.addEventListener("change", () => { if (rm.matches) { user = true; sync(); } });
+    document.addEventListener("visibilitychange", sync);
+    if (btn) btn.addEventListener("click", () => { user = !user; sync(); });
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver((es) => es.forEach((en) => {
+        // at least half on screen, the same in every engine
+        seen = en.isIntersecting && en.intersectionRatio >= 0.5;
+        sync();
+      }), { threshold: 0.5 }).observe(video);
+    } else {
+      seen = true;
+      sync();
+    }
+  })();
+
   /* ── Article table of contents + scrollspy ────────────────────── */
   (function tableOfContents() {
     const rail = $("[data-toc]");
