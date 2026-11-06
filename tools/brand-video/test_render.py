@@ -137,6 +137,17 @@ class RenderTest(unittest.TestCase):
         self.assertAlmostEqual(y0, y, delta=0.5)
 
 
+    def test_poster_fits_its_budget(self):
+        import tempfile
+        import encode
+        with tempfile.TemporaryDirectory() as tmp:
+            png, jpg = Path(tmp) / "p.png", Path(tmp) / "p.jpg"
+            compose.frame(14.5, self.c, grain=False).write_to_png(str(png))
+            encode.poster(png, jpg)
+            self.assertLessEqual(jpg.stat().st_size, encode.POSTER_MAX)
+            self.assertEqual(encode.POSTER_MAX, 200_000)
+
+
 def luminance(rgb):
     r, g, b = (v * 255 for v in rgb[:3])
     return 0.2126 * r + 0.7152 * g + 0.0722 * b

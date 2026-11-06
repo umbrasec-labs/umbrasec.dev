@@ -74,8 +74,9 @@ def _scene(ctx: cairo.Context, t: float, c) -> None:
     d.vignette(ctx)
 
 
-def frame(t: float, c) -> cairo.ImageSurface:
-    """The finished frame at time t, motion-blurred inside the FAST windows."""
+def frame(t: float, c, *, grain: bool = True) -> cairo.ImageSurface:
+    """The finished frame at time t, motion-blurred inside the FAST windows.
+    grain=False leaves out the film grain (the poster compresses better)."""
     surface = cairo.ImageSurface(cairo.FORMAT_RGB24, tl.W, tl.H)
     ctx = cairo.Context(surface)
     if tl.fast(t):
@@ -89,5 +90,6 @@ def frame(t: float, c) -> cairo.ImageSurface:
     else:
         _scene(ctx, t, c)
     d.hud(ctx, t, tl.section_at(t), alpha=edge_fade(t))
-    d.grain(ctx, t)
+    if grain:
+        d.grain(ctx, t)
     return surface

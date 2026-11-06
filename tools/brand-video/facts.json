@@ -1,0 +1,10 @@
+{
+  "rendered": "2026-11-06",
+  "claims_executed": 421,
+  "claims_passed": 421,
+  "pack_sigma": 22,
+  "pack_kql": 7,
+  "kev_total": 1766,
+  "technique": "T1552.001",
+  "article_title": "What a Hijacked AI Coding Agent Leaves in Your Logs"
+}
