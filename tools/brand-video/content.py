@@ -170,6 +170,33 @@ def _claims(path: Path, pack_total: int) -> tuple[int, int]:
     return executed, passed
 
 
+MONTHS = dict(Jan="January", Feb="February", Mar="March", Apr="April", May="May",
+              Jun="June", Jul="July", Aug="August", Sep="September", Oct="October",
+              Nov="November", Dec="December")
+
+
+def _case_card(art_text: str, s: Source) -> None:
+    """The card's case and title belong to the sentence its quote comes from:
+    "Case 2 · CVE-X" over "Product" needs "Product (CVE-X" there; "Case 1 · Name,
+    Aug 2025" needs every word of Name and "(August 2025)" there."""
+    quote = squash(s.before + s.mark + s.after)
+    start = art_text.index(quote)
+    sentence = art_text[art_text.rfind(". ", 0, start) + 2:start + len(quote)]
+    case = s.label.split(" · ", 1)[1]
+    _need(s.title.lower() in sentence.lower(),
+          f"card title {s.title!r} is not in its case's sentence")
+    if re.fullmatch(r"CVE-\d{4}-\d+", case):
+        _need(f"{s.title} ({case}" in sentence,
+              f"{case} is not the article's CVE for {s.title!r}")
+        return
+    name, when = case.rsplit(", ", 1)
+    for word in name.split():
+        _need(word in sentence, f"{word!r} is not in its case's sentence")
+    month, year = when.split()
+    _need(f"({MONTHS.get(month, month)} {year})" in sentence,
+          f"case date {when!r} is not the article's")
+
+
 def load(site: Path, detections: Path) -> Content:
     site, detections = Path(site), Path(detections)
     article = site / ARTICLE
@@ -180,6 +207,7 @@ def load(site: Path, detections: Path) -> Content:
         end = art_text.index(quote) + len(quote)
         _need(quote.endswith(".") and re.match(r" [A-Z]|$", art_text[end:end + 2]),
               f"quote stops before its sentence ends: {quote!r}")
+        _case_card(art_text, s)
     _need(ARTICLE_TITLE in art_text, f"article title changed: {ARTICLE_TITLE!r}")
     _need(ARTICLE_EYEBROW.upper() in art_text.upper(),
           f"article category label changed: {ARTICLE_EYEBROW!r}")
@@ -197,6 +225,7 @@ def load(site: Path, detections: Path) -> Content:
     tiles = tuple(re.findall(r'data-tr-id="([^"]+)"', index_raw))
     for t in FIELD_TECHNIQUES + (TECHNIQUE,):
         _need(t in tiles, f"{t} is not in the hero reel")
+    _need(TECHNIQUE_NAME in index_text, f"the site no longer names {TECHNIQUE} {TECHNIQUE_NAME!r}")
     for s in ("/home/dev/.local/share/claude/versions/2.1.310",
               "/usr/bin/bash -c 'cat ~/.aws/credentials'", CLAIM):
         _need(s in index_text, f"hero reel no longer shows {s!r}")

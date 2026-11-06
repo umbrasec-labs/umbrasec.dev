@@ -201,6 +201,37 @@ class ContentTest(unittest.TestCase):
             with self.assertRaises(content.FactError):
                 content.load(SITE, DETECTIONS)
 
+    def _refuses_sources(self, sources):
+        with mock.patch.object(content, "SOURCES", tuple(sources)):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def test_load_refuses_swapped_case_cves(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((s1, replace(s2, label=s3.label.replace("3", "2")),
+                               replace(s3, label=s2.label.replace("2", "3"))))
+
+    def test_load_refuses_a_product_on_the_wrong_case(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((s1, replace(s2, title="Roo Code"), s3))
+
+    def test_load_refuses_a_wrong_case_title(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, title="Malicious extension versions"), s2, s3))
+
+    def test_load_refuses_a_wrong_case_date(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, label=s1.label.replace("2025", "2024")), s2, s3))
+
+    def test_load_refuses_a_wrong_case_name(self):
+        s1, s2, s3 = content.SOURCES
+        self._refuses_sources((replace(s1, label=s1.label.replace("Nx", "Npm")), s2, s3))
+
+    def test_load_refuses_a_changed_technique_name(self):
+        with mock.patch.object(content, "TECHNIQUE_NAME", "Unsecured Credentials"):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
 
 if __name__ == "__main__":
     unittest.main()
