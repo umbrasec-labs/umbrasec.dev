@@ -5,6 +5,10 @@ to papers to a real rule catching its trace, publishing, and the end card.
 Picture and sound are made in code from one cue list (`timeline.py`), so they
 cannot drift apart.
 
+The film is 2560 x 1440 (1440p). Scenes draw in a 1920 x 1080 layout space that
+`compose.frame` scales up (`timeline.OUT_W`, `SCALE`), so positions, the
+coordinates in `umbra.js` and the 1080p poster do not depend on the output size.
+
 The site shows it twice. A first-time visitor gets it as an intro over the
 blurred page (with sound where the browser allows it, Skip or Esc to close);
 at the end card its title is swapped for real text that flies into the hero
@@ -59,7 +63,7 @@ to `assets/video/`, and update the "as of" date in the film's caption in
 
 It shows the figures true on its render date (`facts.json`). When the pack or
 the claims change, the site does not fail; `render.py drift` says what moved,
-and a re-render is a choice (each one adds about 7 MB to the repo).
+and a re-render is a choice (each one adds about 11 MB to the repo).
 
 ## Files
 

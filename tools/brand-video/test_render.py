@@ -33,7 +33,7 @@ class RenderTest(unittest.TestCase):
 
     def test_frame_shape_and_accent(self):
         s = compose.frame(2.4, self.c)
-        self.assertEqual((s.get_width(), s.get_height()), (1920, 1080))
+        self.assertEqual((s.get_width(), s.get_height()), (2560, 1440))
         self.assertGreaterEqual(near(s, ACCENT), 200)
 
     def test_papers_quotes_render(self):

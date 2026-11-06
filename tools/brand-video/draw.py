@@ -34,6 +34,12 @@ def rgb(hex_: str) -> tuple[float, float, float]:
     return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 
+def screen(ctx: cairo.Context) -> None:
+    """Back to plain layout space (W x H) whatever the scenes transformed,
+    scaled to the output frame."""
+    ctx.set_matrix(cairo.Matrix(xx=tl.SCALE, yy=tl.SCALE))
+
+
 def cq(v: float) -> float:
     """Storyboard container units to film pixels."""
     return v * tl.W / 100
@@ -247,23 +253,28 @@ def grid(ctx: cairo.Context, alpha: float, *, cell: float = 48.0, scale: float =
     if alpha <= 0:
         return
     ctx.save()
-    ctx.identity_matrix()
-    ctx.set_line_width(1.0)
     step = cell * scale
     if scale == 1.0:
-        xs = [k * cell - 0.5 for k in range(1, int(tl.W / cell) + 1)]
-        ys = [k * cell - 0.5 for k in range(1, int(tl.H / cell) + 1)]
+        # output pixels, so the 1 px lines stay sharp at any output size
+        ctx.identity_matrix()
+        ctx.set_line_width(1.0)
+        xs = [round(k * cell * tl.SCALE) - 0.5 for k in range(1, int(tl.W / cell) + 1)]
+        ys = [round(k * cell * tl.SCALE) - 0.5 for k in range(1, int(tl.H / cell) + 1)]
+        w, h = tl.OUT_W, tl.OUT_H
     else:
+        screen(ctx)
+        ctx.set_line_width(1.0)
+        w, h = tl.W, tl.H
         x0 = cx - math.floor(cx / step) * step
         y0 = cy - math.floor(cy / step) * step
         xs = [x0 + k * step for k in range(int(tl.W / step) + 2)]
         ys = [y0 + k * step for k in range(int(tl.H / step) + 2)]
     for x in xs:
         ctx.move_to(x, 0)
-        ctx.line_to(x, tl.H)
+        ctx.line_to(x, h)
     for y in ys:
         ctx.move_to(0, y)
-        ctx.line_to(tl.W, y)
+        ctx.line_to(w, y)
     ctx.set_source_rgba(*ACCENT, alpha)
     ctx.stroke()
     ctx.restore()
@@ -379,7 +390,7 @@ def soft_glow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
     for _ in range(passes):
         small = _box_blur(small, radius)
     ctx.save()
-    ctx.identity_matrix()
+    screen(ctx)
     ctx.scale(down, down)
     pat = cairo.SurfacePattern(small)
     pat.set_filter(cairo.FILTER_BILINEAR)
@@ -392,7 +403,7 @@ def soft_glow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
 def vignette(ctx: cairo.Context, strength: float = 0.45) -> None:
     """The storyboard's .fx-vig: clear to 55 %, black at `strength` in the corners."""
     ctx.save()
-    ctx.identity_matrix()
+    screen(ctx)
     ctx.translate(tl.W / 2, tl.H / 2)
     ctx.scale(tl.W / 2 * math.sqrt(2), tl.H / 2 * math.sqrt(2))
     g = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
@@ -431,7 +442,7 @@ def grain(ctx: cairo.Context, t: float, amount: float = 0.03, size: float = 1.5)
     f = int(round(t * tl.FPS))
     rng = random.Random(f * 7919 + 17)
     ctx.save()
-    ctx.identity_matrix()
+    screen(ctx)
     ctx.scale(size, size)
     for shade, k in ((1.0, f), (0.0, f + 3)):
         surf = tiles[k % len(tiles)][1]
@@ -523,7 +534,7 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
         return
     W, H = tl.W, tl.H
     ctx.save()
-    ctx.identity_matrix()
+    screen(ctx)
     # corner ticks
     k, m = cq(1.5), cq(1.5)
     ctx.set_line_width(1.0)
@@ -782,7 +793,7 @@ def soft_shadow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
     for _ in range(passes):
         small = _box_blur(small, radius)
     ctx.save()
-    ctx.identity_matrix()
+    screen(ctx)
     ctx.scale(down, down)
     pat = cairo.SurfacePattern(small)
     pat.set_filter(cairo.FILTER_BILINEAR)

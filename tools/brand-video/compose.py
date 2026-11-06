@@ -1,6 +1,7 @@
 """One frame of the film: background, the sections on screen, the dot, HUD, grain.
 
-Each section module draws in its own 1920 x 1080 space and offers:
+Each section module draws in its own 1920 x 1080 layout space (scaled to the
+1440p output frame) and offers:
     draw(ctx, t, c)   everything it shows at time t
     glow(ctx, t, c)   only the orange parts that bloom, in the same space
     dot(t, c)         the dot in screen space, (x, y, diameter, alpha), or None
@@ -77,16 +78,21 @@ def _scene(ctx: cairo.Context, t: float, c) -> None:
 def frame(t: float, c, *, grain: bool = True) -> cairo.ImageSurface:
     """The finished frame at time t, motion-blurred inside the FAST windows.
     grain=False leaves out the film grain (the poster compresses better)."""
-    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, tl.W, tl.H)
+    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, tl.OUT_W, tl.OUT_H)
     ctx = cairo.Context(surface)
+    d.screen(ctx)
     if tl.fast(t):
-        sub = cairo.ImageSurface(cairo.FORMAT_RGB24, tl.W, tl.H)
+        sub = cairo.ImageSurface(cairo.FORMAT_RGB24, tl.OUT_W, tl.OUT_H)
         sctx = cairo.Context(sub)
+        d.screen(sctx)
         span = SHUTTER / tl.FPS
         for k in range(SAMPLES):
             _scene(sctx, t - span / 2 + span * (k + 0.5) / SAMPLES, c)
+            ctx.save()
+            ctx.identity_matrix()
             ctx.set_source_surface(sub)
             ctx.paint_with_alpha(1 / (k + 1))   # running mean of the sub-frames
+            ctx.restore()
     else:
         _scene(ctx, t, c)
     d.hud(ctx, t, tl.section_at(t), alpha=edge_fade(t))
