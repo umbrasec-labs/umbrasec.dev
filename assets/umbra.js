@@ -196,6 +196,8 @@
 
   document.addEventListener("keydown", (e) => {
     const open = overlay.classList.contains("open");
+    // the home intro film is a modal of its own
+    if (document.documentElement.classList.contains("intro-on")) return;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       togglePalette();
@@ -450,6 +452,256 @@
     });
   })();
 
+  /* ── Home: the intro film (once per visitor) ──────────────────── */
+  // The film opens over the blurred page (on its first frame), with sound
+  // where the browser allows it. At its end card the title is swapped for
+  // real text on the same spot, each word flies to its place in the hero
+  // headline and the page comes back into focus; the film plays on out of
+  // sight so its sound ends as mixed. Skip, Esc or a click anywhere closes it
+  // (once the title has decoded, it lands the title). No intro for reduced
+  // motion, Save-Data, a deep link or a scrolled page; a film that does not
+  // start, stalls or fails closes, and anything going wrong at the handoff
+  // falls back to a plain fade.
+  (function introFilm() {
+    const root = $("[data-intro]");
+    const h1 = $(".hero-headline");
+    if (!root || !h1) return;
+    const video = $("[data-intro-video]", root);
+    const skipBtn = $("[data-intro-skip]", root);
+    const soundBtn = $("[data-intro-sound]", root);
+    const lines = $$(".ghost-line-1, .ghost-line-2", h1);
+    const texts = lines.map((l) => l.textContent);
+    // each hero line is one text node, as written (a page translator rewrites them)
+    const plain = (l, i) => l.childNodes.length === 1 && l.firstChild.nodeType === Node.TEXT_NODE &&
+                            l.firstChild.data === texts[i];
+    if (!video || lines.length !== 2 || !lines.every(plain)) return;
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    if (reduceMotion || saveData || !("animate" in Element.prototype)) return;
+    const forced = location.hash === "#intro";
+    // a deep link (an article's /#contact) or a restored scroll: the page
+    // they asked for, and the visit does not count
+    if (!forced && (location.hash || window.scrollY > 0)) return;
+    const KEY = "umbrasec-intro-seen";
+    // storage blocked: show nothing rather than replay on every visit
+    if (!forced) { try { if (localStorage.getItem(KEY)) return; } catch (e) { return; } }
+
+    // where the film draws its title (tools/brand-video s5_end.layout, 1920 x 1080);
+    // tools/brand-video/test_site.py fails if a re-render moves it
+    const END = { w: 1920, left: 379.54, top: 322.69, px: 138.24, lh: 0.94 };
+    const LANDS_FROM = 13.25; // s: the title has decoded; a close from here lands it
+    const HANDOFF = 14.2;     // s: title resolved and lockup in, before the film fades
+    const FLY = 900, STAGGER = 35;
+    const STALL = 2000;       // ms on one frame while open (stalled, paused): close
+    const html = document.documentElement;
+    const others = [];
+    let state = "idle", opened = false, title = null, wait = 0;
+
+    function lock() {
+      // run again on the first frame: the script adds a few controls after this one
+      Array.from(document.body.children).forEach((el) => {
+        if (el !== root && !el.inert) { el.inert = true; others.push(el); }
+      });
+    }
+
+    function setSound(on) {
+      video.muted = !on;
+      // the label says what a press does; it is also the button's name
+      soundBtn.textContent = on ? "Sound off" : "Sound on";
+      soundBtn.classList.toggle("is-invite", !on);
+    }
+
+    function release() {
+      // stop the download too, not only the picture
+      video.pause();
+      $$("source", video).forEach((el) => el.remove());
+      video.removeAttribute("src");
+      video.load();
+      root.remove();
+    }
+
+    function done() {
+      if (state === "done") return;
+      const landed = state === "handoff";
+      state = "done";
+      clearTimeout(wait);
+      const focused = root.contains(document.activeElement);
+      html.classList.remove("intro-on", "intro-flying");
+      others.forEach((el) => { el.inert = false; });
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("visibilitychange", onVisible);
+      if (focused) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
+      if (landed && !video.paused && !video.ended && !video.muted && isFinite(video.duration)) {
+        // the title has landed; the end of the sound plays out of sight
+        root.hidden = true;
+        video.addEventListener("ended", release);
+        setTimeout(release, (video.duration - video.currentTime) * 1000 + 600);
+      } else release();
+    }
+
+    function fade() {
+      state = "closing";
+      if (title) title.remove();
+      html.classList.remove("intro-flying");
+      root.classList.remove("is-handoff");
+      root.classList.add("is-closing");
+      setTimeout(done, 450);
+    }
+
+    function close() {
+      if (state !== "playing") return;
+      if (!opened) return done();                     // nothing on screen yet
+      if (video.currentTime >= LANDS_FROM) return handoff();
+      fade();
+    }
+
+    function fail() {
+      if (state !== "playing") return;
+      if (opened) fade(); else done();
+    }
+
+    function wordsOf(el) {
+      const node = el.firstChild, out = [];
+      let at = 0;
+      for (const w of node.textContent.split(" ")) {
+        out.push({ w, node, start: at, end: at + w.length });
+        at += w.length + 1;
+      }
+      return out;
+    }
+    function rangeRect(node, a, b) {
+      const r = document.createRange();
+      r.setStart(node, a); r.setEnd(node, b);
+      return r.getBoundingClientRect();
+    }
+
+    function handoff() {
+      if (state !== "playing") return;
+      // the words fly only to a headline that is as written and on screen
+      const hr = h1.getBoundingClientRect();
+      if (!lines.every(plain) || hr.bottom <= 0 || hr.top >= innerHeight) return fade();
+      state = "handoff";
+      try {
+        const sr = $(".intro-stage", root).getBoundingClientRect();
+        const k = sr.width / END.w;
+        const cs = getComputedStyle(h1);
+        title = document.createElement("div");
+        title.className = "intro-title";
+        title.setAttribute("aria-hidden", "true");
+        Object.assign(title.style, {
+          left: sr.left + END.left * k + "px", top: sr.top + END.top * k + "px",
+          fontSize: END.px * k + "px", lineHeight: String(END.lh),
+          fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, letterSpacing: "-0.045em",
+        });
+        const flights = [];
+        lines.forEach((line, i) => {
+          const row = document.createElement("div");
+          row.className = "intro-title-line" + (i ? " is-accent" : "");
+          wordsOf(line).forEach((w, j) => {
+            if (j) row.appendChild(document.createTextNode(" "));
+            const span = document.createElement("span");
+            span.className = "intro-word";
+            span.textContent = w.w;
+            row.appendChild(span);
+            flights.push({ span, target: w });
+          });
+          title.appendChild(row);
+        });
+        root.appendChild(title);
+        // both ends of every word measured the same way (glyph boxes), then flown
+        const anims = flights.map(({ span, target }, i) => {
+          const src = rangeRect(span.firstChild, 0, span.textContent.length);
+          const box = span.getBoundingClientRect();
+          const dst = rangeRect(target.node, target.start, target.end);
+          span.style.transformOrigin = (src.left - box.left) + "px " + (src.top - box.top) + "px";
+          return span.animate(
+            [{ transform: "none" },
+             { transform: "translate(" + (dst.left - src.left) + "px," + (dst.top - src.top) + "px) " +
+                          // width and height apart: type does not scale exactly in
+                          // proportion (about 1%), and the word must end on the hero
+                          "scale(" + dst.width / src.width + "," + dst.height / src.height + ")" }],
+            { duration: FLY, delay: 120 + i * STAGGER, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }
+          ).finished;
+        });
+        html.classList.add("intro-flying");   // the real headline waits under its flying words
+        root.classList.add("is-handoff");
+        Promise.all(anims).then(done, done);
+        // a flight that never reports back still ends
+        setTimeout(done, 120 + flights.length * STAGGER + FLY + 1000);
+      } catch (e) {
+        fade();
+      }
+    }
+
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    function onVisible() {
+      // back from another tab or app: carry on, or close if the film will not
+      if (document.hidden || state !== "playing") return;
+      moved = performance.now();
+      if (video.paused) start(!video.muted);
+    }
+
+    function onPlaying() {
+      if (opened || state !== "playing") return;
+      opened = true;
+      moved = performance.now();   // a slow start is not a stall
+      lock();
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add("is-open")));
+      skipBtn.focus({ preventScroll: true });
+    }
+
+    // with sound first; most browsers refuse that before a click, so then muted
+    function start(withSound) {
+      setSound(withSound);
+      const p = video.play();
+      if (!p || !p.catch) return;
+      p.catch((e) => {
+        if (withSound && e && e.name === "NotAllowedError" && state === "playing") start(false);
+        else if (!e || e.name !== "AbortError") fail();
+      });
+    }
+
+    let last = -1, moved = 0;
+    function watch(now) {
+      if (state !== "playing") return;
+      const t = video.currentTime;
+      if (t >= HANDOFF) return handoff();
+      if (t !== last) { last = t; moved = now; }
+      else if (opened && now - moved > STALL) return fail();
+      requestAnimationFrame(watch);
+    }
+
+    function begin() {
+      if (!forced) { try { localStorage.setItem(KEY, "1"); } catch (e) { return; } }
+      state = "playing";
+      html.classList.add("intro-on");
+      lock();
+      root.hidden = false;
+      document.addEventListener("keydown", onKey);
+      document.addEventListener("visibilitychange", onVisible);
+      skipBtn.addEventListener("click", (e) => { e.stopPropagation(); close(); });
+      soundBtn.addEventListener("click", (e) => { e.stopPropagation(); setSound(video.muted); });
+      root.addEventListener("click", close);
+      video.addEventListener("playing", onPlaying);
+      video.addEventListener("error", fail, true);   // capture: a <source> error does not bubble
+      video.addEventListener("ended", handoff);
+      video.preload = "auto";
+      start(true);
+      // no picture within 4 s (slow line, no codec): the normal page
+      wait = setTimeout(() => { if (!opened) fail(); }, 4000);
+      watch(performance.now());
+    }
+
+    // opened in a background tab: wait until it is shown, so the visit counts
+    // only when someone can see it
+    if (!document.hidden) begin();
+    else document.addEventListener("visibilitychange", function shown() {
+      if (document.hidden) return;
+      document.removeEventListener("visibilitychange", shown);
+      if (window.scrollY === 0) begin();
+    });
+  })();
+
   /* ── Decode / scramble text ───────────────────────────────────── */
   (function scrambleText() {
     if (reduceMotion || !("IntersectionObserver" in window)) return;
@@ -492,7 +744,10 @@
       }),
       { threshold: 0.4 }
     );
-    els.forEach((el) => io.observe(el));
+    // with the intro film up, the hero headline is the film's title landing,
+    // not a decode
+    const intro = document.documentElement.classList.contains("intro-on");
+    els.forEach((el) => { if (!(intro && el.closest(".hero-headline"))) io.observe(el); });
   })();
 
   /* ── Hero network constellation (mouse-reactive) ──────────────── */
@@ -671,7 +926,12 @@
     if (!root) return;
     const video = $("[data-film-video]", root);
     const btn = $("[data-film-toggle]", root);
+    const sound = $("[data-film-sound]", root);
     if (!video) return;
+    if (sound) sound.addEventListener("click", () => {
+      video.muted = !video.muted;
+      sound.setAttribute("aria-pressed", video.muted ? "false" : "true");
+    });
     // read live: a visitor can turn reduced motion on while the page is open
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
     const saveData = !!(navigator.connection && navigator.connection.saveData);
