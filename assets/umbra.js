@@ -457,11 +457,12 @@
   // where the browser allows it. At its end card the title is swapped for
   // real text on the same spot, each word flies to its place in the hero
   // headline and the page comes back into focus; the film plays on out of
-  // sight so its sound ends as mixed. Skip, Esc or a click anywhere closes it
-  // (once the title has decoded, it lands the title). No intro for reduced
-  // motion, Save-Data, a deep link or a scrolled page; a film that does not
-  // start, stalls or fails closes, and anything going wrong at the handoff
-  // falls back to a plain fade.
+  // sight so its sound ends as mixed. A click on a muted film turns the sound
+  // on (browsers only allow sound after one); Skip, Esc or a click with the
+  // sound already on closes it (once the title has decoded, it lands the
+  // title). No intro for reduced motion, Save-Data, a deep link or a
+  // scrolled page; a film that does not start, stalls or fails closes, and
+  // anything going wrong at the handoff falls back to a plain fade.
   (function introFilm() {
     const root = $("[data-intro]");
     const h1 = $(".hero-headline");
@@ -677,7 +678,11 @@
       document.addEventListener("visibilitychange", onVisible);
       skipBtn.addEventListener("click", (e) => { e.stopPropagation(); close(); });
       soundBtn.addEventListener("click", (e) => { e.stopPropagation(); setSound(video.muted); });
-      root.addEventListener("click", close);
+      root.addEventListener("click", () => {
+        // the click is the gesture browsers want before sound, so spend it on that
+        if (state === "playing" && video.muted) { setSound(true); if (video.paused) start(true); }
+        else close();
+      });
       video.addEventListener("playing", onPlaying);
       video.addEventListener("error", fail, true);   // capture: a <source> error does not bubble
       video.addEventListener("ended", handoff);
