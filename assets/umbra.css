@@ -1201,6 +1201,29 @@ html.intro-flying .hero-headline { visibility: hidden; }
 }
 .intro-title-line.is-accent { color: var(--accent); }
 .intro-word { display: inline-block; will-change: transform; }
+/* Phone-sized screens: the film fills the screen instead of sitting in a
+   framed box. Chosen by the screen's size and shape, not the device, so a
+   foldable takes the phone layout folded and the box unfolded, and a turn
+   or unfold mid-film just reflows (the title landing measures the stage at
+   the handoff). Tablets keep the box. The stage keeps its rounded frame
+   everywhere, like the film card in #approach. */
+@media (orientation: portrait) and (max-width: 600px) {
+    /* edge to edge across the width, the buttons under it */
+    .intro { padding: 0; }
+    .intro-controls { padding: 0 12px; }
+    .intro-btn { padding: 12px 14px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+    /* the full height, the buttons over the film's bottom right corner */
+    .intro { padding: 0; }
+    .intro-box {
+        position: relative;
+        width: min(100%, calc(100vh * 16 / 9));
+        width: min(100%, calc(100svh * 16 / 9));   /* phone toolbars */
+    }
+    .intro-controls { position: absolute; right: 16px; bottom: 16px; margin: 0; }
+    .intro-btn { padding: 12px 14px; }
+}
 @media (forced-colors: active) {
     .intro, .intro.is-open { -webkit-backdrop-filter: none; backdrop-filter: none; background: Canvas; }
     .intro-btn.is-invite { border-color: Highlight; }
