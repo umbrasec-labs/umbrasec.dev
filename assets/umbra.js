@@ -682,7 +682,14 @@
       if (btn) btn.setAttribute("aria-pressed", user ? "true" : "false");
       if (seen && !user && !document.hidden) {
         const p = video.play();
-        if (p && p.catch) p.catch(() => { /* blocked: the poster stays */ });
+        // blocked (iOS Low Power Mode, no H.264): the poster stays and the
+        // button says play; an AbortError is only a pause that came first
+        if (p && p.catch) p.catch((e) => {
+          if (e && (e.name === "NotAllowedError" || e.name === "NotSupportedError")) {
+            user = true;
+            if (btn) btn.setAttribute("aria-pressed", "true");
+          }
+        });
       } else {
         video.pause();
       }
@@ -692,7 +699,8 @@
     if (btn) btn.addEventListener("click", () => { user = !user; sync(); });
     if ("IntersectionObserver" in window) {
       new IntersectionObserver((es) => es.forEach((en) => {
-        seen = en.isIntersecting;
+        // at least half on screen, the same in every engine
+        seen = en.isIntersecting && en.intersectionRatio >= 0.5;
         sync();
       }), { threshold: 0.5 }).observe(video);
     } else {
