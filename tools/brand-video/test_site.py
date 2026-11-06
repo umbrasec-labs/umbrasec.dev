@@ -1,6 +1,6 @@
 """The film on the home page: placed in "How this project works", lazy, muted,
 captioned in plain words, and dated with the render it shows; and the intro
-that opens it over the page once per visitor, whose title lands on the hero."""
+that opens it over the page on every visit, whose title lands on the hero."""
 import json
 import re
 import unittest

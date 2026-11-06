@@ -452,7 +452,7 @@
     });
   })();
 
-  /* ── Home: the intro film (once per visitor) ──────────────────── */
+  /* ── Home: the intro film (every visit to the top of home) ─────── */
   // The film opens over the blurred page (on its first frame), with sound
   // where the browser allows it. At its end card the title is swapped for
   // real text on the same spot, each word flies to its place in the hero
@@ -479,11 +479,8 @@
     if (reduceMotion || saveData || !("animate" in Element.prototype)) return;
     const forced = location.hash === "#intro";
     // a deep link (an article's /#contact) or a restored scroll: the page
-    // they asked for, and the visit does not count
+    // they asked for. Otherwise it plays on every visit; Skip or Esc ends it.
     if (!forced && (location.hash || window.scrollY > 0)) return;
-    const KEY = "umbrasec-intro-seen";
-    // storage blocked: show nothing rather than replay on every visit
-    if (!forced) { try { if (localStorage.getItem(KEY)) return; } catch (e) { return; } }
 
     // where the film draws its title (tools/brand-video s5_end.layout, 1920 x 1080);
     // tools/brand-video/test_site.py fails if a re-render moves it
@@ -672,7 +669,6 @@
     }
 
     function begin() {
-      if (!forced) { try { localStorage.setItem(KEY, "1"); } catch (e) { return; } }
       state = "playing";
       html.classList.add("intro-on");
       lock();
@@ -692,8 +688,8 @@
       watch(performance.now());
     }
 
-    // opened in a background tab: wait until it is shown, so the visit counts
-    // only when someone can see it
+    // opened in a background tab: wait until it is shown, so it plays only
+    // when someone can see it
     if (!document.hidden) begin();
     else document.addEventListener("visibilitychange", function shown() {
       if (document.hidden) return;
