@@ -3,7 +3,7 @@
 synth() plays timeline.EVENTS: a soft pad bed ducked by a kick on every beat,
 and one small voice per cue kind (sonar ping, hop blips, paper flicks,
 highlighter zips, key clicks, the match chime, the counter purr, whooshes,
-the bell on the landing). Pure Python, no dependencies. master() brings it to
+the anvil strike on the landing). Pure Python, no dependencies. master() brings it to
 the reference showreel's loudness (-11.1 dBFS mean RMS) under a -1 dBFS soft
 ceiling; the last 0.15 s is silent so the loop on the site restarts cleanly.
 """
@@ -84,6 +84,36 @@ def _sin2(x: float) -> float:
 
 PENTA = (523.25, 587.33, 659.25, 783.99, 880.0)
 
+# Steel anvil modes: inharmonic ratios, each with its own ring (ratio, level,
+# decay s); the upper ones die first, like struck metal.
+ANVIL = ((1.0, 1.0, 0.7), (1.004, 0.5, 0.85), (1.59, 0.45, 0.45), (2.14, 0.3, 0.32),
+         (2.31, 0.2, 0.28), (2.92, 0.15, 0.2), (3.5, 0.1, 0.14))
+
+
+def _strike(base: float, dur: float, *, seed: int, thud: float) -> list[float]:
+    """One hammer blow: a click, a small thud and the ringing steel."""
+    n = _n(dur)
+    ring = [0.0] * n
+    norm = 1 / sum(a for _, a, _ in ANVIL)
+    att = _n(0.0008)
+    for m, a, d in ANVIL:
+        w, k = TAU * base * m / RATE, 1 / (d * RATE)
+        for i in range(n):
+            ring[i] += a * norm * math.sin(w * i) * math.exp(-i * k) * min(1.0, i / att)
+    return _mix([0.6 * x for x in ring],
+                [0.6 * x for x in noise(0.008, 0.0018, seed=seed, hp=0.8)],
+                [thud * x for x in tone(260, 0.12, 0.03, to=140)])
+
+
+def anvil(*, seed: int) -> list[float]:
+    """A light, bright smith's hammer on the landing: a G6 blow, the hammer's
+    bounce a beat later, and a C major sparkle rising out of the ring."""
+    hit = _strike(1567.98, 1.9, seed=seed, thud=0.25)
+    bounce = _later([0.45 * x for x in _strike(1567.98, 0.9, seed=seed + 1, thud=0.0)], 0.11)
+    sparkle = _mix(*(_later([0.12 * x for x in tone(f, 0.7, 0.22, parts=((1, 1), (2, 0.2)))], t)
+                     for f, t in ((2637.02, 0.2), (3135.96, 0.27), (4186.01, 0.34))))
+    return _mix(hit, bounce, sparkle)
+
 
 def voice(e: tl.Event) -> tuple[list[float], float]:
     """(mono samples, reverb send) for one cue."""
@@ -145,8 +175,7 @@ def voice(e: tl.Event) -> tuple[list[float], float]:
     if k == "decode":
         return [0.2 * x for x in tone(2093 + 60 * n, 0.03, 0.008)], 0.1
     if k == "bell":
-        return [0.7 * x for x in tone(523.25, 2.2, 0.7, parts=((1, 1), (2.76, 0.4),
-                                                             (5.4, 0.2), (8.93, 0.1)))], 0.6
+        return anvil(seed=s), 0.45
     if k == "shimmer":
         return [0.2 * x for x in tone(2093, 0.9, 1, parts=((1, 1), (1.5, 0.5)),
                                       shape=lambda x: math.sin(math.pi * x))], 0.7
