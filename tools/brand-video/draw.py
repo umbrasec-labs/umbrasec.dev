@@ -127,11 +127,14 @@ def css_baseline(top: float, *, family: str, px: float, line_height: float,
 
 def text(ctx: cairo.Context, s: str, x: float, y: float, *, family: str, px: float,
          weight: int = 400, color: Sequence[float], alpha: float = 1.0,
-         tracking: float = 0.0, align: str = "left", hud: bool = False) -> tuple[float, float]:
+         tracking: float = 0.0, align: str = "left", hud: bool = False,
+         halo: float = 0.0) -> tuple[float, float]:
     """Draw one line with its baseline at y; return its (width, height).
 
     Text meant to be read is refused below READ_MIN_PX; HUD marks, tile IDs
-    and other texture pass hud=True.
+    and other texture pass hud=True. halo strokes a background-coloured
+    outline of that width under the text, like the storyboard's text-shadow,
+    so lines passing behind a label do not cut it.
     """
     if px < READ_MIN_PX and not hud:
         raise ValueError(f"{px:g} px is below the {READ_MIN_PX} px floor for text "
@@ -144,6 +147,13 @@ def text(ctx: cairo.Context, s: str, x: float, y: float, *, family: str, px: flo
         x -= w
     if alpha > 0:
         ctx.save()
+        if halo > 0:
+            ctx.move_to(x, y - base)
+            PangoCairo.layout_path(ctx, layout)
+            ctx.set_source_rgba(*BG, 0.85 * alpha)
+            ctx.set_line_width(halo)
+            ctx.set_line_join(cairo.LINE_JOIN_ROUND)
+            ctx.stroke()
         ctx.set_source_rgba(*color, alpha)
         ctx.move_to(x, y - base)
         PangoCairo.show_layout(ctx, layout)
@@ -260,6 +270,29 @@ def glow(ctx: cairo.Context, x: float, y: float, r: float, color: Sequence[float
     ctx.arc(x, y, r, 0, 2 * math.pi)
     ctx.fill()
     ctx.restore()
+
+
+def dot(ctx: cairo.Context, x: float, y: float, *, d: float = cq(1.5),
+        alpha: float = 1.0, halo: float = 1.0) -> None:
+    """The orange dot: core, a faint ring and its glow (storyboard .dot)."""
+    if alpha <= 0 or d <= 0:
+        return
+    r = d / 2
+    glow(ctx, x, y, r + cq(2.6), ACCENT, 0.6 * alpha * halo)
+    ctx.save()
+    ctx.arc(x, y, r + cq(0.35) * min(1.0, d / cq(1.5)), 0, 2 * math.pi)
+    ctx.set_source_rgba(*ACCENT, 0.2 * alpha * halo)
+    ctx.fill()
+    ctx.arc(x, y, r, 0, 2 * math.pi)
+    ctx.set_source_rgba(*ACCENT, alpha)
+    ctx.fill()
+    ctx.restore()
+
+
+def bump(t: float, t0: float, length: float) -> float:
+    """A smooth 0 -> 1 -> 0 pulse starting at t0."""
+    x = tl.prog(t, t0, t0 + length)
+    return math.sin(math.pi * x) if 0 < x < 1 else 0.0
 
 
 def _box_blur(src: cairo.ImageSurface, r: int) -> cairo.ImageSurface:

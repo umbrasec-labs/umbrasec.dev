@@ -46,7 +46,7 @@ T_PING = 0.5                      # sonar ring reveals the field
 PING_END = 1.6
 HOPS = (1.25, 1.5, 1.75, 2.0, 2.25)   # dot lands on each agent CVE
 T_LOCK = 2.5                      # brackets snap shut
-DIVE = (2.72, 3.18)               # camera dives into the lock
+DIVE = (2.9, 3.2)                 # camera dives through the dot into the lock
 # 02 papers
 FLICKS = (3.0, 3.125, 3.25)       # pages flip up: left, centre, right
 SWEEPS = ((3.5, 4.0), (4.0, 4.5), (4.5, 5.0))   # highlighter per page
@@ -96,7 +96,7 @@ def _rule_line_times() -> tuple[float, ...]:
 RULE_LINE_T = _rule_line_times()
 
 # windows that get sub-frame motion blur
-FAST = ((1.2, 2.3), (2.7, 3.25), (5.0, 5.55), (5.85, 6.2), (8.0, 8.45),
+FAST = ((1.05, 2.52), (2.85, 3.25), (5.0, 5.55), (5.85, 6.2), (8.0, 8.45),
         (9.95, 10.55), (12.0, 12.55), (12.5, 12.9), (13.1, 13.55))
 
 
