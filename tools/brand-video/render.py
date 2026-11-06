@@ -62,7 +62,7 @@ def stills(times: list[float], out: Path) -> list[Path]:
 
 
 def sheet(shots, dest: Path, cols: int = 3) -> None:
-    tw, th, pad, lab = tl.W // THUMB, tl.H // THUMB, 12, 30
+    tw, th, pad, lab = tl.OUT_W // THUMB, tl.OUT_H // THUMB, 12, 30
     n_cols = min(cols, len(shots))
     rows = (len(shots) + cols - 1) // cols
     surf = cairo.ImageSurface(cairo.FORMAT_RGB24, pad + n_cols * (tw + pad),

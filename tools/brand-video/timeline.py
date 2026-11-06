@@ -12,6 +12,11 @@ from dataclasses import dataclass
 from content import RULE_LINES
 
 W, H, FPS, DURATION, BPM = 1920, 1080, 30, 15.0, 120
+# Scenes draw in a W x H layout space; frames are rendered at OUT_W x OUT_H
+# (1440p) by scaling that space up, so the layout and the intro's numbers in
+# umbra.js do not change with the output size.
+OUT_W, OUT_H = 2560, 1440
+SCALE = OUT_W / W
 BEAT = 60.0 / BPM
 FRAMES = int(DURATION * FPS)
 

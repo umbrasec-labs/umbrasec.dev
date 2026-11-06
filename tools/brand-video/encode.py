@@ -13,7 +13,7 @@ from typing import Iterable
 
 import timeline as tl
 
-MASTER_BPS, SITE_BPS = 8_000_000, 4_000_000
+MASTER_BPS, SITE_BPS = 14_000_000, 6_000_000
 MASTER_AUDIO_BPS, SITE_AUDIO_BPS = 256_000, 128_000
 
 
@@ -23,8 +23,8 @@ def _h264(bps: int) -> str:
 
 
 def film(frames: Iterable[bytes], wav: Path, master: Path, site: Path) -> None:
-    """Encode raw BGRx frames (cairo RGB24 data, W x H) to both files."""
-    w, h = tl.W, tl.H
+    """Encode raw BGRx frames (cairo RGB24 data, OUT_W x OUT_H) to both files."""
+    w, h = tl.OUT_W, tl.OUT_H
     q = shlex.quote
     pipeline = (
         f"fdsrc fd=0 blocksize={w * h * 4} ! rawvideoparse format=bgrx width={w} height={h} "
@@ -56,10 +56,12 @@ POSTER_MAX = 200_000   # bytes
 
 
 def poster(png: Path, jpg: Path) -> None:
-    """The PNG as a JPEG at the best quality from 85 down that fits POSTER_MAX."""
+    """The PNG as a JPEG at the best quality from 85 down that fits POSTER_MAX.
+    It is scaled to W x H (1080p): it only shows until the film plays."""
     for q in range(85, 40, -5):
         subprocess.run(["gst-launch-1.0", "-q", "filesrc", f"location={png}", "!", "pngdec",
-                        "!", "videoconvert", "!", "jpegenc", f"quality={q}", "!", "filesink",
+                        "!", "videoconvert", "!", "videoscale", "method=lanczos", "!",
+                        f"video/x-raw,width={tl.W},height={tl.H}", "!", "jpegenc", f"quality={q}", "!", "filesink",
                         f"location={jpg}"], check=True, capture_output=True)
         if jpg.stat().st_size <= POSTER_MAX:
             return
