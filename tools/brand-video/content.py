@@ -67,18 +67,22 @@ FIELD_TECHNIQUES = ("T1558.003", "T1490", "T1190")
 BINANCE = "BINANCE $6.3B"
 
 # The three real cases the write-up names. before + mark + after is word for
-# word in the article; mark is the highlighted phrase.
+# word in the article and runs to the end of its sentence, so nothing that
+# qualifies it is cut; mark is the highlighted phrase. The words are the
+# write-up's own account of each case, so a card is headed "Case", not
+# "Source".
 SOURCES = (
-    Source("Source 1 · Nx s1ngularity, Aug 2025", "Malicious package versions",
+    Source("Case 1 · Nx s1ngularity, Aug 2025", "Malicious package versions",
            "started whichever agent CLI was installed, headless and with its "
            "permission prompts switched off, and told it to ",
            "inventory secrets and wallet files", "."),
-    Source("Source 2 · CVE-2025-8217", "Amazon Q Developer for VS Code 1.84.0",
+    Source("Case 2 · CVE-2025-8217", "Amazon Q Developer for VS Code 1.84.0",
            "shipped with an injected instruction to run the Q CLI with ",
-           "every tool trusted and no interaction", ""),
-    Source("Source 3 · CVE-2026-110202", "Roo Code",
+           "every tool trusted and no interaction",
+           "; it did not run because of a syntax error."),
+    Source("Case 3 · CVE-2026-110202", "Roo Code",
            "the third shape: ", "planted text in content the agent reads",
-           ", and an auto-approve allowlist"),
+           ", and an auto-approve allowlist that the shell reads differently."),
 )
 
 # The hero reel's second slide (index.html, data-tr-id="T1552.001").
@@ -90,17 +94,22 @@ TRACE_LINES = (
     "  \"/usr/bin/bash -c 'cat ~/.aws/credentials'\"",
 )
 
-# Real lines of the rule; "..." marks cut lines and the condition is the real
-# one, shortened.
+# Real lines of the rule. "..." marks lines left out, as the hero reel does:
+# the detection part is the reel's slide line for line, and the one tag shown
+# keeps marks for the tags around it. The condition is the real one,
+# shortened.
 RULE_LINES = (
     "title: AI Coding Agent Shell Runs a Risky Command",
     "tags:",
+    "  ...",
     "  - attack.t1552.001",
+    "  ...",
     "detection:",
     "  agent_parent:",
     "    ...",
     "    - ParentImage|contains:",
     "        - '/.local/share/claude/versions/'",
+    "        ...",
     "  risk_credential:",
     "    - CommandLine|contains:",
     "        - '.aws/credentials'",
@@ -120,6 +129,20 @@ def text_of(path: Path) -> str:
     raw = path.read_text(encoding="utf-8")
     raw = re.sub(r"<script.*?</script>|<style.*?</style>", "", raw, flags=re.S)
     return squash(html.unescape(re.sub(r"<[^>]+>", "", raw)))
+
+
+def reel_rule_lines(index_raw: str, technique: str) -> list[str]:
+    """The rule panel of the hero reel's slide for a technique, line by line."""
+    start = index_raw.index(f'data-tr-id="{technique}"')
+    panel = index_raw[index_raw.index("tr-panel tr-rule", start):]
+    panel = panel[:panel.index("tr-foot")]
+    return [squash(html.unescape(re.sub(r"<[^>]+>", "", ln)))
+            for ln in re.findall(r'<div class="ln[^"]*">(.*?)</div>', panel)]
+
+
+def rule_tags(rule_raw: str) -> list[str]:
+    block = re.search(r"^tags:\n((?:[ \t]+- .*\n)+)", rule_raw, flags=re.M)
+    return re.findall(r"- (\S+)", block.group(1)) if block else []
 
 
 def _need(cond: bool, what: str) -> None:
@@ -151,6 +174,9 @@ def load(site: Path, detections: Path) -> Content:
     for s in SOURCES:
         quote = squash(s.before + s.mark + s.after)
         _need(quote in art_text, f"quote no longer word for word: {quote!r}")
+        end = art_text.index(quote) + len(quote)
+        _need(quote.endswith(".") and re.match(r" [A-Z]|$", art_text[end:end + 2]),
+              f"quote stops before its sentence ends: {quote!r}")
     _need(ARTICLE_TITLE in art_text, f"article title changed: {ARTICLE_TITLE!r}")
     art_raw = article.read_text(encoding="utf-8")
     for cve in AGENT_CVES:
@@ -178,6 +204,19 @@ def load(site: Path, detections: Path) -> Content:
             continue
         s = s.removeprefix("- ")
         _need(squash(s) in rule, f"rule line not in {RULE}: {s!r}")
+    film = [ln.strip() for ln in RULE_LINES]
+    reel = reel_rule_lines(index_raw, TECHNIQUE)
+    _need("agent_parent:" in film and len(reel) > 5
+          and film[film.index("agent_parent:"):][:len(reel)] == reel,
+          "the rule excerpt no longer matches the hero reel's slide line for line")
+    tags = rule_tags(rule_raw)
+    tag = f"attack.{TECHNIQUE.lower()}"
+    _need(tag in tags, f"{tag} is no longer a tag of the rule")
+    i = tags.index(tag)
+    want = (["..."] if i > 0 else []) + [f"- {tag}"] + (["..."] if i < len(tags) - 1 else [])
+    _need("tags:" in film and "detection:" in film
+          and film[film.index("tags:") + 1:film.index("detection:")] == want,
+          "the tag excerpt does not mark the tags it leaves out")
     cond = re.search(r"^\s*condition:\s*(.+)$", rule_raw, flags=re.M)
     _need(cond is not None and cond.group(1).startswith("(1 of agent_* or ")
           and ") and (1 of risk_* or " in cond.group(1)

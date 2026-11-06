@@ -11,7 +11,9 @@ import re
 import shutil
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest import mock
 
 import content
 
@@ -138,6 +140,58 @@ class ContentTest(unittest.TestCase):
                 else:
                     os.environ["BRAND_VIDEO_CLAIMS"] = saved
 
+    def test_case_cards_say_whose_words(self):
+        # the page text is the write-up's own account of each case, so a card
+        # is headed as a case, never as the source's own words
+        for s in self.c.sources:
+            self.assertRegex(s.label, r"^Case [123] · ")
+
+    def test_quotes_end_where_the_sentence_ends(self):
+        # a quote cut mid-sentence can drop what qualifies it, like the
+        # Amazon Q instruction never running
+        text = page_text(ARTICLE)
+        for s in self.c.sources:
+            q = squash(s.before + s.mark + s.after)
+            end = text.index(q) + len(q)
+            self.assertTrue(q.endswith("."), q)
+            self.assertRegex(text[end:end + 2], r"^ [A-Z]", q)
+
+    def test_rule_excerpt_marks_cuts_like_the_hero_reel(self):
+        index = (SITE / "index.html").read_text(encoding="utf-8")
+        start = index.index('data-tr-id="T1552.001"')
+        panel = index[index.index("tr-panel tr-rule", start):]
+        panel = panel[:panel.index("tr-foot")]
+        reel = [squash(html.unescape(re.sub(r"<[^>]+>", "", ln)))
+                for ln in re.findall(r'<div class="ln[^"]*">(.*?)</div>', panel)]
+        self.assertGreater(len(reel), 5)
+        film = [ln.strip() for ln in self.c.rule_lines]
+        a = film.index("agent_parent:")
+        self.assertEqual(film[a:a + len(reel)], reel)
+
+    def test_rule_excerpt_marks_left_out_tags(self):
+        rule = (SITE / content.RULE).read_text(encoding="utf-8")
+        block = re.search(r"^tags:\n((?:[ \t]+- .*\n)+)", rule, flags=re.M).group(1)
+        tags = re.findall(r"- (\S+)", block)
+        film = [ln.strip() for ln in self.c.rule_lines]
+        shown = film[film.index("tags:") + 1:film.index("detection:")]
+        i = tags.index("attack.t1552.001")
+        want = ((["..."] if i > 0 else []) + ["- attack.t1552.001"]
+                + (["..."] if i < len(tags) - 1 else []))
+        self.assertEqual(shown, want)
+
+    def test_load_refuses_a_cut_quote(self):
+        cut = (content.SOURCES[0],
+               replace(content.SOURCES[1], after=""),
+               content.SOURCES[2])
+        with mock.patch.object(content, "SOURCES", cut):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
+
+    def test_load_refuses_an_unmarked_cut(self):
+        unmarked = tuple(ln for ln in content.RULE_LINES if ln.strip() != "...")
+        with mock.patch.object(content, "RULE_LINES", unmarked):
+            with self.assertRaises(content.FactError):
+                content.load(SITE, DETECTIONS)
 
 if __name__ == "__main__":
     unittest.main()

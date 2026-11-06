@@ -1,6 +1,7 @@
 import unittest
 
 import timeline as tl
+from content import RULE_LINES
 
 
 def on_beat(t):
@@ -57,6 +58,20 @@ class TimelineTest(unittest.TestCase):
                   tl.ease_out_back, tl.ease_out_expo):
             self.assertAlmostEqual(f(0.0), 0.0, places=6, msg=f.__name__)
             self.assertAlmostEqual(f(1.0), 1.0, places=6, msg=f.__name__)
+
+    def test_rule_lines_type_on_sixteenths(self):
+        # one key per typed line, a "..." line shows with the line above it,
+        # and the rule is whole before the wire starts
+        self.assertEqual(len(tl.RULE_LINE_T), len(RULE_LINES))
+        typed = [t for t, ln in zip(tl.RULE_LINE_T, RULE_LINES) if ln.strip() != "..."]
+        keys = [e.t for e in tl.EVENTS if e.kind == "key"]
+        self.assertEqual(keys, typed)
+        for a, b in zip(typed, typed[1:]):
+            self.assertAlmostEqual(b - a, tl.TYPE_STEP)
+        for i, ln in enumerate(RULE_LINES):
+            if ln.strip() == "..." and i > 0:
+                self.assertEqual(tl.RULE_LINE_T[i], tl.RULE_LINE_T[i - 1])
+        self.assertLess(max(tl.RULE_LINE_T), tl.WIRE[0])
 
     def test_prog_clamps(self):
         self.assertEqual(tl.prog(0.0, 1.0, 2.0), 0.0)

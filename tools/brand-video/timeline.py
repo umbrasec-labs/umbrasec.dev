@@ -78,6 +78,23 @@ T_LAND = 13.5
 LOCKUP_IN = (13.8, 14.1)
 FADE_OUT = (14.7, 15.0)
 
+
+
+def _rule_line_times() -> tuple[float, ...]:
+    """When each rule line appears: typed lines one per 16th note, a "..."
+    line together with the line above it."""
+    out, k = [], 0
+    for i, ln in enumerate(RULE_LINES):
+        if ln.strip() == "..." and i > 0:
+            out.append(out[-1])
+        else:
+            out.append(TYPE_START + k * TYPE_STEP)
+            k += 1
+    return tuple(out)
+
+
+RULE_LINE_T = _rule_line_times()
+
 # windows that get sub-frame motion blur
 FAST = ((1.2, 2.3), (2.7, 3.25), (5.0, 5.55), (5.85, 6.2), (8.0, 8.45),
         (9.95, 10.55), (12.0, 12.55), (12.5, 12.9), (13.1, 13.55))
@@ -117,8 +134,9 @@ def _events() -> tuple[Event, ...]:
     add(Event(GATHER[0], "riser"))
     add(Event(T_CHIP, "thunk"))
     add(Event(CHIP_FLIGHT[0], "whoosh", 0.3, 0.6, 1))
-    for i in range(len(RULE_LINES)):
-        add(Event(TYPE_START + i * TYPE_STEP, "key", 0.3, 0.55, i))
+    for i, (t, ln) in enumerate(zip(RULE_LINE_T, RULE_LINES)):
+        if ln.strip() != "...":
+            add(Event(t, "key", 0.3, 0.55, i))
     add(Event(TRACE_IN[0], "slide", -0.4))
     add(Event(WIRE[0], "wire", 0.0))
     add(Event(T_MATCH, "match"))
