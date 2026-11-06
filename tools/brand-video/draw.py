@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import os
 import random
+from dataclasses import dataclass
 from typing import Callable, Sequence
 
 import fonts
@@ -278,9 +279,10 @@ def dot(ctx: cairo.Context, x: float, y: float, *, d: float = cq(1.5),
     if alpha <= 0 or d <= 0:
         return
     r = d / 2
-    glow(ctx, x, y, r + cq(2.6), ACCENT, 0.6 * alpha * halo)
+    k = min(1.0, d / cq(1.5))
+    glow(ctx, x, y, r + cq(2.6) * k, ACCENT, 0.6 * alpha * halo)
     ctx.save()
-    ctx.arc(x, y, r + cq(0.35) * min(1.0, d / cq(1.5)), 0, 2 * math.pi)
+    ctx.arc(x, y, r + cq(0.35) * k, 0, 2 * math.pi)
     ctx.set_source_rgba(*ACCENT, 0.2 * alpha * halo)
     ctx.fill()
     ctx.arc(x, y, r, 0, 2 * math.pi)
@@ -434,6 +436,36 @@ def _hud_text(ctx, s, x, y, color, alpha, align="left"):
                 alpha=alpha, tracking=HUD_TRACK, align=align, hud=True)
 
 
+def _cites(ctx: cairo.Context, t: float, alpha: float) -> None:
+    """CITED [1] [2] [3], centred in the top bar; each tag pops on its beat."""
+    pad_x, pad_y, gap = cq(0.45), cq(0.3), cq(0.6)
+    lw, _ = measure("CITED", family=MONO, px=HUD_PX, weight=500, tracking=HUD_TRACK)
+    tw, _ = measure("[1]", family=MONO, px=HUD_PX, weight=500, tracking=HUD_TRACK)
+    bw, bh = tw + 2 * pad_x, HUD_PX + 2 * pad_y
+    x = tl.W / 2 - (lw + 3 * (gap + bw)) / 2
+    top = cq(2.6)
+    base = css_baseline(top + pad_y, family=MONO, px=HUD_PX, line_height=1.0, weight=500)
+    _hud_text(ctx, "Cited", x, base, MUTED, alpha)
+    x += lw + gap
+    for i, tc in enumerate(tl.CITES):
+        k = tl.prog(t, tc, tc + 0.2)
+        if k > 0:
+            e = tl.ease_out_back(k, 2.0)
+            a = alpha * min(1.0, k * 4)
+            cx, cy = x + bw / 2, top + bh / 2
+            ctx.save()
+            ctx.translate(cx, cy + tl.lerp(cq(1.2), 0.0, e))
+            ctx.scale(tl.lerp(0.8, 1.0, e), tl.lerp(0.8, 1.0, e))
+            ctx.translate(-cx, -cy)
+            round_rect(ctx, x + 0.5, top + 0.5, bw - 1, bh - 1, cq(0.3))
+            ctx.set_line_width(1.0)
+            ctx.set_source_rgba(*LINE_HI, a)
+            ctx.stroke()
+            _hud_text(ctx, f"[{i + 1}]", x + pad_x, base, TEXT, a)
+            ctx.restore()
+        x += bw + gap
+
+
 def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0) -> None:
     """Corner ticks, title, timecode, section label and progress bar.
 
@@ -465,6 +497,10 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
     # title
     if leave > 0:
         _hud_text(ctx, "UMBRASEC · trace → rule", cq(3.4), top, DIM, alpha * leave)
+    # papers: the citation tags pop into the top bar on their beats
+    cites = min(tl.prog(t, tl.FLICKS[0], tl.FLICKS[0] + 0.3), 1 - tl.prog(t, 6.0, 6.25))
+    if cites > 0:
+        _cites(ctx, t, alpha * cites)
     # timecode with the orange dot
     tw, _ = _hud_text(ctx, tl.timecode(t), W - cq(3.4), top, MUTED, alpha, align="right")
     d = cq(0.62)
@@ -487,4 +523,217 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
     ctx.rectangle(bx, by, bw * tl.clamp01(t / tl.DURATION), bh)
     ctx.set_source_rgba(*ACCENT, alpha)
     ctx.fill()
+    ctx.restore()
+
+
+# ---------------------------------------------------------------- paragraphs
+
+@dataclass(frozen=True)
+class Para:
+    """A wrapped paragraph laid out once and drawn line by line.
+
+    lines are (Pango.LayoutLine, baseline from the top); marks are the marked
+    range's boxes per line, (x, top, width, height), from the paragraph's
+    top-left.
+    """
+    layout: object
+    lines: tuple
+    height: float
+    marks: tuple
+    px: float
+
+
+def paragraph(s: str, *, width: float, family: str, px: float, weight: int = 400,
+              line_height: float = 1.4, tracking: float = 0.0,
+              mark: tuple[int, int] | None = None,
+              mark_color: Sequence[float] | None = None) -> Para:
+    """Lay out s wrapped at width, CSS-like: each line box is line_height x px
+    with the text centred in it. mark is a (start, end) character range."""
+    if px < READ_MIN_PX:
+        raise ValueError(f"{px:g} px is below the {READ_MIN_PX} px floor: {s[:30]!r}")
+    layout = _layout(_SCRATCH, s, family, px, weight, tracking)
+    if mark and mark_color:
+        b0, b1 = len(s[:mark[0]].encode()), len(s[:mark[1]].encode())
+        attrs = layout.get_attributes() or Pango.AttrList()
+        a = Pango.attr_foreground_new(*(int(v * 65535) for v in mark_color))
+        a.start_index, a.end_index = b0, b1
+        attrs.insert(a)
+        layout.set_attributes(attrs)
+    layout.set_width(int(width * Pango.SCALE))
+    layout.set_wrap(Pango.WrapMode.WORD)
+    asc, desc = metrics(family, px, weight)
+    lh = line_height * px
+    half = (lh - (asc + desc)) / 2
+    lines = tuple((layout.get_line_readonly(i), i * lh + half + asc)
+                  for i in range(layout.get_line_count()))
+    marks = []
+    if mark:
+        b2c, bi = {}, 0
+        for ci, ch in enumerate(s):
+            b2c[bi] = ci
+            bi += len(ch.encode())
+        b2c[bi] = len(s)
+        c2b = {v: k for k, v in b2c.items()}
+        for line, base in lines:
+            l0, l1 = b2c[line.start_index], b2c[line.start_index + line.length]
+            o0, o1 = max(mark[0], l0), min(mark[1], l1)
+            while o1 > o0 and s[o1 - 1] == " ":   # a wrap's trailing space is not marked
+                o1 -= 1
+            if o0 >= o1:
+                continue
+            x0 = line.index_to_x(c2b[o0], False) / Pango.SCALE
+            x1 = line.index_to_x(c2b[o1 - 1], True) / Pango.SCALE
+            marks.append((x0, base - asc, x1 - x0, asc + desc))
+    return Para(layout, lines, len(lines) * lh, tuple(marks), px)
+
+
+def draw_paragraph(ctx: cairo.Context, para: Para, x: float, y: float, *,
+                   color: Sequence[float], alpha: float = 1.0) -> None:
+    ctx.save()
+    ctx.set_source_rgba(*color, alpha)
+    for line, base in para.lines:
+        ctx.move_to(x, y + base)
+        PangoCairo.show_layout_line(ctx, line)
+    ctx.new_path()
+    ctx.restore()
+
+
+def band_rects(para: Para, x: float, y: float) -> tuple:
+    """The highlighter band per marked line, like the storyboard's mark: 58 %
+    of the text box high, low in the box, padded 0.1 em each side."""
+    pad = 0.1 * para.px
+    out = []
+    for mx, top, w, bh in para.marks:
+        hb = 0.58 * bh
+        out.append((x + mx - pad, y + top + (bh - hb) * 0.88, w + 2 * pad, hb))
+    return tuple(out)
+
+
+def draw_band(ctx: cairo.Context, rects, progress: float, *, alpha: float = 0.42) -> None:
+    """The band swept to `progress` (0..1) along the marked lines in order."""
+    left = tl.clamp01(progress) * sum(r[2] for r in rects)
+    for bx, by, bw, bh in rects:
+        if left <= 0:
+            break
+        ctx.rectangle(bx, by, min(bw, left), bh)
+        left -= bw
+    ctx.set_source_rgba(*ACCENT, alpha)
+    ctx.fill()
+
+
+def band_edge(rects, progress: float) -> tuple[float, float]:
+    """Where the band's leading edge is at `progress`: (x, middle of the band)."""
+    left = tl.clamp01(progress) * sum(r[2] for r in rects)
+    for bx, by, bw, bh in rects:
+        if left <= bw:
+            return bx + left, by + bh / 2
+        left -= bw
+    bx, by, bw, bh = rects[-1]
+    return bx + bw, by + bh / 2
+
+
+# ---------------------------------------------------------------- perspective cards
+
+def card(w: float, h: float, *, anchor: tuple[float, float], origin: tuple[float, float],
+         rx: float = 0.0, ry: float = 0.0, rz: float = 0.0, scale: float = 1.0,
+         persp: float = cq(90)) -> Callable[[float, float], tuple[float, float]]:
+    """Map card space (u, v) to the screen like CSS `perspective(p) rotateY(ry)
+    rotateZ(rz)` about `origin`, after a flip of rx degrees about the bottom
+    edge (positive tips the top away). `anchor` is where the origin lands."""
+    ox, oy = origin
+    ax, ay = anchor
+    cx_, sx_ = math.cos(math.radians(rx)), math.sin(math.radians(rx))
+    cy_, sy_ = math.cos(math.radians(ry)), math.sin(math.radians(ry))
+    cz_, sz_ = math.cos(math.radians(rz)), math.sin(math.radians(rz))
+
+    def f(u: float, v: float) -> tuple[float, float]:
+        x = (u - ox) * scale
+        y = (h + (v - h) * cx_ - oy) * scale
+        z = (v - h) * sx_ * scale
+        x, y = x * cz_ - y * sz_, x * sz_ + y * cz_
+        x, z = x * cy_ + z * sy_, -x * sy_ + z * cy_
+        k = persp / (persp - z)
+        return ax + x * k, ay + y * k
+    return f
+
+
+def _affine(src, dst) -> cairo.Matrix:
+    """The affine map taking triangle src onto triangle dst."""
+    (x1, y1), (x2, y2), (x3, y3) = src
+    det = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
+
+    def solve(p1, p2, p3):
+        return ((p1 * (y2 - y3) + p2 * (y3 - y1) + p3 * (y1 - y2)) / det,
+                (p1 * (x3 - x2) + p2 * (x1 - x3) + p3 * (x2 - x1)) / det,
+                (p1 * (x2 * y3 - x3 * y2) + p2 * (x3 * y1 - x1 * y3)
+                 + p3 * (x1 * y2 - x2 * y1)) / det)
+    a, b, c = solve(*(p[0] for p in dst))
+    e, f, g = solve(*(p[1] for p in dst))
+    return cairo.Matrix(xx=a, yx=e, xy=b, yy=f, x0=c, y0=g)
+
+
+def warp(ctx: cairo.Context, src: cairo.ImageSurface,
+         f: Callable[[float, float], tuple[float, float]], *, w: float, h: float,
+         margin: float, ss: float, cells: int = 10, alpha: float = 1.0) -> None:
+    """Draw a card bitmap through the mapping f, in small triangles.
+
+    src holds a w x h card at ss pixels per unit inside `margin` units of
+    clear border; the triangles are clipped without antialiasing, so they
+    meet without seams, and their aliased outer edges fall in the clear
+    border while the card's own edge stays smooth.
+    """
+    if alpha <= 0:
+        return
+    us = [-margin + (w + 2 * margin) * i / cells for i in range(cells + 1)]
+    vs = [-margin + (h + 2 * margin) * j / cells for j in range(cells + 1)]
+    scr = [[f(u, v) for u in us] for v in vs]
+
+    def sp(i, j):
+        return (us[i] + margin) * ss, (vs[j] + margin) * ss
+    pat = cairo.SurfacePattern(src)
+    pat.set_filter(cairo.FILTER_BILINEAR)
+    ctx.save()
+    ctx.push_group()
+    ctx.set_antialias(cairo.ANTIALIAS_NONE)
+    for j in range(cells):
+        for i in range(cells):
+            for tri in (((i, j), (i + 1, j), (i + 1, j + 1)), ((i, j), (i + 1, j + 1), (i, j + 1))):
+                s3 = [sp(a, b) for a, b in tri]
+                ctx.save()
+                ctx.transform(_affine(s3, [scr[b][a] for a, b in tri]))
+                ctx.move_to(*s3[0])
+                ctx.line_to(*s3[1])
+                ctx.line_to(*s3[2])
+                ctx.close_path()
+                ctx.clip()
+                ctx.set_source(pat)
+                ctx.paint()
+                ctx.restore()
+    ctx.pop_group_to_source()
+    ctx.paint_with_alpha(alpha)
+    ctx.restore()
+
+
+def soft_shadow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
+                dx: float = 0.0, dy: float = 0.0, down: int = 16, alpha: float = 0.5,
+                radius: int = 2, passes: int = 2) -> None:
+    """A blurred drop shadow of whatever draw_fn fills (it fills with the
+    current source, which is black)."""
+    if alpha <= 0:
+        return
+    small = cairo.ImageSurface(cairo.FORMAT_ARGB32, tl.W // down + 1, tl.H // down + 1)
+    sc = cairo.Context(small)
+    sc.scale(1 / down, 1 / down)
+    sc.translate(dx, dy)
+    sc.set_source_rgba(0, 0, 0, 1)
+    draw_fn(sc)
+    for _ in range(passes):
+        small = _box_blur(small, radius)
+    ctx.save()
+    ctx.identity_matrix()
+    ctx.scale(down, down)
+    pat = cairo.SurfacePattern(small)
+    pat.set_filter(cairo.FILTER_BILINEAR)
+    ctx.set_source(pat)
+    ctx.paint_with_alpha(alpha)
     ctx.restore()

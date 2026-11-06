@@ -13,10 +13,12 @@ import cairo
 
 import draw as d
 import s1_research
+import s2_papers
 import timeline as tl
 
 SCENES = (
     (0.0, 3.2, s1_research),
+    (2.95, 6.3, s2_papers),
 )
 SAMPLES = 6        # motion blur: sub-frames in the FAST windows
 SHUTTER = 0.5      # the shutter is open for half a frame (180 degrees)
