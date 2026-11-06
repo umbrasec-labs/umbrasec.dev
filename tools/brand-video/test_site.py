@@ -116,6 +116,47 @@ class IntroTest(unittest.TestCase):
         self.assertGreaterEqual(t, tl.LOCKUP_IN[1])
         self.assertLess(t, tl.FADE_OUT[0])
 
+    def test_a_late_close_lands_the_title_only_once_it_has_decoded(self):
+        import timeline as tl
+        t = float(re.search(r"const LANDS_FROM = ([\d.]+)", self.js).group(1))
+        self.assertGreaterEqual(t, tl.DECODE_2[1])
+        self.assertLess(t, float(re.search(r"const HANDOFF = ([\d.]+)", self.js).group(1)))
+
+    def test_skip_names_its_key(self):
+        skip = re.search(r"<button[^>]*data-intro-skip[^>]*>.*?</button>", self.intro, re.S).group(0)
+        self.assertIn('aria-keyshortcuts="Escape"', skip)
+        # the name stays "Skip intro"; the key is announced from aria-keyshortcuts
+        self.assertIn('<kbd aria-hidden="true">Esc</kbd>', skip)
+
+
+class IntroCssTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.css = (SITE / "assets" / "umbra.css").read_text(encoding="utf-8")
+
+    def _rule(self, selector):
+        m = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", self.css)
+        self.assertIsNotNone(m, selector)
+        return m.group(1)
+
+    def test_the_scrollbar_keeps_its_place(self):
+        # locking the page must not change its width, or the film box and
+        # the hero jump on classic-scrollbar systems
+        self.assertIn("scrollbar-gutter: stable", self._rule("html.intro-on"))
+
+    def test_the_film_box_fits_phone_toolbars(self):
+        box = self._rule(".intro-box")
+        self.assertIn("100vh", box)     # fallback first
+        self.assertIn("100svh", box)
+        self.assertLess(box.index("100vh"), box.index("100svh"))
+
+    def test_forced_colors_beat_the_open_state(self):
+        blocks = re.findall(r"@media \(forced-colors: active\) \{(.*?)\n\}", self.css, re.S)
+        intro = [b for b in blocks if ".intro" in b]
+        self.assertEqual(len(intro), 1)
+        self.assertIn(".intro, .intro.is-open", intro[0])
+        self.assertIn(".intro-btn.is-invite { border-color: Highlight; }", intro[0])
+
 
 if __name__ == "__main__":
     unittest.main()

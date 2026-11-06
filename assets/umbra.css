@@ -1144,8 +1144,12 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
 /* Home: the intro film. Opens over the blurred page once per visitor; at its
    end card the title is swapped for real text that flies into the hero
    headline (assets/umbra.js introFilm). */
-html.intro-on { overflow: hidden; }
+/* the gutter stays while the page is locked, so nothing shifts on systems
+   with classic scrollbars */
+html.intro-on { overflow: hidden; scrollbar-gutter: stable; }
 html.intro-flying .hero-headline { visibility: hidden; }
+/* focus lands on the headline after the intro; it is not a control */
+.hero-headline:focus { outline: none; }
 .intro {
     position: fixed; inset: 0; z-index: 200;
     display: grid; place-items: center; padding: 24px;
@@ -1166,6 +1170,7 @@ html.intro-flying .hero-headline { visibility: hidden; }
 }
 .intro-box {
     width: min(100%, calc((100vh - 120px) * 16 / 9));
+    width: min(100%, calc((100svh - 120px) * 16 / 9));   /* phone toolbars */
     opacity: 0; transform: scale(0.94);
     transition: opacity .5s ease, transform .7s cubic-bezier(0.16,1,0.3,1);
 }
@@ -1197,5 +1202,6 @@ html.intro-flying .hero-headline { visibility: hidden; }
 .intro-title-line.is-accent { color: var(--accent); }
 .intro-word { display: inline-block; will-change: transform; }
 @media (forced-colors: active) {
-    .intro { -webkit-backdrop-filter: none; backdrop-filter: none; background: Canvas; }
+    .intro, .intro.is-open { -webkit-backdrop-filter: none; backdrop-filter: none; background: Canvas; }
+    .intro-btn.is-invite { border-color: Highlight; }
 }
