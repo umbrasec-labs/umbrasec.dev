@@ -4,6 +4,7 @@ Each section module draws in its own 1920 x 1080 space and offers:
     draw(ctx, t, c)   everything it shows at time t
     glow(ctx, t, c)   only the orange parts that bloom, in the same space
     dot(t, c)         the dot in screen space, (x, y, diameter, alpha), or None
+    over(ctx, t, c)   optional: drawn above every section, for what flies across a neighbour
 Neighbouring sections overlap where one hands over to the next; the later
 one owns the dot once it offers one.
 """
@@ -14,11 +15,13 @@ import cairo
 import draw as d
 import s1_research
 import s2_papers
+import s3_query
 import timeline as tl
 
 SCENES = (
     (0.0, 3.2, s1_research),
-    (2.95, 6.3, s2_papers),
+    (2.95, 6.45, s2_papers),
+    (5.85, 10.55, s3_query),
 )
 SAMPLES = 6        # motion blur: sub-frames in the FAST windows
 SHUTTER = 0.5      # the shutter is open for half a frame (180 degrees)
@@ -57,6 +60,9 @@ def _scene(ctx: cairo.Context, t: float, c) -> None:
     d.soft_glow(ctx, glows, alpha=0.9)
     for m in active:
         m.draw(ctx, t, c)
+    for m in active:
+        if hasattr(m, "over"):
+            m.over(ctx, t, c)
     dot = _dot(t, c, active)
     if dot:
         x, y, size, alpha = dot

@@ -53,7 +53,7 @@ SWEEPS = ((3.5, 4.0), (4.0, 4.5), (4.5, 5.0))   # highlighter per page
 CITES = (4.0, 4.5, 5.0)           # [1] [2] [3] land in the top bar
 GATHER = (5.0, 5.5)               # highlights pull into the chip
 T_CHIP = 5.5
-CHIP_FLIGHT = (5.85, 6.2)         # chip flies to the rule's tag line
+CHIP_FLIGHT = (6.0, 6.375)        # chip flies to the rule's tag line, landing as it types
 # 03 build the query
 RULE_IN = (5.9, 6.2)
 TYPE_START, TYPE_STEP = 6.125, 0.125  # one rule line per 16th note
@@ -96,7 +96,7 @@ def _rule_line_times() -> tuple[float, ...]:
 RULE_LINE_T = _rule_line_times()
 
 # windows that get sub-frame motion blur
-FAST = ((1.05, 2.52), (2.85, 3.25), (5.0, 5.55), (5.85, 6.2), (8.0, 8.45),
+FAST = ((1.05, 2.52), (2.85, 3.25), (5.0, 5.55), (6.0, 6.4), (7.5, 8.45),
         (9.95, 10.55), (12.0, 12.55), (12.5, 12.9), (13.1, 13.55))
 
 

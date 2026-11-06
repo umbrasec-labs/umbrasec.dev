@@ -291,6 +291,41 @@ def dot(ctx: cairo.Context, x: float, y: float, *, d: float = cq(1.5),
     ctx.restore()
 
 
+def backlight(ctx: cairo.Context, x: float, y: float, alpha: float, *,
+              rx: float = cq(50), ry: float = cq(30)) -> None:
+    """The storyboard's .fx-glow: a wide, faint orange wash behind a scene."""
+    if alpha <= 0:
+        return
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(rx, ry)
+    g = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
+    for j in range(9):
+        f = j / 8
+        g.add_color_stop_rgba(0.72 * f, *ACCENT, alpha * (1 - f) ** 2)
+    ctx.set_source(g)
+    ctx.paint()
+    ctx.restore()
+
+
+def bezier(pts, u: float) -> tuple[float, float]:
+    """The point at u on the cubic curve through four control points."""
+    (x0, y0), (x1, y1), (x2, y2), (x3, y3) = pts
+    m = 1 - u
+    return (m ** 3 * x0 + 3 * m * m * u * x1 + 3 * m * u * u * x2 + u ** 3 * x3,
+            m ** 3 * y0 + 3 * m * m * u * y1 + 3 * m * u * u * y2 + u ** 3 * y3)
+
+
+def bezier_part(pts, u: float):
+    """The first u of a cubic curve as a cubic of its own (de Casteljau)."""
+    def mix(a, b):
+        return a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u
+    p0, p1, p2, p3 = pts
+    a, b, c = mix(p0, p1), mix(p1, p2), mix(p2, p3)
+    ab, bc = mix(a, b), mix(b, c)
+    return p0, a, ab, mix(ab, bc)
+
+
 def bump(t: float, t0: float, length: float) -> float:
     """A smooth 0 -> 1 -> 0 pulse starting at t0."""
     x = tl.prog(t, t0, t0 + length)
@@ -585,6 +620,11 @@ def paragraph(s: str, *, width: float, family: str, px: float, weight: int = 400
             x1 = line.index_to_x(c2b[o1 - 1], True) / Pango.SCALE
             marks.append((x0, base - asc, x1 - x0, asc + desc))
     return Para(layout, lines, len(lines) * lh, tuple(marks), px)
+
+
+def line_widths(para: Para) -> tuple[float, ...]:
+    """The width of each wrapped line."""
+    return tuple(line.get_extents()[1].width / Pango.SCALE for line, _ in para.lines)
 
 
 def draw_paragraph(ctx: cairo.Context, para: Para, x: float, y: float, *,

@@ -14,6 +14,7 @@ import cairo
 
 import draw as d
 import s1_research
+import s3_query
 import timeline as tl
 
 W, H = tl.W, tl.H
@@ -46,7 +47,6 @@ CHIP_C = (W / 2, d.cq(45.5))
 CHIP_PX = d.cq(1.3)
 CHIP_PAD = (d.cq(1.6), d.cq(0.85))
 CHIP_DOT, CHIP_GAP = d.cq(0.85), d.cq(0.9)
-CHIP_TO = (d.cq(56.5), d.cq(20.2))  # the rule's tag line in frame 03
 HL_DOT = d.cq(1.1)                # the dot's size while it holds the highlighter
 
 
@@ -158,13 +158,6 @@ def _band(t: float, i: int) -> float:
     return tl.ease_in_out_cubic(tl.prog(t, a, a + SWEEP))
 
 
-def _bezier(pts, u: float) -> tuple[float, float]:
-    (x0, y0), (x1, y1), (x2, y2), (x3, y3) = pts
-    m = 1 - u
-    return (m ** 3 * x0 + 3 * m * m * u * x1 + 3 * m * u * u * x2 + u ** 3 * x3,
-            m ** 3 * y0 + 3 * m * m * u * y1 + 3 * m * u * u * y2 + u ** 3 * y3)
-
-
 def _conv(ctx, t: float, width: float, alpha: float) -> None:
     """The three lines that pull the highlights down into the chip."""
     k = tl.ease_in_out_cubic(tl.prog(t, tl.GATHER[0], tl.GATHER[1] - 0.1))
@@ -176,14 +169,20 @@ def _conv(ctx, t: float, width: float, alpha: float) -> None:
         n = 40
         ctx.move_to(*pts[0])
         for j in range(1, n + 1):
-            ctx.line_to(*_bezier(pts, k * j / n))
+            ctx.line_to(*d.bezier(pts, k * j / n))
     ctx.set_line_width(width)
     ctx.set_line_cap(cairo.LINE_CAP_ROUND)
     ctx.set_source_rgba(*d.ACCENT, a)
     ctx.stroke()
 
 
-def chip_pose(t: float):
+def chip_target(c) -> tuple[float, float]:
+    """Where the chip lands: the middle of the rule's tag highlight in frame 03."""
+    x, y, w, h = s3_query.layout(c)["rule"]["hl"][f"attack.{c.technique.lower()}"]
+    return x + w / 2, y + h / 2
+
+
+def chip_pose(t: float, c):
     """(centre x, centre y, scale, alpha) of the technique chip."""
     k = tl.prog(t, tl.T_CHIP, tl.T_CHIP + 0.32)
     if k <= 0:
@@ -191,8 +190,9 @@ def chip_pose(t: float):
     s = tl.lerp(0.6, 1.0, tl.ease_out_back(k, 2.6))
     alpha = tl.prog(t, tl.T_CHIP, tl.T_CHIP + 0.08)
     fl = tl.ease_in_out_cubic(tl.prog(t, *tl.CHIP_FLIGHT))
-    x = tl.lerp(CHIP_C[0], CHIP_TO[0], fl)
-    y = tl.lerp(CHIP_C[1], CHIP_TO[1], fl) - 60 * math.sin(math.pi * fl)
+    to = chip_target(c)
+    x = tl.lerp(CHIP_C[0], to[0], fl)
+    y = tl.lerp(CHIP_C[1], to[1], fl) - 60 * math.sin(math.pi * fl)
     s *= tl.lerp(1.0, 0.55, fl)
     alpha *= 1 - tl.prog(t, tl.CHIP_FLIGHT[1] - 0.1, tl.CHIP_FLIGHT[1])
     return x, y, s, alpha
@@ -211,7 +211,7 @@ def _chip_parts(c):
 
 def chip_dot(t: float, c):
     """Where the chip's dot sits on screen, and its size."""
-    pose_ = chip_pose(t)
+    pose_ = chip_pose(t, c)
     if pose_ is None:
         return None
     x, y, s, _ = pose_
@@ -220,7 +220,7 @@ def chip_dot(t: float, c):
 
 
 def _chip(ctx, t: float, c, glow_only: bool = False) -> None:
-    pose_ = chip_pose(t)
+    pose_ = chip_pose(t, c)
     if pose_ is None:
         return
     x, y, s, alpha = pose_
@@ -254,19 +254,7 @@ def _chip(ctx, t: float, c, glow_only: bool = False) -> None:
 
 
 def _bg_glow(ctx, t: float) -> None:
-    g = 0.13 * min(tl.prog(t, 3.0, 3.4), 1 - tl.prog(t, 5.8, 6.2))
-    if g <= 0:
-        return
-    ctx.save()
-    ctx.translate(W / 2, 0.6 * H)
-    ctx.scale(d.cq(50), d.cq(30))
-    grad = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
-    for j in range(9):
-        f = j / 8
-        grad.add_color_stop_rgba(0.72 * f, *d.ACCENT, g * (1 - f) ** 2)
-    ctx.set_source(grad)
-    ctx.paint()
-    ctx.restore()
+    d.backlight(ctx, W / 2, 0.6 * H, 0.13 * min(tl.prog(t, 3.0, 3.4), 1 - tl.prog(t, 5.8, 6.2)))
 
 
 def _quad(ctx, f) -> None:
@@ -307,6 +295,12 @@ def draw(ctx, t: float, c) -> None:
         else:
             d.warp(ctx, card_surface(i, c.sources[i], band), f, w=PAGE_W, h=PAGE_H,
                    margin=MARGIN, ss=SS, alpha=alpha)
+
+
+def over(ctx, t: float, c) -> None:
+    """The chip, above the rule panel it flies across."""
+    if t < tl.FLICKS[0] or t > tl.CHIP_FLIGHT[1] + 0.05:
+        return
     _chip(ctx, t, c)
 
 

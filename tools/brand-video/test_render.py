@@ -55,5 +55,34 @@ class RenderTest(unittest.TestCase):
             self.assertGreaterEqual(settled, 0.6)
 
 
+    def test_query_panels_fit(self):
+        import s3_query
+        lay = s3_query.layout(self.c)
+        self.assertGreaterEqual(s3_query.CODE_PX, 21)
+        for name in ("trace", "rule", "claims"):
+            panel = lay[name]
+            for w in panel["widths"]:
+                self.assertLessEqual(w, panel["inner"], name)
+            self.assertLess(panel["bottom"], tl.H - draw.cq(5), name)   # clear of the HUD
+            self.assertGreater(panel["top"], draw.cq(5), name)
+
+    def test_wire_joins_the_two_credentials_strings(self):
+        import s3_query
+        lay = s3_query.layout(self.c)
+        start, end = lay["wire"][0], lay["wire"][-1]
+        tx, ty, tw, th = lay["trace"]["hl"][".aws/credentials"]
+        rx, ry, rw, rh = lay["rule"]["hl"]["'.aws/credentials'"]
+        self.assertAlmostEqual(start[0], tx + tw, delta=2)
+        self.assertTrue(ty <= start[1] <= ty + th)
+        self.assertAlmostEqual(end[0], rx, delta=2)
+        self.assertTrue(ry <= end[1] <= ry + rh)
+
+    def test_the_tag_line_is_where_the_chip_lands(self):
+        import s2_papers
+        import s3_query
+        x, y, w, h = s3_query.layout(self.c)["rule"]["hl"]["attack.t1552.001"]
+        self.assertEqual(s2_papers.chip_target(self.c), (x + w / 2, y + h / 2))
+
+
 if __name__ == "__main__":
     unittest.main()
