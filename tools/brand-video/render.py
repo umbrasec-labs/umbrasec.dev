@@ -8,7 +8,7 @@ writes one PNG per time and DIR/sheet.png.
 The film, its sound, the poster and the facts it shows:
     python3 tools/brand-video/render.py film --out DIR
 writes DIR/umbrasec-brand-15s.mp4 (master, with sound), DIR/brand-15s.mp4 (the
-silent site copy), DIR/brand-15s-poster.jpg and DIR/facts.json, and keeps
+site copy, 128 kbps sound), DIR/brand-15s-poster.jpg and DIR/facts.json, and keeps
 facts.json here too. Later:
     python3 tools/brand-video/render.py drift
 lists figures on screen that have changed in the repos since that render.

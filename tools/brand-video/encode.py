@@ -1,6 +1,7 @@
-"""H.264 encoding with GStreamer: one pass makes the master (with sound) and the
-silent site copy, plus the poster JPEG. Uses only gst-launch-1.0 and
-gst-discoverer-1.0 with stock plugins (openh264, voaacenc, mp4mux).
+"""H.264 encoding with GStreamer: one pass makes the master and the site copy,
+both with sound (the site starts muted and has a sound button), plus the poster
+JPEG. Uses only gst-launch-1.0 and gst-discoverer-1.0 with stock plugins
+(openh264, voaacenc, mp4mux).
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ from typing import Iterable
 import timeline as tl
 
 MASTER_BPS, SITE_BPS = 8_000_000, 4_000_000
+MASTER_AUDIO_BPS, SITE_AUDIO_BPS = 256_000, 128_000
 
 
 def _h264(bps: int) -> str:
@@ -28,11 +30,12 @@ def film(frames: Iterable[bytes], wav: Path, master: Path, site: Path) -> None:
         f"fdsrc fd=0 blocksize={w * h * 4} ! rawvideoparse format=bgrx width={w} height={h} "
         f"framerate={tl.FPS}/1 ! videoconvert ! video/x-raw,format=I420 ! tee name=t "
         f"t. ! queue max-size-buffers=8 ! {_h264(MASTER_BPS)} ! queue ! mux. "
-        f"filesrc location={q(str(wav))} ! wavparse ! audioconvert ! audioresample ! "
-        f"voaacenc bitrate=256000 ! queue ! mux. "
+        f"filesrc location={q(str(wav))} ! wavparse ! audioconvert ! audioresample ! tee name=a "
+        f"a. ! queue ! voaacenc bitrate={MASTER_AUDIO_BPS} ! queue ! mux. "
         f"mp4mux name=mux faststart=true ! filesink location={q(str(master))} "
-        f"t. ! queue max-size-buffers=8 ! {_h264(SITE_BPS)} ! "
-        f"mp4mux faststart=true ! filesink location={q(str(site))}")
+        f"t. ! queue max-size-buffers=8 ! {_h264(SITE_BPS)} ! queue ! site. "
+        f"a. ! queue ! voaacenc bitrate={SITE_AUDIO_BPS} ! queue ! site. "
+        f"mp4mux name=site faststart=true ! filesink location={q(str(site))}")
     proc = subprocess.Popen(["gst-launch-1.0", "-q", "-e", *shlex.split(pipeline)],
                             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
                             stderr=subprocess.PIPE)

@@ -1,4 +1,4 @@
-"""The encoder: one pipeline makes the master (with sound) and the site copy (silent)."""
+"""The encoder: one pipeline makes the master and the site copy, both with sound."""
 import tempfile
 import unittest
 from array import array
@@ -25,7 +25,8 @@ class EncodeTest(unittest.TestCase):
             self.assertAlmostEqual(m["duration"], 1.0, delta=1 / 30 + 1e-6)
             s = encode.probe(site)
             self.assertEqual((s["width"], s["height"]), (1920, 1080))
-            self.assertIsNone(s["audio_channels"])
+            self.assertEqual((s["audio_channels"], s["audio_rate"]), (2, 48000))
+            self.assertAlmostEqual(s["duration"], 1.0, delta=1 / 30 + 1e-6)
 
 
 if __name__ == "__main__":
