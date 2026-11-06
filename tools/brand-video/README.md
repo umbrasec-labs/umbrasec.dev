@@ -1,9 +1,18 @@
 # Brand film renderer
 
-Makes the 15 second film on the home page ("How this project works"): one
-continuous shot from research to papers to a real rule catching its trace,
-publishing, and the end card. Picture and sound are made in code from one cue
-list (`timeline.py`), so they cannot drift apart.
+Makes the 15 second film on the home page: one continuous shot from research
+to papers to a real rule catching its trace, publishing, and the end card.
+Picture and sound are made in code from one cue list (`timeline.py`), so they
+cannot drift apart.
+
+The site shows it twice. A first-time visitor gets it as an intro over the
+blurred page (with sound where the browser allows it, Skip or Esc to close);
+at the end card its title is swapped for real text that flies into the hero
+headline (`assets/umbra.js`, introFilm). It also loops in "How this project
+works", muted until the sound button is pressed. The intro needs to know where
+the end card draws the title: `END` and `HANDOFF` in `umbra.js` come from
+`s5_end.layout()` and `timeline.py`, and `test_site.py` fails if a re-render
+moves them.
 
 Every string on screen comes from `content.py`, which checks it against the
 repos at render time (quotes word for word, CVEs on the site, rule lines and
@@ -35,7 +44,7 @@ BRAND_VIDEO_CLAIMS=<predicate.json> python3 -m unittest discover -s tools/brand-
 # a few frames and a contact sheet, to check against the storyboard
 BRAND_VIDEO_CLAIMS=<predicate.json> python3 tools/brand-video/render.py stills --at 2.4,8.6,14.5 --out <dir>
 
-# the film: master with sound, silent site copy, poster, facts.json (about 5 minutes)
+# the film: master and site copy (both with sound), poster, facts.json (about 5 minutes)
 BRAND_VIDEO_CLAIMS=<predicate.json> python3 tools/brand-video/render.py film --out <dir>
 
 # figures on screen that changed since the last render (exit 1 if any)

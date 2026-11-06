@@ -1,5 +1,6 @@
 """The film on the home page: placed in "How this project works", lazy, muted,
-captioned in plain words, and dated with the render it shows."""
+captioned in plain words, and dated with the render it shows; and the intro
+that opens it over the page once per visitor, whose title lands on the hero."""
 import json
 import re
 import unittest
@@ -48,12 +49,72 @@ class SiteEmbedTest(unittest.TestCase):
         self.assertIn('aria-label="Pause the film"', b)
         self.assertIn('aria-pressed="false"', b)
 
+    def test_sound_button(self):
+        b = re.search(r"<button[^>]*data-film-sound[^>]*>", self.fig).group(0)
+        self.assertIn('type="button"', b)
+        self.assertIn('aria-pressed="false"', b)
+
     def test_caption_is_plain_and_dated_by_the_render(self):
         cap = re.search(r'<figcaption id="film-desc"[^>]*>(.*?)</figcaption>', self.fig, re.S)
         text = re.sub(r"<[^>]+>", "", cap.group(1))
         self.assertNotRegex(text, r"CVE-\d")
         rendered = date.fromisoformat(json.loads((HERE / "facts.json").read_text())["rendered"])
         self.assertIn(f"as of {as_of(rendered)}", text)
+
+
+class IntroTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.html = (SITE / "index.html").read_text(encoding="utf-8")
+        m = re.search(r'<div class="intro" data-intro.*?<!-- /intro -->', cls.html, re.S)
+        cls.intro = m.group(0) if m else ""
+        cls.js = (SITE / "assets" / "umbra.js").read_text(encoding="utf-8")
+
+    def test_intro_is_a_hidden_dialog_before_the_nav(self):
+        self.assertTrue(self.intro, "no intro markup")
+        tag = re.search(r'<div class="intro"[^>]*>', self.intro).group(0)
+        for attr in ("hidden", 'role="dialog"', 'aria-modal="true"', "aria-label="):
+            self.assertIn(attr, tag)
+        self.assertNotIn("data-intro-always", tag)
+        self.assertLess(self.html.index("data-intro"), self.html.index('<nav aria-label="Site"'))
+
+    def test_intro_video_waits_for_the_script(self):
+        v = re.search(r"<video[^>]*data-intro-video[^>]*>", self.intro).group(0)
+        for attr in ("muted", "playsinline", 'preload="none"'):
+            self.assertIn(attr, v)
+        self.assertNotIn("autoplay", v)
+        self.assertIn('src="assets/video/brand-15s.mp4"', self.intro)
+
+    def test_intro_buttons(self):
+        sound = re.search(r"<button[^>]*data-intro-sound[^>]*>", self.intro).group(0)
+        skip = re.search(r"<button[^>]*data-intro-skip[^>]*>", self.intro).group(0)
+        for b in (sound, skip):
+            self.assertIn('type="button"', b)
+        # the visible label is the name (it says what a press does), so no
+        # aria-label that could disagree with it
+        self.assertNotIn("aria-label", sound)
+        self.assertIn(">Sound on</button>", self.intro)
+
+    def _end(self):
+        m = re.search(r"const END = \{([^}]*)\}", self.js)
+        self.assertIsNotNone(m, "no END in umbra.js")
+        return {k: float(v) for k, v in re.findall(r"(\w+): ([\d.]+)", m.group(1))}
+
+    def test_title_lands_where_the_film_draws_it(self):
+        import s5_end
+        L = s5_end.layout()
+        end = self._end()
+        self.assertEqual(end["w"], 1920)
+        self.assertAlmostEqual(end["left"], L["left"], delta=0.01)
+        self.assertAlmostEqual(end["top"], L["top"], delta=0.01)
+        self.assertAlmostEqual(end["px"], s5_end.LINE_PX, delta=0.01)
+        self.assertAlmostEqual(end["lh"], s5_end.LINE_LH, delta=1e-9)
+
+    def test_handoff_is_after_the_lockup_and_before_the_fade(self):
+        import timeline as tl
+        t = float(re.search(r"const HANDOFF = ([\d.]+)", self.js).group(1))
+        self.assertGreaterEqual(t, tl.LOCKUP_IN[1])
+        self.assertLess(t, tl.FADE_OUT[0])
 
 
 if __name__ == "__main__":

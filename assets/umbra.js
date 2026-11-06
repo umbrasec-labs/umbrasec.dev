@@ -450,6 +450,168 @@
     });
   })();
 
+  /* ── Home: the intro film (once per visitor) ──────────────────── */
+  // The film opens over the blurred page, with sound where the browser allows
+  // it. At its end card the title is swapped for real text on the same spot,
+  // each word flies to its place in the hero headline and the page comes back
+  // into focus; the film plays on out of sight so its sound ends as mixed.
+  // Skip, Esc or a click anywhere closes it (on the end card, it lands the
+  // title). Reduced motion, Save-Data, a blocked or stalled video: no intro.
+  (function introFilm() {
+    const root = $("[data-intro]");
+    const h1 = $(".hero-headline");
+    if (!root || !h1) return;
+    const video = $("[data-intro-video]", root);
+    const skipBtn = $("[data-intro-skip]", root);
+    const soundBtn = $("[data-intro-sound]", root);
+    const lines = $$(".ghost-line-1, .ghost-line-2", h1);
+    if (!video || lines.length !== 2 || !lines.every((l) => l.childNodes.length === 1)) return;
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    if (reduceMotion || saveData || !("animate" in Element.prototype)) return;
+    const KEY = "umbrasec-intro-seen";
+    if (location.hash !== "#intro") {
+      // storage blocked: show nothing rather than replay on every visit
+      try { if (localStorage.getItem(KEY)) return; localStorage.setItem(KEY, "1"); }
+      catch (e) { return; }
+    }
+
+    // where the film draws its title (tools/brand-video s5_end.layout, 1920 x 1080);
+    // tools/brand-video/test_site.py fails if a re-render moves it
+    const END = { w: 1920, left: 379.54, top: 322.69, px: 138.24, lh: 0.94 };
+    const HANDOFF = 14.2;     // s: title resolved and lockup in, before the film fades
+    const FLY = 900, STAGGER = 35;
+    const html = document.documentElement;
+    const others = Array.from(document.body.children).filter((el) => el !== root && !el.inert);
+    let state = "idle";
+
+    function setSound(on) {
+      video.muted = !on;
+      // the label says what a press does; it is also the button's name
+      soundBtn.textContent = on ? "Sound off" : "Sound on";
+      soundBtn.classList.toggle("is-invite", !on);
+    }
+
+    function done() {
+      if (state === "done") return;
+      state = "done";
+      video.pause();
+      html.classList.remove("intro-on", "intro-flying");
+      others.forEach((el) => { el.inert = false; });
+      root.remove();
+      document.removeEventListener("keydown", onKey);
+    }
+
+    function close() {
+      if (state !== "playing") return;
+      if (video.currentTime >= 12.5) return handoff();   // the end card is up: land it
+      state = "closing";
+      root.classList.add("is-closing");
+      setTimeout(done, 450);
+    }
+
+    function wordsOf(el) {
+      const node = el.firstChild, out = [];
+      let at = 0;
+      for (const w of node.textContent.split(" ")) {
+        out.push({ w, node, start: at, end: at + w.length });
+        at += w.length + 1;
+      }
+      return out;
+    }
+    function rangeRect(node, a, b) {
+      const r = document.createRange();
+      r.setStart(node, a); r.setEnd(node, b);
+      return r.getBoundingClientRect();
+    }
+
+    function handoff() {
+      if (state !== "playing") return;
+      state = "handoff";
+      // the page gets its scrollbar back now, under the blur, so the hero
+      // measured below is where it will rest
+      html.classList.remove("intro-on");
+      const sr = $(".intro-stage", root).getBoundingClientRect();
+      const k = sr.width / END.w;
+      const cs = getComputedStyle(h1);
+      const title = document.createElement("div");
+      title.className = "intro-title";
+      title.setAttribute("aria-hidden", "true");
+      Object.assign(title.style, {
+        left: sr.left + END.left * k + "px", top: sr.top + END.top * k + "px",
+        fontSize: END.px * k + "px", lineHeight: String(END.lh),
+        fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, letterSpacing: "-0.045em",
+      });
+      const flights = [];
+      lines.forEach((line, i) => {
+        const row = document.createElement("div");
+        row.className = "intro-title-line" + (i ? " is-accent" : "");
+        wordsOf(line).forEach((w, j) => {
+          if (j) row.appendChild(document.createTextNode(" "));
+          const span = document.createElement("span");
+          span.className = "intro-word";
+          span.textContent = w.w;
+          row.appendChild(span);
+          flights.push({ span, target: w });
+        });
+        title.appendChild(row);
+      });
+      root.appendChild(title);
+      // both ends of every word measured the same way (glyph boxes), then flown
+      const anims = flights.map(({ span, target }, i) => {
+        const src = rangeRect(span.firstChild, 0, span.textContent.length);
+        const box = span.getBoundingClientRect();
+        const dst = rangeRect(target.node, target.start, target.end);
+        span.style.transformOrigin = (src.left - box.left) + "px " + (src.top - box.top) + "px";
+        return span.animate(
+          [{ transform: "none" },
+           { transform: "translate(" + (dst.left - src.left) + "px," + (dst.top - src.top) + "px) " +
+                        // width and height apart: type does not scale exactly in
+                        // proportion (about 1%), and the word must end on the hero
+                        "scale(" + dst.width / src.width + "," + dst.height / src.height + ")" }],
+          { duration: FLY, delay: 120 + i * STAGGER, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }
+        ).finished;
+      });
+      html.classList.add("intro-flying");   // the real headline waits under its flying words
+      root.classList.add("is-handoff");
+      Promise.all(anims).then(done, done);
+    }
+
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    html.classList.add("intro-on");
+    others.forEach((el) => { el.inert = true; });
+    root.hidden = false;
+    document.addEventListener("keydown", onKey);
+    skipBtn.addEventListener("click", (e) => { e.stopPropagation(); close(); });
+    soundBtn.addEventListener("click", (e) => { e.stopPropagation(); setSound(video.muted); });
+    root.addEventListener("click", close);
+    video.addEventListener("ended", handoff);
+    video.preload = "auto";
+    state = "playing";
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add("is-open")));
+    skipBtn.focus({ preventScroll: true });
+
+    // with sound first; most browsers refuse that before a click, so then muted
+    function fail() { if (state === "playing") { state = "closing"; done(); } }
+    function start(withSound) {
+      setSound(withSound);
+      const p = video.play();
+      if (!p || !p.catch) return;
+      p.catch((e) => {
+        if (withSound && e && e.name === "NotAllowedError" && state === "playing") start(false);
+        else if (!e || e.name !== "AbortError") fail();
+      });
+    }
+    start(true);
+    // no picture within 4 s (slow line, no codec): the normal page
+    const wait = setTimeout(() => { if (video.currentTime < 0.1) fail(); }, 4000);
+    (function watch() {
+      if (state !== "playing") return clearTimeout(wait);
+      if (video.currentTime >= HANDOFF) return handoff();
+      requestAnimationFrame(watch);
+    })();
+  })();
+
   /* ── Decode / scramble text ───────────────────────────────────── */
   (function scrambleText() {
     if (reduceMotion || !("IntersectionObserver" in window)) return;
@@ -492,7 +654,10 @@
       }),
       { threshold: 0.4 }
     );
-    els.forEach((el) => io.observe(el));
+    // with the intro film up, the hero headline is the film's title landing,
+    // not a decode
+    const intro = document.documentElement.classList.contains("intro-on");
+    els.forEach((el) => { if (!(intro && el.closest(".hero-headline"))) io.observe(el); });
   })();
 
   /* ── Hero network constellation (mouse-reactive) ──────────────── */
@@ -671,7 +836,12 @@
     if (!root) return;
     const video = $("[data-film-video]", root);
     const btn = $("[data-film-toggle]", root);
+    const sound = $("[data-film-sound]", root);
     if (!video) return;
+    if (sound) sound.addEventListener("click", () => {
+      video.muted = !video.muted;
+      sound.setAttribute("aria-pressed", video.muted ? "false" : "true");
+    });
     // read live: a visitor can turn reduced motion on while the page is open
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
     const saveData = !!(navigator.connection && navigator.connection.saveData);
