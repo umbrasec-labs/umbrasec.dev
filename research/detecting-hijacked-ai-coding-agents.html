@@ -16,7 +16,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="UMBRASEC - Trace the technique. Forge the rule.">
     <meta property="article:published_time" content="2026-10-26">
-    <meta property="article:modified_time" content="2026-10-30">
+    <meta property="article:modified_time" content="2026-11-08">
     <meta property="article:author" content="UMBRASEC">
     <meta property="article:section" content="AI &amp; LLM Security">
     <meta property="article:tag" content="AI coding agents">
@@ -36,7 +36,7 @@
       "headline": "What a Hijacked AI Coding Agent Leaves in Your Logs",
       "description": "Four detections for a hijacked AI coding agent: a headless CLI with approvals off, a risky shell, a hunt over agent shells, config changes, and what logs miss.",
       "datePublished": "2026-10-26",
-      "dateModified": "2026-10-30",
+      "dateModified": "2026-11-08",
       "author": { "@type": "Organization", "name": "UMBRASEC", "url": "https://umbrasec.dev/" },
       "publisher": { "@type": "Organization", "name": "UMBRASEC", "logo": { "@type": "ImageObject", "url": "https://umbrasec.dev/assets/umbra-icon-v2.png" } },
       "image": "https://umbrasec.dev/assets/og.png",
@@ -118,6 +118,13 @@
             </h1>
             <p class="text-xl text-[#959c95] leading-snug">
                 An AI coding agent runs shell commands with a developer's access. When something other than the developer steers it, those commands still look like the agent's work. This article covers what a hijacked agent leaves in your logs and ships four detections for it, with their limits stated.
+            </p>
+            <p class="mt-4 text-sm text-[#959c95]">
+                Updated 2026-11-08: new section, The same file can leak secrets. Claude Code can save an approved
+                command, secrets included, to <code>.claude/settings.local.json</code>, and Apiiro found copies of
+                that file with secrets on public GitHub. The section adds checks for a repository and three gitleaks
+                rules: in our test the default rules found 3 of 14 planted secrets in that file, and with the added
+                rules gitleaks found all 14.
             </p>
             <p class="mt-4 text-sm text-[#959c95]">
                 Updated 2026-10-30: added Detection 4, for an agent changing its own configuration: a Sigma rule for a
@@ -1834,6 +1841,118 @@ DeviceFileEvents
           PreviousFileName, SHA1, FileSize, Rank
 | sort by Rank asc, Timestamp desc</code></pre>
 
+            <h2>The same file can leak secrets</h2>
+            <p>
+                Detection 4 lists one write as a false positive: Claude Code saving
+                <code>.claude/settings.local.json</code> after a person approves a permission. For a hijack it is
+                harmless, but the file has a second risk. When a person picks "Yes, and don't ask again" for a Bash
+                command, Claude Code saves the approval as an <code>allow</code> rule in that file, and Apiiro
+                reported on 2026-11-05 that the rule can hold the command word for word. A password, token or key
+                typed into the command is then in the file. Apiiro found 104,185 public copies of the file on GitHub,
+                1,122 of them holding at least one secret, and counted 2,539 secrets across 1,994 repositories once
+                git history and other files were included.
+            </p>
+            <p>
+                Claude Code tries to keep the file out of git. Its documentation says that the first time it writes
+                the file in a repository that does not already ignore it, it adds
+                <code>**/.claude/settings.local.json</code> to the user's global git excludes. That rule lives on one
+                machine and does not travel with the repository, and the documentation says a file made by hand is not
+                covered. The VS Code extension can also save an approval to the shared
+                <code>.claude/settings.json</code>, which is meant to be committed.
+            </p>
+            <p>
+                Endpoint logs are the wrong place to look for this. The write is the normal one Detection 4 already
+                treats as a false positive, and the leak happens later, at commit and push, so it is found in the
+                repository.
+            </p>
+            <h3>Checking a repository</h3>
+            <p>
+                Run these from the repository root. The first two list the settings files git tracks now or has ever
+                committed, on any branch. The third prints the rule that ignores the local file, or nothing; a rule
+                from your global excludes file protects only your machine.
+            </p>
+            <pre><code>git ls-files -- '*.claude/settings*.json'
+git log --all --format='%h %ad %s' --date=short -- '*.claude/settings*.json'
+git check-ignore -v .claude/settings.local.json</code></pre>
+            <p>
+                To keep the file out on every machine, ignore it in the repository. The <code>**/</code> matters:
+                without it the pattern matches only at the root, and before Claude Code 2.1.211 the file was written
+                in the folder a session started in.
+            </p>
+            <pre><code># .gitignore
+**/.claude/settings.local.json</code></pre>
+            <p>
+                If a secret was ever pushed, rotate it first. Removing the file or rewriting history does not take
+                back a copy that has already been cloned or cached. To stop new secrets reaching the file, keep them
+                off the command line: put them in the environment or in a file the tool reads, such as
+                <code>~/.pgpass</code> or <code>sshpass -e</code>, so a saved rule holds a variable name and not the
+                value. That also keeps them out of the process command lines that Detection 2 and an EDR record.
+            </p>
+            <h3>Finding the secrets with gitleaks</h3>
+            <p>
+                We planted 14 generated secrets in a test <code>settings.local.json</code>, in the shapes a saved
+                command takes: a password in <code>PGPASSWORD</code> or <code>MYSQL_PWD</code>, an exported token,
+                <code>mysql -p</code> and <code>mysqldump -p</code> with the password attached, <code>sshpass -p</code>,
+                <code>--pass</code> and <code>--password=</code> flags, a Bearer header, <code>curl -u</code>, a URL
+                with a password, a GitHub token and an AWS key pair. Gitleaks 8.30.1 with its default rules found 3:
+                the GitHub token, the AWS key and one high-entropy <code>PGPASSWORD</code>. It missed every
+                human-style password, the exported token and a random 40-character Bearer token. A saved command
+                carries short passwords behind flags, which the default rules are not built for.
+            </p>
+            <p>
+                The three rules below add those shapes and read only the two settings files, so they stay quiet
+                elsewhere. With them gitleaks found all 14. None of 25 harmless entries fired, among them prefix rules,
+                <code>$VAR</code> references, <code>mysql -p</code> and <code>mysql --password</code> with no value,
+                <code>docker -p</code>, <code>docker -u 1000:1000</code>, <code>ssh -p2222</code> and
+                <code>grep "password="</code>. Run against git history, they also found the secrets in a file that was
+                committed and then deleted.
+            </p>
+            <pre><code># Secrets inside commands saved to Claude Code permission rules.
+# "Yes, and don't ask again" can save the approved command word for word.
+# The stock rules miss most of these because the values are short, human-chosen
+# or sit behind a flag rather than a key name. Only .claude/settings*.json is read.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "claude-settings-env-secret"
+description = "Secret assigned to a variable inside a saved Claude Code command"
+path = '''(?:^|[\\/])\.claude[\\/]settings(?:\.local)?\.json$'''
+regex = '''(?i)(?:^|[\s(;&amp;|])(?:export\s+)?[a-z0-9_]*(?:password|passwd|pwd|sshpass|token|secret|secret_key|api_?key|access_key|_auth)=(?:\\"|"|')?([^\s"'\\$*&lt;{%)][^\s"'\\)]{3,})'''
+secretGroup = 1
+
+[[rules]]
+id = "claude-settings-flag-secret"
+description = "Secret passed as a flag or header inside a saved Claude Code command"
+path = '''(?:^|[\\/])\.claude[\\/]settings(?:\.local)?\.json$'''
+regex = '''(?i)(?:\bsshpass\s+-p\s*|\bmysql(?:dump|admin)?\b[^)\n]*?\s-p|--password=|--pass[=\s]+|\bcurl\b[^)\n]*?\s(?:-u|--user)\s+[^\s:"'\\]+:|authorization:\s*(?:bearer|basic|token)\s+|x-api-key:\s*)(?:\\"|"|')?([^\s"'\\$*&lt;{%)][^\s"'\\)]{3,})'''
+secretGroup = 1
+
+[[rules]]
+id = "claude-settings-url-credential"
+description = "Password inside a URL in a saved Claude Code command"
+path = '''(?:^|[\\/])\.claude[\\/]settings(?:\.local)?\.json$'''
+regex = '''(?i)\b[a-z][a-z0-9+.-]*://[^\s/:@"'\\]+:([^\s/@"'\\$*&lt;{%)][^\s/@"'\\)]{3,})@'''
+secretGroup = 1</code></pre>
+            <p>
+                Save it as <code>claude-settings.gitleaks.toml</code>. <code>[extend]</code> keeps the default rules,
+                so one run covers both. <code>gitleaks git</code> reads every commit, and <code>gitleaks dir</code>
+                reads the files on disk, ignored ones included:
+            </p>
+            <pre><code>gitleaks git --config claude-settings.gitleaks.toml .
+gitleaks dir --config claude-settings.gitleaks.toml .</code></pre>
+            <p>
+                These rules were tested on generated entries, not on real leaked files, and the shapes come from
+                common command-line habits, not from Apiiro's data, which we have not seen. They miss a secret with
+                no name or flag before it, such as a bare token passed as an argument, and a value with a space or a
+                quote in it. They also miss <code>--password value</code> with a space, which mysql reads as no
+                password and a database name, so it is left out. They read no file other than the two settings
+                files, so a secret in a session transcript is not seen. The name match on <code>pwd</code>,
+                <code>token</code>, <code>secret</code> and <code>key</code> is broad on purpose, so expect hits on
+                test values. Treat a hit as a lead to check by eye; a real secret in a public repository needs
+                rotating.
+            </p>
+
             <h2>What this does not cover</h2>
             <ul>
                 <li><strong>Cursor and Devin beyond shipped code:</strong> the Cursor CLI and IDE agent strings and
@@ -1940,6 +2059,9 @@ DeviceFileEvents
 
             <h2>References</h2>
             <ul>
+                <li><a href="https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again" target="_blank" rel="noopener">Apiiro - Coding Agents Copy Your Secrets to a Hidden File. Thousands Are on GitHub.</a></li>
+                <li><a href="https://thehackernews.com/2026/11/claude-codes-dont-ask-again-file.html" target="_blank" rel="noopener">The Hacker News - Claude Code's "Don't Ask Again" File Exposes Passwords and Keys in 1,122 Public Copies on GitHub</a></li>
+                <li><a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener">Anthropic - Claude Code settings files and precedence (settings.local.json and global git excludes)</a></li>
                 <li><a href="https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c" target="_blank" rel="noopener">Nx - GHSA-cxm3-wv7p-598c, malicious versions of Nx and some supporting plugins were published</a></li>
                 <li><a href="https://snyk.io/blog/weaponizing-ai-coding-agents-for-malware-in-the-nx-malicious-package/" target="_blank" rel="noopener">Snyk - Weaponizing AI coding agents for malware in the Nx malicious package</a></li>
                 <li><a href="https://aws.amazon.com/security/security-bulletins/AWS-2025-015/" target="_blank" rel="noopener">AWS - Security Bulletin AWS-2025-015 (Amazon Q Developer for VS Code, CVE-2025-8217)</a></li>
