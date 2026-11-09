@@ -2,7 +2,8 @@
 #
 # UMBRASEC pre-commit hook: keep derived files in sync with research/articles.json
 #
-# There is no CI for this site, by design: this hook is the only gate. It
+# CI (.github/workflows/ci.yml) re-runs the check and the tests on every pull
+# request; this hook catches drift before the commit and fixes it. It
 # regenerates the derived files, stages exactly the ones it rewrote so a drift
 # can never reach a commit, and re-runs build_indexes.py --check, which fails if:
 #   - any generated file drifts from the manifest, or
