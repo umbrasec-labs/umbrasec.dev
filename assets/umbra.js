@@ -908,6 +908,15 @@
       if (!root.contains(e.relatedTarget)) { focus = false; sync(); }
     });
     document.addEventListener("visibilitychange", sync);
+    // back and next: step by hand (wraps round); the new example gets its full time
+    const step = (d) => show((cur + d + exs.length) % exs.length);
+    $$("[data-tr-step]", root).forEach((b) => b.addEventListener("click", () => step(+b.getAttribute("data-tr-step"))));
+    // left and right arrow keys while a reel button has focus
+    root.addEventListener("keydown", (e) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.key === "ArrowLeft") { step(-1); e.preventDefault(); }
+      else if (e.key === "ArrowRight") { step(1); e.preventDefault(); }
+    });
     if (pauseBtn) pauseBtn.addEventListener("click", () => {
       user = !user;
       pauseBtn.setAttribute("aria-pressed", user ? "true" : "false");
