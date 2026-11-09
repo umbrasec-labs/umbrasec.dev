@@ -2,9 +2,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test 'tools/**/*.test.mjs'"
+    "test": "node --test 'tools/**/*.test.mjs'",
+    "build:css": "bash tools/site-build/tailwind/build.sh",
+    "check:css": "bash tools/site-build/tailwind/build.sh --check"
   },
   "devDependencies": {
+    "tailwindcss": "3.4.17",
     "wrangler": "^4.153.0"
   }
 }

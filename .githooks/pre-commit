@@ -55,14 +55,31 @@ scan_secrets() {
     fi
 }
 
+# assets/tailwind.css is built ahead of time (tools/site-build/tailwind/build.sh)
+# and is what ships. Check it against what is staged, after any regeneration
+# above has staged its files. CI runs the same check on every pull request.
+check_tailwind() {
+    if [ ! -x node_modules/.bin/tailwindcss ]; then
+        echo "pre-commit: node_modules missing, skipping the Tailwind CSS check (CI runs it; npm ci to enable)" >&2
+        return 0
+    fi
+    if ! bash tools/site-build/tailwind/build.sh --check --staged >/dev/null; then
+        echo "pre-commit: run npm run build:css, git add assets/tailwind.css, commit again" >&2
+        echo "pre-commit: or bypass once with: git commit --no-verify" >&2
+        exit 1
+    fi
+}
+
 if ! command -v python3 >/dev/null 2>&1; then
     echo "pre-commit: python3 not found; skipping site-build regen" >&2
+    check_tailwind
     scan_secrets
     exit 0
 fi
 
 # Fast path: if everything is in sync and there are no orphans, still scan.
 if python3 tools/site-build/build_indexes.py --check >/dev/null 2>&1; then
+    check_tailwind
     scan_secrets
     exit 0
 fi
@@ -112,6 +129,8 @@ if ! python3 tools/site-build/build_indexes.py --check; then
     echo "pre-commit: fix it, or bypass once with: git commit --no-verify" >&2
     exit 1
 fi
+
+check_tailwind
 
 # Scan after staging, so regenerated files are covered too.
 scan_secrets
