@@ -169,7 +169,7 @@ body {
 }
 .tr-kicker span { color: var(--accent); }
 .tr-ctrl { display: flex; align-items: center; gap: 6px; }
-.tr-now, .tr-pause {
+.tr-now, .tr-pause, .tr-step {
     position: relative; overflow: hidden;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-size: 12px; line-height: 1;
@@ -184,7 +184,16 @@ body {
 /* the longest ids are 9 characters: a fixed width keeps the pause button still */
 .tr-now-id { display: inline-block; min-width: 9ch; }
 .tr-count { color: var(--muted); }
-.tr-pause:hover { color: var(--text); border-color: var(--border-hi); }
+.tr-pause:hover, .tr-step:hover { color: var(--text); border-color: var(--border-hi); }
+/* back and next: step by hand, the timer restarts on the new example */
+.tr-step {
+    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+}
+.tr-step svg {
+    width: 12px; height: 12px; fill: none; stroke: currentColor;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
 .tr-prog {
     position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
     background: var(--accent); transform: scaleX(0); transform-origin: left;
