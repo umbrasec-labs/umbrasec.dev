@@ -25,3 +25,7 @@ jobs:
         run: python3 -m unittest discover -s tools/site-build -p 'test_*.py'
       - name: Function tests
         run: npm test
+      - name: Install pinned build tools
+        run: npm ci --ignore-scripts
+      - name: Tailwind CSS in sync
+        run: npm run check:css
