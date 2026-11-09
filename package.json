@@ -7,7 +7,7 @@
     "check:css": "bash tools/site-build/tailwind/build.sh --check"
   },
   "devDependencies": {
-    "tailwindcss": "3.4.17",
+    "tailwindcss": "3.4.19",
     "wrangler": "^4.153.0"
   }
 }
