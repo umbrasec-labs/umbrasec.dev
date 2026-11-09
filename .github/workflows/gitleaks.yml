@@ -1,7 +1,11 @@
-# Secret and PII scan on every push and pull request. This is the only gate for
-# commits made from Claude Code cloud sessions, which bypass .githooks/pre-commit.
+# Secret and PII scan on every pull request and on master. Commits from Claude
+# Code cloud sessions bypass .githooks/pre-commit, so this and ci.yml gate them.
+# Branch pushes are covered by their pull request, so they are not scanned twice.
 name: gitleaks
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
 permissions:
   contents: read
 jobs:

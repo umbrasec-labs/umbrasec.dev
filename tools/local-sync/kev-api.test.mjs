@@ -153,12 +153,22 @@ for (const [name, impl] of [
     const { puts } = installCache(undefined);
     installFetch(impl);
     const { ctx, pending } = makeContext();
-    const res = await onRequestGet(ctx);
+    const warned = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warned.push(args.join(" "));
+    let res;
+    try {
+      res = await onRequestGet(ctx);
+    } finally {
+      console.warn = origWarn;
+    }
     await Promise.all(pending);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("x-kev-source"), "snapshot");
     assert.equal(res.headers.get("access-control-allow-origin"), "*");
-    assert.equal(await res.text(), SNAPSHOT_TEXT);
+    assert.deepEqual(await res.json(), { ...SNAPSHOT, mode: "snapshot" }, "the fallback carries mode like the live body");
+    assert.equal(warned.length, 1, "a live failure is logged even when the snapshot answers");
+    assert.match(warned[0], /live path failed/);
     assert.equal(puts.length, 1, "snapshot fallback is cached briefly so an outage does not re-hit upstream per request");
     assert.match(puts[0][1].headers.get("cache-control"), /s-maxage=300/);
   });
@@ -170,12 +180,15 @@ test("upstream and snapshot both unavailable: 503 JSON, not cached", async () =>
   const { ctx, pending } = makeContext({ assets: { fetch: async () => new Response("nope", { status: 404 }) } });
   const logged = [];
   const origError = console.error;
+  const origWarn = console.warn;
   console.error = (...args) => logged.push(args.join(" "));
+  console.warn = () => {};
   let res;
   try {
     res = await onRequestGet(ctx);
   } finally {
     console.error = origError;
+    console.warn = origWarn;
   }
   await Promise.all(pending);
   assert.equal(res.status, 503);

@@ -92,10 +92,10 @@ when both CISA and the snapshot are unavailable). An edge-cache hit is `cache-li
 
 Fields per entry: `cveID`, `vendorProject`, `product`, `vulnerabilityName`,
 `dateAdded`, `knownRansomwareCampaignUse`. Top level carries `source`, `catalogVersion`,
-`synced` and `count` (the full catalog's entry count, not this file's). Live responses
-also carry `mode` and `dateReleased`; the snapshot fallback does not (it answers as
-`snapshot`, or as `cache` for a few minutes after an outage while the fallback stays
-cached), so check for the `mode` key rather than the header. It is deliberately a recent-entries feed, not a mirror - for the full
+`synced` and `count` (the full catalog's entry count, not this file's), plus `mode`:
+`live` or `snapshot`. Live responses also carry `dateReleased`. The header adds the
+cache layer (`cache-snapshot` for a few minutes after an outage while the fallback
+stays cached); `mode` says which data you got. It is deliberately a recent-entries feed, not a mirror - for the full
 catalog, go to [CISA](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
 or run `kev-watch`, which queries CISA's feed directly.
 

@@ -11,8 +11,9 @@
  *      snapshot at /assets/kev-latest.json (kept by tools/local-sync/sync-kev.py)
  *   2. snapshot missing too                              -> 503 JSON, not cached
  *
- * The response schema is the snapshot's schema plus "mode" and "dateReleased",
- * so assets/umbra.js and anyone curling the old file can read either. The
+ * The response schema is the snapshot's schema plus "mode" ("live" or
+ * "snapshot"); live responses also carry "dateReleased". assets/umbra.js and
+ * anyone curling the old file can read either. The
  * X-KEV-Source header says which path answered: live | snapshot | none, or
  * cache-live / cache-snapshot for an edge-cache hit on either of the first two.
  *
@@ -82,10 +83,14 @@ export async function onRequestGet(context) {
     return res;
   } catch (err) {
     liveError = err;
+    // Logged even when the snapshot answers, so a broken live path is visible.
+    console.warn("kev: live path failed, serving snapshot: " + ((err && err.message) || err));
   }
 
   try {
-    const body = await fetchSnapshot(request, env);
+    // Tag the fallback like the live body, so clients can read mode either way.
+    const snap = JSON.parse(await fetchSnapshot(request, env));
+    const body = JSON.stringify({ ...snap, mode: "snapshot" }, null, 2) + "\n";
     const res = new Response(body, {
       status: 200,
       headers: headers("snapshot", { "Cache-Control": `public, max-age=60, s-maxage=${FALLBACK_TTL}` }),
