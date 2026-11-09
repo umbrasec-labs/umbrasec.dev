@@ -613,6 +613,29 @@ def csp_hash_problems():
     return missing
 
 
+def csp_enforced_problems(headers=None):
+    """Enforced Content-Security-Policy lines whose script-src would block inline script.
+
+    The zone's JS-detections bootstrap is inline with a per-request ray id, so the
+    enforced script-src must keep 'unsafe-inline' and must carry no hash or nonce:
+    browsers ignore 'unsafe-inline' once a hash or nonce is present."""
+    if headers is None:
+        headers = (ROOT / "_headers").read_text(encoding="utf-8")
+    problems = []
+    for line in headers.splitlines():
+        name, _, value = line.strip().partition(":")
+        if name != "Content-Security-Policy":
+            continue
+        for directive in value.split(";"):
+            parts = directive.split()
+            if parts and parts[0] == "script-src":
+                if "'unsafe-inline'" not in parts:
+                    problems.append("script-src has no 'unsafe-inline'")
+                if any(p.startswith(("'sha256-", "'sha384-", "'sha512-", "'nonce-")) for p in parts):
+                    problems.append("script-src carries a hash or nonce, so 'unsafe-inline' is ignored")
+    return problems
+
+
 # The homepage hero's trace-to-rule reel is generated from the pack, the Claims
 # Ledger and hero-reel.json (see hero_reel.py). The claims live in the
 # detections repo, so the reel is rebuilt and checked only where that checkout
@@ -756,6 +779,7 @@ def build(check: bool, list_drift: bool = False) -> int:
                if not all(s in (ROOT / rel).read_text(encoding="utf-8")
                           for s in ('<a href="#main" class="skip-link">', '<main id="main">'))]
     bad_hashes = csp_hash_problems()
+    bad_enforced = csp_enforced_problems()
     html_links = html_link_problems()
     long_descs = description_problems()
     coverage_issues = kev_coverage.problems(coverage, kev_coverage.named_cves(SIGMA_DIR, RESEARCH_DIR),
@@ -820,7 +844,13 @@ def build(check: bool, list_drift: bool = False) -> int:
             print("site-build: CSP - 404.html inline script hash not in _headers:")
             for token in bad_hashes:
                 print(f"  - '{token}'")
-            print("\nReplace the old sha256-... in the Content-Security-Policy lines of _headers with this one.")
+            print("\nReplace the old sha256-... in the Content-Security-Policy-Report-Only line of _headers with this one.")
+            problems = True
+        if bad_enforced:
+            print("site-build: CSP - the enforced Content-Security-Policy in _headers would block the zone's inline JS-detections bootstrap:")
+            for why in bad_enforced:
+                print(f"  - {why}")
+            print("\nKeep 'unsafe-inline' and no hash or nonce in the enforced script-src; the hash belongs in the Report-Only line.")
             problems = True
         if no_nav_link:
             print("site-build: MISSING - pages with no Exploited now link in the site nav:")

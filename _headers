@@ -19,21 +19,27 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'none'
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'sha256-ZQPejEVGAaxv6Ks7Vz7EG2WhGYp+N7AFqmkiLKZeYz8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'sha256-ZQPejEVGAaxv6Ks7Vz7EG2WhGYp+N7AFqmkiLKZeYz8=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Cross-Origin-Opener-Policy: same-origin
 
-# The Report-Only policy above is the script-src lockdown on trial: browsers
-# log what it would block to the console and block nothing. Its sha256 is the
-# inline script in 404.html - edit that script and the hash must change too
-# (build_indexes.py --check fails and prints the new one). Two things stop it being
-# enforced yet: the zone's JS-detections bootstrap is an inline script with a
-# per-request ray id, so no hash can cover it and static Pages cannot add a
-# nonce; and Email Address Obfuscation injects /cdn-cgi/ scripts (same origin,
-# already allowed). Turn the bootstrap off in the zone before promoting this to
-# Content-Security-Policy.
+# Two policies, and a browser applies both:
+# - The enforced one pins every source to this site plus the font CDNs and
+#   Cloudflare Web Analytics (beacon script from static.cloudflareinsights.com,
+#   reports to cloudflareinsights.com). It still allows inline script, because
+#   the zone's JS-detections bootstrap is an inline script with a per-request
+#   ray id: no hash can cover it and static Pages cannot add a nonce. Never add
+#   a sha256 to this line: a hash makes browsers ignore 'unsafe-inline' and the
+#   bootstrap would be blocked (build_indexes.py --check guards it).
+# - The Report-Only one is the script-src lockdown on trial: browsers log what
+#   it would block and block nothing. Its sha256 is the inline script in
+#   404.html - edit that script and the hash must change too (--check fails and
+#   prints the new one). Turn JS detections off in the zone before promoting it.
+# Email Address Obfuscation injects /cdn-cgi/ scripts (same origin, allowed).
+# A pages.dev preview never shows the zone's injected scripts (bootstrap,
+# beacon), so check a policy change against the live HTML too.
 
 # The pages.dev hostname serves the same site; keep it out of search results
 # so only umbrasec.dev is indexed. Preview and branch aliases already get
