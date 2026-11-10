@@ -2,7 +2,8 @@
 
 load() refuses to build the film on any mismatch: a quote that is no longer
 word for word, a CVE the site no longer names, a rule line that changed, a
-tile list that drifted from the hero reel, or a Claims Ledger report that is
+tile list that drifted from the hero reel, a KEV wall whose CVE is no longer
+shown on /exploited as the film shows it, or a Claims Ledger report that is
 stale or not all green. Numbers (pack counts, KEV total, claims) are read from
 the repos at render time, never typed in.
 """
@@ -13,7 +14,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 
@@ -50,6 +51,19 @@ class Content:
     pack_sigma: int
     pack_kql: int
     tiles: tuple[str, ...]
+    # "Exploited now": the KEV snapshot joined to the coverage map, as /exploited does
+    kev_date: str                        # the snapshot's day, ISO
+    kev_days: int                        # the window: days from its cut to that day
+    kev_wall: tuple[tuple[str, str], ...]   # (CVE, tier) per entry added in the window, newest first
+    kev_tiers: tuple[tuple[str, str, int], ...]   # (tier, the site's label, count)
+    kev_cve: str
+    kev_tier: str
+    kev_tier_label: str
+    kev_product: str
+    kev_added: str
+    kev_note: str
+    kev_rule: str
+    kev_claims: int
 
 
 ARTICLE = "research/detecting-hijacked-ai-coding-agents.html"
@@ -62,6 +76,12 @@ CLAIM = "catches/claude-parent-credential-read"
 TECHNIQUE = "T1552.001"
 TECHNIQUE_NAME = "Credentials In Files"
 MAX_CLAIMS_AGE_DAYS = 14
+
+# The KEV entry "Exploited now" locks on. The film shows the tier the site
+# gives it and the site's own note on what the rule does not cover.
+KEV_CVE = "CVE-2026-109619"
+KEV_TIER = "partial"
+KEV_TIERS = ("rule", "partial", "writeup", "gap")   # the order /exploited lists them in
 
 AGENT_CVES = ("CVE-2025-8217", "CVE-2025-53773", "CVE-2025-54135",
               "CVE-2025-54136", "CVE-2026-110202")
@@ -153,7 +173,7 @@ def _need(cond: bool, what: str) -> None:
         raise FactError(what)
 
 
-def _claims(path: Path, pack_total: int) -> tuple[int, int]:
+def _claims(path: Path, pack_total: int) -> tuple[int, int, dict]:
     _need(path.is_file(), f"no Claims Ledger report at {path}; re-run the harness")
     data = json.loads(path.read_text(encoding="utf-8"))
     s = data.get("summary", {})
@@ -167,7 +187,82 @@ def _claims(path: Path, pack_total: int) -> tuple[int, int]:
           f"Claims Ledger covers {s.get('rules')} rules, the pack has {pack_total}")
     executed, passed = int(s["executed"]), int(s["passed"])
     _need(executed == passed > 0, f"claims: {passed} of {executed} passed")
-    return executed, passed
+    return executed, passed, data.get("rules", {})
+
+
+def site_date(iso: str) -> str:
+    """The site's date style, as in the article headers: Nov 6, 2026."""
+    d = date.fromisoformat(iso)
+    return f"{d.strftime('%b')} {d.day}, {d.year}"
+
+
+def tier_labels(exploited_js: str) -> dict[str, str]:
+    """The names /exploited gives the tiers (TIERS in assets/exploited.js)."""
+    m = re.search(r"const TIERS = \{([^}]*)\}", exploited_js)
+    _need(m is not None, "assets/exploited.js no longer has a TIERS table")
+    return dict(re.findall(r'(\w+): "([^"]+)"', m.group(1)))
+
+
+def kev_wall(feed: dict, coverage: dict) -> tuple[tuple[str, str], ...]:
+    """Each entry added in the window with its tier, joined the way
+    functions/api/exploited.js joinCoverage does: a "none" entry, an unmapped
+    CVE and a tier name the page does not know are all a gap."""
+    tier_of = {e["cve"]: e["tier"] for e in coverage["entries"] if e["tier"] != "none"}
+
+    def tier(cve: str) -> str:
+        t = tier_of.get(cve)
+        return t if t in KEV_TIERS else "gap"
+    return tuple((r["cve"], tier(r["cve"])) for r in feed["rows"])
+
+
+def _kev(site: Path, feed: dict, claim_rules: dict) -> dict:
+    """The facts of "Exploited now", from the snapshot and the coverage map as
+    they are at render time."""
+    coverage = json.loads((site / "assets" / "kev-coverage.json").read_text(encoding="utf-8"))
+    wall = kev_wall(feed, coverage)
+    _need(len(wall) > 0, "the KEV snapshot has no entries in its window")
+    _need(len({cve for cve, _ in wall}) == len(wall), "the KEV snapshot lists a CVE twice")
+    for cve, tier in wall:
+        _need(re.fullmatch(r"CVE-\d{4}-\d{4,}", cve) is not None, f"not a CVE id: {cve!r}")
+        _need(tier in KEV_TIERS, f"{cve}: unknown tier {tier!r}")
+    labels = tier_labels((site / "assets" / "exploited.js").read_text(encoding="utf-8"))
+    _need(set(labels) == set(KEV_TIERS), f"/exploited now has the tiers {sorted(labels)}")
+    tiers = tuple((t, labels[t], sum(1 for _, x in wall if x == t)) for t in KEV_TIERS)
+    days = (date.fromisoformat(feed["generated"]) - date.fromisoformat(feed["cut"])).days
+    _need(days > 0, "the KEV snapshot's window is empty")
+
+    row = next((r for r in feed["rows"] if r["cve"] == KEV_CVE), None)
+    _need(row is not None, f"{KEV_CVE} is no longer in the KEV snapshot's window")
+    entry = next((e for e in coverage["entries"] if e["cve"] == KEV_CVE), None)
+    _need(entry is not None and entry.get("kev") is True,
+          f"{KEV_CVE} is not a KEV entry in the coverage map")
+    # the film says "Partial rule" and nothing stronger: any other tier stops the render
+    _need(entry["tier"] == KEV_TIER,
+          f"{KEV_CVE} is tier {entry['tier']!r} now; the film shows it as {KEV_TIER!r}")
+    product = f"{row['vendor']} {row['product']}".strip()
+    _need(product == entry["label"], f"{KEV_CVE}: the snapshot says {product!r}, "
+                                     f"the coverage map {entry['label']!r}")
+    note = entry.get("note", "")
+    _need(bool(note), f"{KEV_CVE} has no note on what its rule leaves out")
+    _need(len(entry["rules"]) == 1, f"{KEV_CVE} now maps to {len(entry['rules'])} rules; "
+                                    "the film's card shows one")
+    rule = entry["rules"][0]["name"]
+    rule_files = list((site / "tools" / "sigma-pack" / "rules").rglob(rule))
+    _need(len(rule_files) == 1, f"{rule} is not one file in the pack")
+    rec = claim_rules.get(Path(rule).stem)
+    _need(rec is not None and rec.get("status") == "verified",
+          f"the Claims Ledger report does not verify {rule}")
+    claims = sum(rec["counts"].values())
+    _need(claims == entry.get("claims") and claims > 0,
+          f"{rule}: the report has {claims} claims, the coverage map {entry.get('claims')}")
+    # /exploited shows the same card: same tier name, note, rule file and claim count
+    page = text_of(site / "exploited.html")
+    for s in (KEV_CVE, labels[KEV_TIER], product, note, rule, f"{claims} tested claims"):
+        _need(s in page, f"/exploited no longer shows {s!r}")
+    return dict(kev_date=feed["generated"], kev_days=days, kev_wall=wall, kev_tiers=tiers,
+                kev_cve=KEV_CVE, kev_tier=KEV_TIER, kev_tier_label=labels[KEV_TIER],
+                kev_product=product, kev_added=row["added"], kev_note=note, kev_rule=rule,
+                kev_claims=claims)
 
 
 MONTHS = dict(Jan="January", Feb="February", Mar="March", Apr="April", May="May",
@@ -269,7 +364,8 @@ def load(site: Path, detections: Path) -> Content:
 
     claims_path = Path(os.environ.get("BRAND_VIDEO_CLAIMS")
                        or detections / "out" / "predicate.json")
-    executed, passed = _claims(claims_path, sigma + kql)
+    executed, passed, claim_rules = _claims(claims_path, sigma + kql)
+    kev_facts = _kev(site, kev, claim_rules)
 
     signals = OTHER_CVES + FIELD_TECHNIQUES + (f"KEV {kev_total:,}", BINANCE)
     return Content(
@@ -279,5 +375,5 @@ def load(site: Path, detections: Path) -> Content:
         claim_name=CLAIM, claims_executed=executed, claims_passed=passed,
         article_title=ARTICLE_TITLE, article_eyebrow=ARTICLE_EYEBROW,
         article_url=ARTICLE_URL,
-        pack_sigma=sigma, pack_kql=kql, tiles=tiles,
+        pack_sigma=sigma, pack_kql=kql, tiles=tiles, **kev_facts,
     )

@@ -11,14 +11,27 @@ from dataclasses import dataclass
 
 from content import RULE_LINES
 
-W, H, FPS, DURATION, BPM = 1920, 1080, 30, 15.0, 120
+W, H, FPS, DURATION, BPM = 1920, 1080, 60, 22.0, 120
+# What steps instead of moving (film grain, scrambled letters) changes this
+# often, whatever FPS is: at 60 fps every second frame then differs only where
+# something moves, which is what keeps the site copy inside its size budget.
+TICK = 30
 # Scenes draw in a W x H layout space; frames are rendered at OUT_W x OUT_H
 # (1440p) by scaling that space up, so the layout and the intro's numbers in
 # umbra.js do not change with the output size.
 OUT_W, OUT_H = 2560, 1440
 SCALE = OUT_W / W
+MASTER_W, MASTER_H = 3840, 2160   # the optional 4K master (render.py film --master)
 BEAT = 60.0 / BPM
-FRAMES = int(DURATION * FPS)
+FRAMES = round(DURATION * FPS)
+
+
+def set_output(w: int, h: int) -> None:
+    """Render at another frame size. The layout space stays W x H."""
+    global OUT_W, OUT_H, SCALE
+    if w * H != h * W:
+        raise ValueError(f"{w} x {h} is not {W}:{H}")
+    OUT_W, OUT_H, SCALE = w, h, w / W
 
 
 @dataclass(frozen=True)
@@ -33,8 +46,9 @@ SECTIONS = (
     Section("research", "Research", 0.0, 3.0),
     Section("papers", "Papers", 3.0, 6.0),
     Section("query", "Build the query", 6.0, 10.0),
-    Section("publish", "Publish", 10.0, 12.5),
-    Section("end", "End card", 12.5, 15.0),
+    Section("exploited", "Exploited now", 10.0, 14.5),
+    Section("publish", "Publish", 14.5, 19.0),
+    Section("end", "End card", 19.0, 22.0),
 )
 
 
@@ -67,22 +81,33 @@ WIRE = (8.0, 8.4)                 # the dot draws the wire
 T_MATCH = 8.5
 COUNT = (8.5, 9.5)
 T_CONFIRM = 9.5
-# 04 publish
-FOLD = (9.95, 10.5)               # rule panel folds into its tile
-T_TILE = 10.5
-TICKS = (10.5, 10.75, 11.0)       # umbrasec.dev, umbra-blue, detections
-BROWSER_IN = (10.6, 11.1)
-T_LIVE = 11.25
-COLLAPSE = (12.0, 12.5)           # everything pulls into the dot
-# 05 end card
-DECODE_1 = (12.5, 13.0)
-DECODE_2 = (12.75, 13.25)
-DOT_UP = (12.5, 12.85)
-DOT_FALL = (13.15, 13.5)
-T_LAND = 13.5
-LOCKUP_IN = (13.8, 14.1)
-FADE_OUT = (14.7, 15.0)
-
+# 04 exploited now
+PAN_OUT = (9.95, 10.45)           # the camera whips right, from the rule to the KEV wall
+WALL_IN = (10.2, 10.7)            # the wall's cells come up
+SCAN = (10.75, 11.75)             # a beam reads the wall, top to bottom
+SCAN_TICKS = tuple(SCAN[0] + i * 0.125 for i in range(8))   # a tick per 16th note
+TO_LOCK = (11.75, 12.0)           # the dot crosses to the CVE the pack has work on
+T_KEV_LOCK = 12.0                 # brackets snap on it
+CARD_IN = (12.0, 12.4)            # its card: product, note, rule file, claims
+T_TIER = 12.5                     # the tier badge stamps on
+PAN_BACK = (13.95, 14.45)         # the camera whips back to the rule
+# 05 publish
+FOLD = (14.45, 15.0)              # rule panel folds into its tile
+T_TILE = 15.0
+BROWSER_IN = (15.1, 15.6)
+TICKS = (15.5, 16.0, 16.5)        # umbrasec.dev, umbra-blue, detections
+READ = (16.75, 17.5)              # the page is read: its text bars fill
+T_LIVE = 17.5
+COLLAPSE = (18.5, 19.0)           # everything pulls into the dot
+# 06 end card
+DECODE_1 = (19.0, 19.5)
+DECODE_2 = (19.25, 19.75)
+DOT_UP = (19.0, 19.35)
+DOT_FALL = (19.65, 20.0)
+T_LAND = 20.0
+LOCKUP_IN = (20.3, 20.6)
+SWEEP = (20.6, 21.3)              # a light crosses the title
+FADE_OUT = (21.7, 22.0)
 
 
 def _rule_line_times() -> tuple[float, ...]:
@@ -102,7 +127,15 @@ RULE_LINE_T = _rule_line_times()
 
 # windows that get sub-frame motion blur
 FAST = ((1.05, 2.52), (2.85, 3.25), (5.0, 5.55), (6.0, 6.4), (7.5, 8.45),
-        (9.95, 10.55), (12.0, 12.55), (12.5, 12.9), (13.1, 13.55))
+        (PAN_OUT[0], PAN_OUT[1] + 0.1), (TO_LOCK[0], TO_LOCK[1] + 0.05),
+        (PAN_BACK[0], FOLD[1] + 0.05), (COLLAPSE[0], COLLAPSE[1] + 0.05),
+        (DOT_UP[0], DOT_UP[1] + 0.05), (DOT_FALL[0] - 0.05, T_LAND + 0.05))
+
+
+def pan(t: float) -> float:
+    """The camera's sideways move for "Exploited now": 0 on the rule, 1 on the
+    KEV wall one frame width to its right."""
+    return ease_in_out_cubic(prog(t, *PAN_OUT)) - ease_in_out_cubic(prog(t, *PAN_BACK))
 
 
 @dataclass(frozen=True)
@@ -117,11 +150,12 @@ class Event:
 def _events() -> tuple[Event, ...]:
     ev: list[Event] = []
     add = ev.append
-    # the bed: a soft kick on every beat up to the collapse, hats from 3.0 to 10.0
+    # the bed: a soft kick on every beat up to the collapse, hats from 3.0 to
+    # the end of "Exploited now"
     for i in range(int(COLLAPSE[0] / BEAT) + 1):
         t = i * BEAT
         add(Event(t, "kick", 0.0, 1.0 if i % 4 == 0 else 0.62))
-    for i in range(int(3.0 / BEAT), int(10.0 / BEAT)):
+    for i in range(int(3.0 / BEAT), int(SECTIONS[3].end / BEAT)):
         add(Event(i * BEAT + BEAT / 2, "hat", 0.25 if i % 2 else -0.25, 0.5))
     add(Event(T_POP, "pop"))
     add(Event(T_PING, "ping"))
@@ -147,6 +181,15 @@ def _events() -> tuple[Event, ...]:
     add(Event(T_MATCH, "match"))
     add(Event(COUNT[0] + 0.02, "purr"))
     add(Event(T_CONFIRM, "confirm"))
+    # exploited now: voices from the kit above, nothing new
+    add(Event(PAN_OUT[0], "whoosh", 0.5, 0.7, 3))
+    add(Event(WALL_IN[0] + 0.05, "slide", 0.3, 0.6))
+    for i, t in enumerate(SCAN_TICKS):
+        add(Event(t, "hop", -0.4 + 0.1 * i, 0.5, i % 5))
+    add(Event(T_KEV_LOCK, "lock", 0.0, 0.8))
+    add(Event(CARD_IN[0] + 0.02, "slide", 0.4, 0.6))
+    add(Event(T_TIER, "tick", 0.4, 0.8, 1))
+    add(Event(PAN_BACK[0], "whoosh", -0.4, 0.7, 4))
     add(Event(FOLD[0], "whoosh", 0.4, 0.8, 2))
     add(Event(T_TILE, "impact", 0.3, 1.0))
     for i, t in enumerate(TICKS):

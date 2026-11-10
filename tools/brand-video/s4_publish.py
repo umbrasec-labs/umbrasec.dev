@@ -1,9 +1,10 @@
-"""04 Publish, 10.0 - 12.5 s: the rule folds into its tile and the write-up goes live.
+"""05 Publish, 14.5 - 19.0 s: the rule folds into its tile and the write-up goes live.
 
-Storyboard frame 04. The rule panel folds into the T1552.001 tile, which flies
-into its slot in the 29-tile sigma-pack grid; three ticks land for the places a
-rule change reaches; the camera pulls back to the live article; then the whole
-page collapses into the orange dot.
+Storyboard frame 04. Back from the KEV wall, the rule panel folds into the
+T1552.001 tile, which flies into its slot in the sigma-pack grid; three ticks
+land, one a beat, for the places a rule change reaches; the camera pulls back
+to the article, its text bars fill as it is read, and LIVE lands with a light
+across the page; then the whole page collapses into the orange dot.
 """
 from __future__ import annotations
 
@@ -28,8 +29,10 @@ TILE_H, TILE_GAP, TILE_PX = d.cq(2.7), d.cq(0.45), d.cq(0.7)   # tile IDs are te
 DEST_TOP, DEST_GAP, DEST_NAME = d.cq(1.7), d.cq(0.75), d.cq(9.5)
 DESTS = (("umbrasec.dev", "write-up and pack"), ("umbra-blue", "skills synced"),
          ("detections", "claims relocked"))
-SQUASH = (tl.FOLD[0], 10.2)           # the panel folds down to a strip
-FLY = (10.2, tl.T_TILE)               # the strip flies into its slot as the tile
+SQUASH = (tl.FOLD[0], tl.FOLD[0] + 0.25)   # the panel folds down to a strip
+FLY = (SQUASH[1], tl.T_TILE)               # the strip flies into its slot as the tile
+LEAVE = (tl.COLLAPSE[0], tl.COLLAPSE[0] + 0.4)   # the backlight goes with the collapse
+SHINE = (tl.T_LIVE, tl.T_LIVE + 0.7)       # the light that crosses the page as it goes live
 DOT_REST = d.cq(0.6)
 DOT_END = d.cq(1.5)
 
@@ -220,10 +223,21 @@ def _browser(ctx, t: float, B) -> None:
     d.text(ctx, B["eyebrow"], il, B["eyebrow_base"], family=d.MONO, px=TXT_PX, weight=500,
            color=d.ACCENT, tracking=TRACK)
     d.draw_paragraph(ctx, B["title"], il, B["title_top"], color=d.TEXT)
-    for bx, by, bw in B["bars"]:
+    n = len(B["bars"])
+    for i, (bx, by, bw) in enumerate(B["bars"]):
         d.round_rect(ctx, bx, by, bw, d.cq(0.5), d.cq(0.25))
         ctx.set_source_rgb(*d.BAR)
         ctx.fill()
+        # read, one bar after the other
+        r = tl.ease_in_out_cubic(tl.clamp01(tl.prog(t, *tl.READ) * n - i))
+        if r > 0:
+            ctx.save()
+            ctx.rectangle(bx, by, bw * r, d.cq(0.5))
+            ctx.clip()
+            d.round_rect(ctx, bx, by, bw, d.cq(0.5), d.cq(0.25))
+            ctx.set_source_rgb(*d.LINE_HI)
+            ctx.fill()
+            ctx.restore()
     d.round_rect(ctx, il + 0.5, round(B["mini_top"]) + 0.5, B["inner"] - 1, B["mini_h"] - 1,
                  d.cq(0.5))
     ctx.set_source_rgb(*d.BG)
@@ -245,6 +259,12 @@ def _browser(ctx, t: float, B) -> None:
         ctx.fill()
         d.text(ctx, "LIVE", il + LIVE_DOT + d.cq(0.6), B["live_base"], family=d.MONO,
                px=TXT_PX, weight=500, color=d.SAGE, alpha=lk, tracking=TRACK)
+    def lit(g):
+        d.round_rect(g, l + 0.5, tp + 0.5, w - 1, h - 1, d.cq(0.8))
+        g.set_source_rgba(1, 1, 1, 0.09)
+        g.fill()
+    d.light_sweep(ctx, tl.ease_in_out_cubic(tl.prog(t, *SHINE)), (l, tp, w, h), lit,
+                  width=d.cq(12))
     ctx.pop_group_to_source()
     ctx.paint_with_alpha(k)
     ctx.restore()
@@ -364,14 +384,14 @@ def _collapsed(ctx, t: float, c, fn) -> None:
     ctx.push_group()
     fn(ctx)
     ctx.pop_group_to_source()
-    ctx.paint_with_alpha(1 - tl.ease_in_cubic(tl.prog(t, 12.2, tl.COLLAPSE[1])))
+    ctx.paint_with_alpha(1 - tl.ease_in_cubic(tl.prog(t, tl.COLLAPSE[0] + 0.2, tl.COLLAPSE[1])))
     ctx.restore()
 
 
 def draw(ctx, t: float, c) -> None:
     if t < tl.FOLD[0] or t > tl.COLLAPSE[1]:
         return
-    a = tl.prog(t, tl.FOLD[0], tl.FOLD[0] + 0.5) * (1 - tl.prog(t, 12.0, 12.4))
+    a = tl.prog(t, tl.FOLD[0], tl.FOLD[0] + 0.5) * (1 - tl.prog(t, *LEAVE))
     d.backlight(ctx, 0.62 * W, 0.4 * H, 0.13 * a)   # storyboard --gx:62% --gy:40%
     _collapsed(ctx, t, c, lambda g: _scene(g, t, c))
 

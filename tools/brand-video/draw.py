@@ -40,6 +40,19 @@ def screen(ctx: cairo.Context) -> None:
     ctx.set_matrix(cairo.Matrix(xx=tl.SCALE, yy=tl.SCALE))
 
 
+# The camera's sideways offset for the section being drawn, in layout pixels.
+# compose sets it around each section; the glow and shadow passes, which draw
+# on surfaces of their own, read it so their light moves with the section.
+CAM_X = 0.0
+
+
+def scene(ctx: cairo.Context, cam_x: float = 0.0) -> None:
+    """Layout space as one section sees it: the screen, moved by the camera."""
+    global CAM_X
+    CAM_X = cam_x
+    ctx.set_matrix(cairo.Matrix(xx=tl.SCALE, yy=tl.SCALE, x0=cam_x * tl.SCALE))
+
+
 def cq(v: float) -> float:
     """Storyboard container units to film pixels."""
     return v * tl.W / 100
@@ -244,11 +257,12 @@ def check(ctx: cairo.Context, x: float, y: float, size: float, color: Sequence[f
 
 
 def grid(ctx: cairo.Context, alpha: float, *, cell: float = 48.0, scale: float = 1.0,
-         cx: float = tl.W / 2, cy: float = tl.H / 2) -> None:
+         cx: float = tl.W / 2, cy: float = tl.H / 2, dx: float = 0.0) -> None:
     """The umbra grid in screen space: 1 px orange lines every `cell` px.
 
     With scale 1 the lines sit on whole pixels, so a still grid never crawls;
-    scale > 1 grows it about (cx, cy) for camera pushes.
+    scale > 1 grows it about (cx, cy) for camera pushes. dx slides it sideways
+    for a camera pan (it is far away, so it moves less than the scenes).
     """
     if alpha <= 0:
         return
@@ -258,7 +272,9 @@ def grid(ctx: cairo.Context, alpha: float, *, cell: float = 48.0, scale: float =
         # output pixels, so the 1 px lines stay sharp at any output size
         ctx.identity_matrix()
         ctx.set_line_width(1.0)
-        xs = [round(k * cell * tl.SCALE) - 0.5 for k in range(1, int(tl.W / cell) + 1)]
+        off = dx % cell
+        xs = [round((k * cell + off) * tl.SCALE) - 0.5 for k in range(0 if off else 1,
+                                                                  int(tl.W / cell) + 1)]
         ys = [round(k * cell * tl.SCALE) - 0.5 for k in range(1, int(tl.H / cell) + 1)]
         w, h = tl.OUT_W, tl.OUT_H
     else:
@@ -386,6 +402,7 @@ def soft_glow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
     small = cairo.ImageSurface(cairo.FORMAT_ARGB32, sw, sh)
     sc = cairo.Context(small)
     sc.scale(1 / down, 1 / down)
+    sc.translate(CAM_X, 0)
     draw_fn(sc)
     for _ in range(passes):
         small = _box_blur(small, radius)
@@ -432,14 +449,15 @@ def _noise_tiles() -> list[tuple[bytearray, cairo.ImageSurface]]:
 
 
 def grain(ctx: cairo.Context, t: float, amount: float = 0.03, size: float = 1.5) -> None:
-    """Film grain from pre-made noise tiles: a light and a dark pass, new each frame.
+    """Film grain from pre-made noise tiles: a light and a dark pass, new on
+    every tick (tl.TICK a second, not every frame at 60 fps).
 
     It also dithers the glows so their gradients do not band after H.264.
     """
     if amount <= 0:
         return
     tiles = _noise_tiles()
-    f = int(round(t * tl.FPS))
+    f = int(t * tl.TICK + 1e-6)
     rng = random.Random(f * 7919 + 17)
     ctx.save()
     screen(ctx)
@@ -551,7 +569,7 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
     top = css_baseline(cq(3.0), family=MONO, px=HUD_PX, line_height=1.0, weight=500)
     bottom = css_baseline(H - cq(3.0) - HUD_PX, family=MONO, px=HUD_PX, line_height=1.0, weight=500)
     end = section.key == "end"
-    leave = 1.0 - tl.ease_in_out_cubic(tl.prog(t, 12.5, 12.8)) if end else 1.0
+    leave = 1.0 - tl.ease_in_out_cubic(tl.prog(t, section.start, section.start + 0.3)) if end else 1.0
     # title
     if leave > 0:
         _hud_text(ctx, "UMBRASEC · trace → rule", cq(3.4), top, DIM, alpha * leave)
@@ -569,7 +587,7 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
     if leave > 0:
         n = tl.SECTIONS.index(section) + 1
         label = scramble(section.label.upper(), tl.prog(t, section.start, section.start + 0.3),
-                         int(t * tl.FPS))
+                         int(t * tl.TICK + 1e-6))
         nw, _ = _hud_text(ctx, f"{n:02d}", cq(3.4), bottom, ACCENT, alpha * leave)
         _hud_text(ctx, f" · {label}", cq(3.4) + nw, bottom, MUTED, alpha * leave)
     # progress bar
@@ -581,6 +599,73 @@ def hud(ctx: cairo.Context, t: float, section: tl.Section, *, alpha: float = 1.0
     ctx.rectangle(bx, by, bw * tl.clamp01(t / tl.DURATION), bh)
     ctx.set_source_rgba(*ACCENT, alpha)
     ctx.fill()
+    ctx.restore()
+
+
+def streak(ctx: cairo.Context, x: float, y: float, length: float, alpha: float, *,
+           color: Sequence[float] = ACCENT, width: float = 2.0) -> None:
+    """A thin horizontal flare through (x, y), brightest at the centre: the
+    light a hard hit throws. Draw it in a glow pass and it blooms."""
+    if alpha <= 0 or length <= 0:
+        return
+    g = cairo.LinearGradient(x - length / 2, 0, x + length / 2, 0)
+    g.add_color_stop_rgba(0.0, *color, 0.0)
+    g.add_color_stop_rgba(0.5, *color, alpha)
+    g.add_color_stop_rgba(1.0, *color, 0.0)
+    ctx.save()
+    ctx.rectangle(x - length / 2, y - width / 2, length, width)
+    ctx.set_source(g)
+    ctx.fill()
+    ctx.restore()
+
+
+def light_sweep(ctx: cairo.Context, k: float, box: tuple[float, float, float, float],
+                draw_fn: Callable[[cairo.Context], None], *, width: float = cq(7),
+                lean: float = 0.35) -> None:
+    """A leaning band of light crossing box (x, y, w, h) left to right as k
+    goes 0 -> 1. draw_fn draws the lit copy of what the band crosses; it shows
+    only inside the band, strongest along its middle and soft at both edges."""
+    if not 0 < k < 1:
+        return
+    x, y, w, h = box
+    cx = tl.lerp(x - width - lean * h, x + w, k)
+    # the gradient runs across the band, at right angles to its leaning edges
+    n = math.hypot(h, lean * h)
+    across = width * h / n
+    g = cairo.LinearGradient(cx, y + h, cx + across * h / n, y + h + across * lean * h / n)
+    g.add_color_stop_rgba(0.0, 0, 0, 0, 0.0)
+    g.add_color_stop_rgba(0.5, 0, 0, 0, 1.0)
+    g.add_color_stop_rgba(1.0, 0, 0, 0, 0.0)
+    ctx.save()
+    ctx.rectangle(x, y, w, h)
+    ctx.clip()
+    ctx.push_group()
+    draw_fn(ctx)
+    ctx.pop_group_to_source()
+    ctx.mask(g)
+    ctx.restore()
+
+
+_DUST: list[tuple[float, float, float, float, float]] = []
+
+
+def dust(ctx: cairo.Context, t: float, alpha: float, *, dx: float = 0.0) -> None:
+    """A few motes close to the lens, for depth: they drift slowly and move
+    more than the scenes when the camera pans (dx)."""
+    if alpha <= 0:
+        return
+    if not _DUST:
+        rng = random.Random(22110)
+        for _ in range(46):
+            _DUST.append((rng.uniform(0, tl.W), rng.uniform(0, tl.H), rng.uniform(0.8, 2.2),
+                          rng.uniform(0.25, 1.0), rng.uniform(0, 2 * math.pi)))
+    ctx.save()
+    for x, y, r, a, ph in _DUST:
+        px = (x + dx + 9 * t * (0.4 + a)) % (tl.W + 40) - 20
+        py = y + 6 * math.sin(ph + 0.5 * t)
+        ctx.arc(px, py, r, 0, 2 * math.pi)
+        ctx.set_source_rgba(*KHAKI, alpha * a)
+        ctx.fill()
     ctx.restore()
 
 
@@ -787,7 +872,7 @@ def soft_shadow(ctx: cairo.Context, draw_fn: Callable[[cairo.Context], None], *,
     small = cairo.ImageSurface(cairo.FORMAT_ARGB32, tl.W // down + 1, tl.H // down + 1)
     sc = cairo.Context(small)
     sc.scale(1 / down, 1 / down)
-    sc.translate(dx, dy)
+    sc.translate(CAM_X + dx, dy)
     sc.set_source_rgba(0, 0, 0, 1)
     draw_fn(sc)
     for _ in range(passes):

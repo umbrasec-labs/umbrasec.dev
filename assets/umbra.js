@@ -486,8 +486,8 @@
     // where the film draws its title (tools/brand-video s5_end.layout, 1920 x 1080);
     // tools/brand-video/test_site.py fails if a re-render moves it
     const END = { w: 1920, left: 379.54, top: 322.69, px: 138.24, lh: 0.94 };
-    const LANDS_FROM = 13.25; // s: the title has decoded; a close from here lands it
-    const HANDOFF = 14.2;     // s: title resolved and lockup in, before the film fades
+    const LANDS_FROM = 19.75; // s: the title has decoded; a close from here lands it
+    const HANDOFF = 20.7;     // s: title resolved and lockup in, before the film fades
     const FLY = 900, STAGGER = 35;
     const STALL = 2000;       // ms on one frame while open (stalled, paused): close
     const html = document.documentElement;

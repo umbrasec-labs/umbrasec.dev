@@ -34,7 +34,7 @@ TRIM=(
   "tools/local-deploy"
   "tools/local-sync"
   "tools/site-build"
-  "tools/brand-video"       # renderer for assets/video/brand-15s.mp4; source only
+  "tools/brand-video"       # renderer for assets/video/brand-film.mp4; source only
   "research/articles.json"
   "assets/og.svg"          # design source for og.png; nothing links to it
 )

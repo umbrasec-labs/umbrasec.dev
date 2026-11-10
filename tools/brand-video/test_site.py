@@ -35,13 +35,21 @@ class SiteEmbedTest(unittest.TestCase):
     def test_video_is_lazy_muted_and_described(self):
         v = re.search(r"<video[^>]*>", self.fig).group(0)
         for attr in ("data-film-video", "muted", "loop", "playsinline", 'preload="none"',
-                     'poster="assets/video/brand-15s-poster.jpg"',
+                     'poster="assets/video/brand-film-poster.jpg"',
                      'aria-describedby="film-desc"'):
             self.assertIn(attr, v)
         self.assertNotIn("autoplay", v)
-        self.assertIn('src="assets/video/brand-15s.mp4"', self.fig)
-        for f in ("brand-15s.mp4", "brand-15s-poster.jpg"):
+        self.assertIn('src="assets/video/brand-film.mp4"', self.fig)
+        for f in ("brand-film.mp4", "brand-film-poster.jpg"):
             self.assertTrue((SITE / "assets" / "video" / f).is_file(), f)
+
+    def test_no_file_or_page_still_names_the_old_film(self):
+        video = SITE / "assets" / "video"
+        self.assertEqual(sorted(p.name for p in video.iterdir()),
+                         ["brand-film-poster.jpg", "brand-film.mp4"])
+        for page in ("index.html", "assets/umbra.js", "assets/umbra.css",
+                     "tools/local-deploy/stage.sh", "tools/brand-video/README.md"):
+            self.assertNotIn("brand-15s", (SITE / page).read_text(encoding="utf-8"), page)
 
     def test_toggle_button(self):
         b = re.search(r"<button[^>]*data-film-toggle[^>]*>", self.fig).group(0)
@@ -58,8 +66,22 @@ class SiteEmbedTest(unittest.TestCase):
         cap = re.search(r'<figcaption id="film-desc"[^>]*>(.*?)</figcaption>', self.fig, re.S)
         text = re.sub(r"<[^>]+>", "", cap.group(1))
         self.assertNotRegex(text, r"CVE-\d")
-        rendered = date.fromisoformat(json.loads((HERE / "facts.json").read_text())["rendered"])
-        self.assertIn(f"as of {as_of(rendered)}", text)
+        facts = json.loads((HERE / "facts.json").read_text())
+        rendered = date.fromisoformat(facts["rendered"])
+        self.assertIn(f"Figures as of {as_of(rendered)}", text)
+        # the KEV wall is a dated snapshot of its own, and the caption says which day
+        self.assertIn(f"the exploited-now list as of {as_of(date.fromisoformat(facts['kev_date']))}",
+                      text)
+        # the caption does not promise more than the film shows
+        self.assertIn("partial rule", text)
+        self.assertIn("most of it not covered", text)
+
+    def test_caption_and_intro_say_how_long_the_film_is(self):
+        import timeline as tl
+        cap = re.search(r'<figcaption id="film-desc"[^>]*>(.*?)</figcaption>', self.fig, re.S)
+        self.assertIn(f"The method in {tl.DURATION:g} seconds", cap.group(1))
+        intro = re.search(r'<div class="intro"[^>]*>', self.html).group(0)
+        self.assertIn(f'aria-label="Intro: the method in {tl.DURATION:g} seconds"', intro)
 
 
 class IntroTest(unittest.TestCase):
@@ -83,7 +105,7 @@ class IntroTest(unittest.TestCase):
         for attr in ("muted", "playsinline", 'preload="none"'):
             self.assertIn(attr, v)
         self.assertNotIn("autoplay", v)
-        self.assertIn('src="assets/video/brand-15s.mp4"', self.intro)
+        self.assertIn('src="assets/video/brand-film.mp4"', self.intro)
 
     def test_intro_buttons(self):
         sound = re.search(r"<button[^>]*data-intro-sound[^>]*>", self.intro).group(0)
@@ -115,10 +137,14 @@ class IntroTest(unittest.TestCase):
         t = float(re.search(r"const HANDOFF = ([\d.]+)", self.js).group(1))
         self.assertGreaterEqual(t, tl.LOCKUP_IN[1])
         self.assertLess(t, tl.FADE_OUT[0])
+        # the 22 s film: the same 0.1 s after the lockup as the first film had
+        self.assertEqual(t, 20.7)
+        self.assertAlmostEqual(t - tl.LOCKUP_IN[1], 0.1)
 
     def test_a_late_close_lands_the_title_only_once_it_has_decoded(self):
         import timeline as tl
         t = float(re.search(r"const LANDS_FROM = ([\d.]+)", self.js).group(1))
+        self.assertEqual(t, 19.75)
         self.assertGreaterEqual(t, tl.DECODE_2[1])
         self.assertLess(t, float(re.search(r"const HANDOFF = ([\d.]+)", self.js).group(1)))
 
