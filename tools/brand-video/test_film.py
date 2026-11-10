@@ -19,16 +19,24 @@ class FramesTest(unittest.TestCase):
         import hashlib
         import timeline as tl
         c = content.load(SITE, SITE.parent / "detections")
+        sha = lambda gen: [hashlib.sha256(f).hexdigest() for f in gen]
+        pool = render.workers(c, 3)
         try:
             tl.set_output(480, 270)   # small frames: this is about order, not pixels
-            sha = lambda gen: [hashlib.sha256(f).hexdigest() for f in gen]
-            serial = sha(render._frames(c, 1, 12))
-            parallel = sha(render._frames(c, 3, 12))
+            serial = sha(render._frames(None, 1, 12))
+            parallel = sha(render._frames(pool, 3, 12))
+            # the same workers then render another size, as they do for the master
+            tl.set_output(960, 540)
+            big_serial = sha(render._frames(None, 1, 4))
+            big_parallel = sha(render._frames(pool, 3, 4))
         finally:
+            pool.terminate()
+            pool.join()
             tl.set_output(2560, 1440)
-        self.assertEqual(len(serial), 12)
         self.assertEqual(len(set(serial)), 12)
         self.assertEqual(parallel, serial)
+        self.assertEqual(big_parallel, big_serial)
+        self.assertNotEqual(big_serial[0], serial[0])
 
     def test_frames_waiting_for_the_encoder_are_bounded(self):
         import timeline as tl

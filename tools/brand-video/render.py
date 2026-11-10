@@ -132,7 +132,12 @@ def check_master_dir(path: Path) -> Path:
 _CONTENT = None
 
 
-def _frame(i: int) -> bytes:
+def _frame(job: tuple[int, int, int]) -> bytes:
+    """Frame i at w x h. The size travels with the job, so one worker can
+    render the site copy and then the master."""
+    i, w, h = job
+    if (tl.OUT_W, tl.OUT_H) != (w, h):
+        tl.set_output(w, h)
     s = compose.frame(i / tl.FPS, _CONTENT)
     s.flush()
     return bytes(s.get_data())
@@ -145,33 +150,37 @@ def ahead(jobs: int) -> int:
     return 2 * max(1, jobs)
 
 
-def _frames(c, jobs: int, n: int | None = None):
-    """Every frame's raw bytes, in order, rendered by `jobs` processes. The
-    workers are forked, so they share the loaded content and the output size.
-    A new frame is only started when the encoder has taken one."""
+def workers(c, jobs: int):
+    """The processes that render frames, or None to render in this one. They
+    are forked once, before anything else starts a thread here: a second pool
+    forked later (for the master) can inherit a held lock and never wake."""
     global _CONTENT
     _CONTENT = c
+    return multiprocessing.get_context("fork").Pool(jobs) if jobs > 1 else None
+
+
+def _frames(pool, jobs: int, n: int | None = None):
+    """Every frame's raw bytes at the current output size, in order. A new
+    frame is only started when the encoder has taken one."""
     n = tl.FRAMES if n is None else n
-    if jobs <= 1:
-        for i in range(n):
-            yield _frame(i)
-            if i % tl.FPS == tl.FPS - 1:
-                print(f"  {i + 1}/{n} frames", file=sys.stderr, flush=True)
-        return
-    pool = multiprocessing.get_context("fork").Pool(jobs)
+    w, h = tl.OUT_W, tl.OUT_H
     waiting: deque = deque()
     nxt = 0
     try:
         for i in range(n):
-            while nxt < n and len(waiting) < ahead(jobs):
-                waiting.append(pool.apply_async(_frame, (nxt,)))
-                nxt += 1
-            yield waiting.popleft().get()
+            if pool is None:
+                f = _frame((i, w, h))
+            else:
+                while nxt < n and len(waiting) < ahead(jobs):
+                    waiting.append(pool.apply_async(_frame, ((nxt, w, h),)))
+                    nxt += 1
+                f = waiting.popleft().get()
+            yield f
             if i % tl.FPS == tl.FPS - 1:
-                print(f"  {i + 1}/{n} frames", file=sys.stderr, flush=True)
+                print(f"  {i + 1}/{n} frames at {w} x {h}", file=sys.stderr, flush=True)
     finally:
-        pool.terminate()
-        pool.join()
+        for r in waiting:   # frames already started for an encoder that stopped
+            r.wait()
 
 
 def _wav(path: Path) -> None:
@@ -187,8 +196,9 @@ def film(out: Path, *, jobs: int = 1, master: Path | None = None) -> dict:
     wav = out / "brand-film.wav"
     _wav(wav)
     size = (tl.OUT_W, tl.OUT_H)
+    pool = workers(c, jobs)
     try:
-        encode.film(_frames(c, jobs), wav, out / SITE_NAME, bps=encode.SITE_BPS,
+        encode.film(_frames(pool, jobs), wav, out / SITE_NAME, bps=encode.SITE_BPS,
                     audio_bps=encode.SITE_AUDIO_BPS)
         weight = (out / SITE_NAME).stat().st_size
         if weight > encode.SITE_MAX_BYTES:
@@ -206,9 +216,12 @@ def film(out: Path, *, jobs: int = 1, master: Path | None = None) -> dict:
         if master is not None:
             master.mkdir(parents=True, exist_ok=True)
             tl.set_output(tl.MASTER_W, tl.MASTER_H)
-            encode.film(_frames(c, jobs), wav, master / master_name(), bps=encode.MASTER_BPS,
+            encode.film(_frames(pool, jobs), wav, master / master_name(), bps=encode.MASTER_BPS,
                         audio_bps=encode.MASTER_AUDIO_BPS)
     finally:
+        if pool:
+            pool.terminate()
+            pool.join()
         tl.set_output(*size)
         wav.unlink(missing_ok=True)
     return f
