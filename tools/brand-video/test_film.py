@@ -9,6 +9,34 @@ import content
 import render
 
 SITE = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
+
+# 12 small frames from three workers match the same frames rendered here, and
+# the same workers then render another size, as they do for the master.
+_ORDER = """
+import hashlib, sys
+from pathlib import Path
+import content, render, timeline as tl
+site = Path.cwd().parents[1]
+c = content.load(site, site.parent / "detections")
+sha = lambda gen: [hashlib.sha256(f).hexdigest() for f in gen]
+pool = render.workers(c, 3)
+try:
+    tl.set_output(480, 270)
+    parallel = sha(render._frames(pool, 3, 12))
+    serial = sha(render._frames(None, 1, 12))
+    tl.set_output(960, 540)
+    big_parallel = sha(render._frames(pool, 3, 4))
+    big_serial = sha(render._frames(None, 1, 4))
+finally:
+    pool.terminate()
+    pool.join()
+assert len(set(serial)) == 12, "frames repeat"
+assert parallel == serial, "order or pixels differ"
+assert big_parallel == big_serial, "the second size differs"
+assert big_serial[0] != serial[0]
+print("same order, both sizes")
+"""
 
 
 class FramesTest(unittest.TestCase):
@@ -16,27 +44,15 @@ class FramesTest(unittest.TestCase):
     runs far ahead of the encoder."""
 
     def test_parallel_frames_are_the_serial_frames_in_order(self):
-        import hashlib
-        import timeline as tl
-        c = content.load(SITE, SITE.parent / "detections")
-        sha = lambda gen: [hashlib.sha256(f).hexdigest() for f in gen]
-        pool = render.workers(c, 3)
-        try:
-            tl.set_output(480, 270)   # small frames: this is about order, not pixels
-            serial = sha(render._frames(None, 1, 12))
-            parallel = sha(render._frames(pool, 3, 12))
-            # the same workers then render another size, as they do for the master
-            tl.set_output(960, 540)
-            big_serial = sha(render._frames(None, 1, 4))
-            big_parallel = sha(render._frames(pool, 3, 4))
-        finally:
-            pool.terminate()
-            pool.join()
-            tl.set_output(2560, 1440)
-        self.assertEqual(len(set(serial)), 12)
-        self.assertEqual(parallel, serial)
-        self.assertEqual(big_parallel, big_serial)
-        self.assertNotEqual(big_serial[0], serial[0])
+        # In a process of its own, as render.py runs it: the workers are forked
+        # before this process has drawn anything. Forking from a test process
+        # that has already rendered frames can inherit a held lock and hang.
+        import subprocess
+        import sys
+        r = subprocess.run([sys.executable, "-c", _ORDER], cwd=HERE, capture_output=True,
+                           text=True, timeout=240)
+        self.assertEqual(r.returncode, 0, r.stderr[-600:])
+        self.assertEqual(r.stdout.strip(), "same order, both sizes")
 
     def test_frames_waiting_for_the_encoder_are_bounded(self):
         import timeline as tl

@@ -152,8 +152,9 @@ def ahead(jobs: int) -> int:
 
 def workers(c, jobs: int):
     """The processes that render frames, or None to render in this one. They
-    are forked once, before anything else starts a thread here: a second pool
-    forked later (for the master) can inherit a held lock and never wake."""
+    are forked once, before this process draws a frame or starts a thread: a
+    pool forked later (a second one for the master, say) can inherit a held
+    lock and never wake."""
     global _CONTENT
     _CONTENT = c
     return multiprocessing.get_context("fork").Pool(jobs) if jobs > 1 else None
