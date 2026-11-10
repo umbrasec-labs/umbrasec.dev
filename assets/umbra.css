@@ -1135,7 +1135,7 @@ nav[aria-label="Site"] .nav-link { white-space: nowrap; }
     .exploited tr.x, .exploited tr.x td { display: block; }
 }
 
-/* ── Home: the 15 s brand film in "How this project works" ───────── */
+/* ── Home: the brand film in "How this project works" ───────── */
 .film { margin-left: 0; margin-right: 0; }
 .film-frame {
     position: relative; aspect-ratio: 16 / 9; overflow: hidden;

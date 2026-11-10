@@ -7,9 +7,11 @@ writes one PNG per time and DIR/sheet.png.
 
 The film, its sound, the poster and the facts it shows:
     python3 tools/brand-video/render.py film --out DIR
-writes DIR/umbrasec-brand-15s.mp4 (master, with sound), DIR/brand-15s.mp4 (the
-site copy, 128 kbps sound), DIR/brand-15s-poster.jpg and DIR/facts.json, and keeps
-facts.json here too. Later:
+writes DIR/brand-film.mp4 (the site copy, 1440p, 128 kbps sound),
+DIR/brand-film-poster.jpg and DIR/facts.json, and keeps facts.json here too.
+Add --master to also render the 4K master, a second pass, into
+tools/brand-video/out/ (git-ignored and never deployed) or the folder you
+name; a folder inside the repo that git does not ignore is refused. Later:
     python3 tools/brand-video/render.py drift
 lists figures on screen that have changed in the repos since that render.
 
@@ -20,6 +22,10 @@ if detections/out has none (see README.md).
 from __future__ import annotations
 
 import argparse
+import multiprocessing
+from collections import deque
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -88,64 +94,172 @@ def sheet(shots, dest: Path, cols: int = 3) -> None:
 
 FACTS = HERE / "facts.json"
 FIGURES = ("claims_executed", "claims_passed", "pack_sigma", "pack_kql", "kev_total",
-           "technique", "article_title")
+           "technique", "article_title",
+           # "Exploited now": the snapshot's day, the tier counts, every CVE on
+           # the wall, and the card
+           "kev_date", "kev_days", "kev_tiers", "kev_wall", "kev_cve", "kev_tier",
+           "kev_note", "kev_rule", "kev_claims")
+SITE_NAME, POSTER_NAME = "brand-film.mp4", "brand-film-poster.jpg"
+MASTER_DIR = HERE / "out"            # git-ignored (.gitignore) and inside a folder stage.sh trims
+POSTER_T = tl.FADE_OUT[0] - 0.3      # the end card, after the light has crossed it
+
+
+def master_name() -> str:
+    return f"umbrasec-brand-film-{tl.MASTER_H}p{tl.FPS}.mp4"
 
 
 def facts(c) -> dict:
-    """The figures the film shows, and the day it was rendered."""
-    return {"rendered": date.today().isoformat(), **{k: getattr(c, k) for k in FIGURES}}
+    """The figures the film shows, and the day it was rendered (JSON types)."""
+    f = {"rendered": date.today().isoformat(), **{k: getattr(c, k) for k in FIGURES}}
+    return json.loads(json.dumps(f))
 
 
-def film(out: Path) -> dict:
+def check_master_dir(path: Path) -> Path:
+    """The master must never be committed or served: a folder inside the
+    repo has to be one git ignores. Anything outside the repo is fine."""
+    path = path.resolve()
+    if SITE.resolve() not in path.parents and path != SITE.resolve():
+        return path
+    r = subprocess.run(["git", "-C", str(SITE), "check-ignore", "-q", str(path / master_name())],
+                       capture_output=True)
+    if r.returncode != 0:
+        raise SystemExit(f"render: {path} is inside the repo and not git-ignored; the 4K "
+                         f"master must never be committed. Use {MASTER_DIR} or a folder "
+                         "outside the repo.")
+    return path
+
+
+_CONTENT = None
+
+
+def _frame(i: int) -> bytes:
+    s = compose.frame(i / tl.FPS, _CONTENT)
+    s.flush()
+    return bytes(s.get_data())
+
+
+def ahead(jobs: int) -> int:
+    """How many frames may be rendered and waiting for the encoder at once. A
+    4K frame is 33 MB, and the encoder is slower than the renderers, so
+    without this bound the finished frames pile up until memory runs out."""
+    return 2 * max(1, jobs)
+
+
+def _frames(c, jobs: int, n: int | None = None):
+    """Every frame's raw bytes, in order, rendered by `jobs` processes. The
+    workers are forked, so they share the loaded content and the output size.
+    A new frame is only started when the encoder has taken one."""
+    global _CONTENT
+    _CONTENT = c
+    n = tl.FRAMES if n is None else n
+    if jobs <= 1:
+        for i in range(n):
+            yield _frame(i)
+            if i % tl.FPS == tl.FPS - 1:
+                print(f"  {i + 1}/{n} frames", file=sys.stderr, flush=True)
+        return
+    pool = multiprocessing.get_context("fork").Pool(jobs)
+    waiting: deque = deque()
+    nxt = 0
+    try:
+        for i in range(n):
+            while nxt < n and len(waiting) < ahead(jobs):
+                waiting.append(pool.apply_async(_frame, (nxt,)))
+                nxt += 1
+            yield waiting.popleft().get()
+            if i % tl.FPS == tl.FPS - 1:
+                print(f"  {i + 1}/{n} frames", file=sys.stderr, flush=True)
+    finally:
+        pool.terminate()
+        pool.join()
+
+
+def _wav(path: Path) -> None:
+    l, r = sound.master(*sound.synth(tl.EVENTS, tl.DURATION))
+    sound.write_wav(path, l, r)
+
+
+def film(out: Path, *, jobs: int = 1, master: Path | None = None) -> dict:
+    if master is not None:
+        master = check_master_dir(master)
     c = content.load(SITE, DETECTIONS)
     out.mkdir(parents=True, exist_ok=True)
-    l, r = sound.master(*sound.synth(tl.EVENTS, tl.DURATION))
-    wav = out / "brand-15s.wav"
-    sound.write_wav(wav, l, r)
-
-    def frames():
-        for i in range(tl.FRAMES):
-            s = compose.frame(i / tl.FPS, c)
-            s.flush()
-            yield bytes(s.get_data())
-            if i % 30 == 29:
-                print(f"  {i + 1}/{tl.FRAMES} frames", file=sys.stderr, flush=True)
-    encode.film(frames(), wav, out / "umbrasec-brand-15s.mp4", out / "brand-15s.mp4")
-    png = out / "brand-15s-poster.png"
-    compose.frame(14.5, c, grain=False).write_to_png(str(png))
-    encode.poster(png, out / "brand-15s-poster.jpg")
-    png.unlink()
-    wav.unlink()
-    f = facts(c)
-    text = json.dumps(f, indent=2) + "\n"
-    (out / "facts.json").write_text(text)
-    FACTS.write_text(text)
+    wav = out / "brand-film.wav"
+    _wav(wav)
+    size = (tl.OUT_W, tl.OUT_H)
+    try:
+        encode.film(_frames(c, jobs), wav, out / SITE_NAME, bps=encode.SITE_BPS,
+                    audio_bps=encode.SITE_AUDIO_BPS)
+        weight = (out / SITE_NAME).stat().st_size
+        if weight > encode.SITE_MAX_BYTES:
+            raise SystemExit(f"render: {SITE_NAME} is {weight:,} bytes, over the "
+                             f"{encode.SITE_MAX_BYTES:,} byte budget; lower encode.SITE_BPS")
+        png = out / "brand-film-poster.png"
+        compose.frame(POSTER_T, c, grain=False).write_to_png(str(png))
+        encode.poster(png, out / POSTER_NAME)
+        png.unlink()
+        # the facts belong to the site copy: written before the optional master
+        f = facts(c)
+        text = json.dumps(f, indent=2) + "\n"
+        (out / "facts.json").write_text(text)
+        FACTS.write_text(text)
+        if master is not None:
+            master.mkdir(parents=True, exist_ok=True)
+            tl.set_output(tl.MASTER_W, tl.MASTER_H)
+            encode.film(_frames(c, jobs), wav, master / master_name(), bps=encode.MASTER_BPS,
+                        audio_bps=encode.MASTER_AUDIO_BPS)
+    finally:
+        tl.set_output(*size)
+        wav.unlink(missing_ok=True)
     return f
 
 
-def resound(out: Path) -> list[Path]:
-    """New sound for the last render: the master and site copy in `out` keep
-    their picture (no figures change) and get a fresh soundtrack."""
-    l, r = sound.master(*sound.synth(tl.EVENTS, tl.DURATION))
-    wav = out / "brand-15s.wav"
-    sound.write_wav(wav, l, r)
+def resound(out: Path, master: Path = MASTER_DIR) -> list[Path]:
+    """New sound for the last render: the site copy in `out`, and the master
+    if there is one, keep their picture (no figures change) and get a fresh
+    soundtrack."""
+    wav = out / "brand-film.wav"
+    _wav(wav)
     done = []
-    for name, bps in (("umbrasec-brand-15s.mp4", encode.MASTER_AUDIO_BPS),
-                      ("brand-15s.mp4", encode.SITE_AUDIO_BPS)):
-        src, tmp = out / name, out / f"{name}.tmp"
+    for src, bps in ((out / SITE_NAME, encode.SITE_AUDIO_BPS),
+                     (master / master_name(), encode.MASTER_AUDIO_BPS)):
+        if not src.is_file():
+            continue
+        tmp = src.with_name(src.name + ".tmp")
         encode.resound(src, wav, tmp, bps)
         tmp.replace(src)
         done.append(src)
     wav.unlink()
+    if not done:
+        raise SystemExit(f"render: no {SITE_NAME} in {out}")
     return done
 
 
+def _short(v) -> str:
+    s = json.dumps(v)
+    return s if len(s) <= 90 else f"{s[:87]}..."
+
+
 def drift() -> list[str]:
-    """Figures on screen that no longer match the repos."""
+    """Figures on screen that no longer match the repos. For the wall it names
+    the CVEs that joined or left it, or changed tier."""
     then = json.loads(FACTS.read_text())
     now = facts(content.load(SITE, DETECTIONS))
-    return [f"{k}: film shows {then.get(k)!r}, repos now say {now[k]!r}"
-            for k in FIGURES if then.get(k) != now[k]]
+    out = []
+    for k in FIGURES:
+        if then.get(k) == now[k]:
+            continue
+        if k == "kev_wall" and isinstance(then.get(k), list):
+            was, new = dict(map(tuple, then[k])), dict(map(tuple, now[k]))
+            parts = [f"{len(new.keys() - was.keys())} joined", f"{len(was.keys() - new.keys())} left"]
+            moved = sorted(c for c in was.keys() & new.keys() if was[c] != new[c])
+            parts += [f"{c} is {new[c]} now, was {was[c]}" for c in moved]
+            if list(was) != list(new) and not (new.keys() ^ was.keys()):
+                parts.append("the order changed")
+            out.append(f"kev_wall: {', '.join(parts)}")
+        else:
+            out.append(f"{k}: film shows {_short(then.get(k))}, repos now say {_short(now[k])}")
+    return out
 
 
 def main(argv=None) -> int:
@@ -157,12 +271,18 @@ def main(argv=None) -> int:
     st.add_argument("--out", required=True, type=Path)
     fm = sub.add_parser("film", help="render the film, sound, poster and facts.json")
     fm.add_argument("--out", required=True, type=Path)
+    fm.add_argument("--jobs", type=int, default=os.cpu_count() or 1,
+                    help="processes that render frames (default: every core)")
+    fm.add_argument("--master", nargs="?", type=Path, const=MASTER_DIR, default=None,
+                    metavar="DIR", help=f"also render the 4K master, into DIR "
+                                        f"(default {MASTER_DIR.relative_to(SITE)}, git-ignored)")
     sd = sub.add_parser("sound", help="swap only the soundtrack of the films in --out")
     sd.add_argument("--out", required=True, type=Path)
     sub.add_parser("drift", help="list figures that changed since the last render")
     args = p.parse_args(argv)
     if args.cmd == "film":
-        print(json.dumps(film(args.out), indent=2))
+        f = film(args.out, jobs=args.jobs, master=args.master)
+        print(json.dumps({k: v for k, v in f.items() if k != "kev_wall"}, indent=2))
     if args.cmd == "sound":
         for path in resound(args.out):
             print(path)

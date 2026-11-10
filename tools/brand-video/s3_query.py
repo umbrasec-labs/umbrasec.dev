@@ -40,7 +40,7 @@ CLAIMS_IN = (8.2, 8.5)
 TYPE_DUR = 0.09                      # a rule line types out in about three frames
 STEP_MOVE = 0.09                     # the dot's step down the gutter
 TO_TRACE = (7.75, 8.0)               # the dot crosses to the event
-OUT = (9.95, 10.3)                   # event, claims, wire and MATCH leave as the rule folds
+OUT = (tl.FOLD[0], tl.FOLD[0] + 0.35)   # event, claims, wire and MATCH leave as the rule folds
 DOT_GUTTER, DOT_WIRE = d.cq(0.6), d.cq(0.75)
 CRED = ".aws/credentials"
 AGENT = "/.local/share/claude/versions/"
@@ -358,6 +358,8 @@ def _bloom(g, t: float, L, poses, confirm: float) -> None:
     out = _out(t)
     _wire(g, t, L, out, WIRE_W * 4)
     _match(g, t, L, out, glow_only=True)
+    # the match throws a short flare along the wire's level
+    d.streak(g, *L["match"], d.cq(26), 0.9 * _flash(t, tl.T_MATCH, 0.22) * out, width=5)
     for (name, mark), t0 in L["flashes"].items():
         dx, dy, a = trace_at if name == "trace" else rule_at
         f = _flash(t, t0) * a

@@ -1,10 +1,11 @@
-"""05 End card, 12.5 - 15.0 s: the dot becomes the full stop.
+"""06 End card, 19.0 - 22.0 s: the dot becomes the full stop.
 
 Storyboard frame 05. "Trace the technique." and "Forge the rule" decode in
 the site's own type; the dot rises out of the frame, falls back and lands as
-the full stop with a ripple, the letters dipping in a wave that runs back from
-it; the lockup fades up; everything fades to charcoal so the loop restarts on
-the dot popping on.
+the full stop with a ripple and a flare, the letters dipping in a wave that
+runs back from it; the lockup fades up over a line that draws in; a light
+crosses the title; everything fades to charcoal so the loop restarts on the
+dot popping on.
 """
 from __future__ import annotations
 
@@ -53,7 +54,8 @@ def layout() -> dict:
     xs = [left + x for x in d.char_xs(L2, family=d.DISPLAY, px=LINE_PX, weight=600,
                                       tracking=LINE_TRACK)]
     return dict(left=left, top=top, b1=b1, b2=b2, l2_right=left + w2, l2_base=b2, stop=stop,
-                xs=xs, lock_top=lock_top, word_w=word_w, url_w=url_w)
+                xs=xs, lock_top=lock_top, word_w=word_w, url_w=url_w, lock_w=lock_w,
+                w1=w1, lh=lh)
 
 
 def _fade(t: float) -> float:
@@ -61,7 +63,7 @@ def _fade(t: float) -> float:
 
 
 def _decode(t: float, s: str, window, seed: int) -> tuple[str, float]:
-    tf = round(t * tl.FPS) / tl.FPS   # one string per frame, so motion blur cannot ghost it
+    tf = int(t * tl.TICK + 1e-6) / tl.TICK   # one string per tick, so motion blur cannot ghost it
     return d.scramble(s, tl.prog(tf, *window), seed), tl.prog(t, window[0], window[0] + 0.12)
 
 
@@ -96,11 +98,12 @@ def draw(ctx, t: float, c) -> None:
     fade = _fade(t)
     if fade <= 0:
         return
-    d.backlight(ctx, 0.5 * W, 0.48 * H, 0.13 * tl.prog(t, 12.5, 13.0) * fade)
-    s1, a1 = _decode(t, L1, tl.DECODE_1, round(t * tl.FPS))
+    d.backlight(ctx, 0.5 * W, 0.48 * H, 0.13 * tl.prog(t, *tl.DECODE_1) * fade)
+    tick = int(t * tl.TICK + 1e-6)
+    s1, a1 = _decode(t, L1, tl.DECODE_1, tick)
     d.text(ctx, s1, L["left"], L["b1"], family=d.DISPLAY, px=LINE_PX, weight=600,
            color=d.TEXT, alpha=a1 * fade, tracking=LINE_TRACK)
-    s2, a2 = _decode(t, L2, tl.DECODE_2, round(t * tl.FPS) + 7)
+    s2, a2 = _decode(t, L2, tl.DECODE_2, tick + 7)
     if s2 == L2:   # resolved: letters dip one by one, running back from the stop
         n = len(L2)
         for i, ch in enumerate(L2):
@@ -111,6 +114,16 @@ def draw(ctx, t: float, c) -> None:
     else:
         d.text(ctx, s2, L["left"], L["b2"], family=d.DISPLAY, px=LINE_PX, weight=600,
                color=d.ACCENT, alpha=a2 * fade, tracking=LINE_TRACK)
+    # a light crosses both lines once the lockup is in
+    def lit(g):
+        d.text(g, L1, L["left"], L["b1"], family=d.DISPLAY, px=LINE_PX, weight=600,
+               color=(1.0, 1.0, 1.0), alpha=0.7 * fade, tracking=LINE_TRACK)
+        d.text(g, L2, L["left"], L["b2"], family=d.DISPLAY, px=LINE_PX, weight=600,
+               color=(1.0, 0.82, 0.62), alpha=0.75 * fade, tracking=LINE_TRACK)
+    d.light_sweep(ctx, tl.ease_in_out_cubic(tl.prog(t, *tl.SWEEP)),
+                  (L["left"] - d.cq(1), L["top"] - d.cq(1),
+                   max(L["w1"], L["l2_right"] - L["left"]) + d.cq(3), 2 * L["lh"] + d.cq(3)),
+                  lit, width=d.cq(11))
     # the ripple from the landing
     k = tl.prog(t, *RIPPLE)
     if 0 < k < 1:
@@ -120,6 +133,9 @@ def draw(ctx, t: float, c) -> None:
         ctx.set_line_width(1.0)
         ctx.set_source_rgba(*d.ACCENT, 0.9 * (1 - k) * fade)
         ctx.stroke()
+        # and its flare: a hairline through the stop that opens and dies
+        d.streak(ctx, x, y, d.cq(30) * tl.ease_out_cubic(tl.prog(k, 0, 0.45)),
+                 0.85 * (1 - tl.prog(k, 0, 0.45)) ** 2 * fade, width=1.5)
     # the lockup
     lk = tl.ease_out_cubic(tl.prog(t, *tl.LOCKUP_IN))
     if lk > 0:
@@ -141,10 +157,15 @@ def draw(ctx, t: float, c) -> None:
         base = d.css_baseline(mid - URL_PX / 2, family=d.MONO, px=URL_PX, line_height=1.0)
         d.text(ctx, "umbrasec.dev", x, base, family=d.MONO, px=URL_PX, color=d.MUTED, alpha=a,
                tracking=0.06)
+        # a hairline under the lockup draws in from the badge
+        u = tl.ease_out_cubic(tl.prog(t, tl.LOCKUP_IN[0], tl.LOCKUP_IN[1] + 0.4))
+        ctx.rectangle(L["left"], round(y0 + BADGE + d.cq(1.0)), L["lock_w"] * u, 1)
+        ctx.set_source_rgba(*d.ACCENT, 0.55 * a)
+        ctx.fill()
 
 
 def glow(ctx, t: float, c) -> None:
-    """The second line's orange blooms once it resolves."""
+    """The second line's orange blooms once it resolves; the landing throws a flare."""
     if t < tl.DECODE_2[1]:
         return
     L = layout()
@@ -152,6 +173,10 @@ def glow(ctx, t: float, c) -> None:
     if a > 0:
         d.text(ctx, L2, L["left"], L["b2"], family=d.DISPLAY, px=LINE_PX, weight=600,
                color=d.ACCENT, alpha=a, tracking=LINE_TRACK)
+    k = tl.prog(t, tl.T_LAND, tl.T_LAND + 0.45)
+    if 0 < k < 1:
+        x, y, _ = L["stop"]
+        d.streak(ctx, x, y, d.cq(34) * tl.ease_out_cubic(k), (1 - k) ** 2, width=6)
 
 
 def dot(t: float, c):

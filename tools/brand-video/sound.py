@@ -105,6 +105,12 @@ def _strike(base: float, dur: float, *, seed: int, thud: float) -> list[float]:
                 [thud * x for x in tone(260, 0.12, 0.03, to=140)])
 
 
+# The strike was tuned by ear at the first film's landing (13.5 s), and a
+# voice's noise is seeded from its cue time. Pinning that seed keeps the strike
+# sample for sample the same wherever the landing moves.
+ANVIL_SEED = 13517
+
+
 def anvil(*, seed: int) -> list[float]:
     """A light, bright smith's hammer on the landing: a G6 blow, the hammer's
     bounce a beat later, and a C major sparkle rising out of the ring."""
@@ -175,7 +181,7 @@ def voice(e: tl.Event) -> tuple[list[float], float]:
     if k == "decode":
         return [0.2 * x for x in tone(2093 + 60 * n, 0.03, 0.008)], 0.1
     if k == "bell":
-        return anvil(seed=s), 0.45
+        return anvil(seed=ANVIL_SEED), 0.45
     if k == "shimmer":
         return [0.2 * x for x in tone(2093, 0.9, 1, parts=((1, 1), (1.5, 0.5)),
                                       shape=lambda x: math.sin(math.pi * x))], 0.7
@@ -184,7 +190,7 @@ def voice(e: tl.Event) -> tuple[list[float], float]:
 
 def _pad(n: int, kicks: list[float]) -> list[float]:
     """A low chord under everything, ducked by each kick; it lifts to the end
-    card's chord at 12.5 s."""
+    card's chord as the end card starts."""
     a = ((55.0, 0.5), (110.0, 0.35), (164.81, 0.2), (220.0, 0.15), (329.63, 0.06))
     b = ((65.41, 0.5), (130.81, 0.35), (196.0, 0.2), (261.63, 0.15), (392.0, 0.06))
     out = [0.0] * n
@@ -194,7 +200,7 @@ def _pad(n: int, kicks: list[float]) -> list[float]:
         i0 = _n(tk)
         for i in range(i0, min(n, i0 + _n(0.5))):
             duck[i] = min(duck[i], 1 - 0.55 * math.exp(-(i - i0) / (0.12 * RATE)))
-    x0, x1 = _n(12.3), _n(12.7)
+    x0, x1 = _n(tl.DECODE_1[0] - 0.2), _n(tl.DECODE_1[0] + 0.2)
     for i in range(n):
         mix = 0.0 if i < x0 else 1.0 if i >= x1 else (i - x0) / (x1 - x0)
         s = 0.0
@@ -254,7 +260,7 @@ def synth(events, duration: float) -> tuple[array, array]:
     pad = _pad(n, [e.t for e in events if e.kind == "kick"])
     wet = _reverb(send)
     lag = 23   # a few samples between the sides widens the room
-    f0, f1 = _n(14.55), _n(14.85)
+    f0, f1 = _n(duration - 0.45), _n(duration - 0.15)
     out_l, out_r = array("f", bytes(4 * n)), array("f", bytes(4 * n))
     for i in range(n):
         g = 1.0 if i < f0 else 0.0 if i >= f1 else 0.5 + 0.5 * math.cos(math.pi * (i - f0) / (f1 - f0))

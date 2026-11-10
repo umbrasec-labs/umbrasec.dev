@@ -167,7 +167,7 @@ def draw(ctx, t: float, c) -> None:
     a = _alpha(t)
     if a <= 0:
         return
-    frame = int(round(t * tl.FPS))
+    frame = int(t * tl.TICK + 1e-6)
     ns = nodes(c)
     ctx.save()
     _camera(ctx, t)
